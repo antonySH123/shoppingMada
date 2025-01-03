@@ -1,0 +1,33 @@
+  <div>
+        {Object.keys(categoriesData).map((category) => (
+          <button
+            key={category}
+            onClick={() => handleCategoryClick(category)}
+            style={{
+              margin: "5px",
+              padding: "10px",
+              background: selectedCategory === category ? "blue" : "gray",
+              color: "white",
+            }}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+
+      {subCategories.length > 0 && (
+        <div style={{ marginTop: "20px" }}>
+          <h2>Sous-Catégories de {selectedCategory}</h2>
+          <select
+            multiple
+            style={{ width: "200px", height: "100px" }}
+            aria-label={`Sous-catégories de ${selectedCategory}`}
+          >
+            {subCategories.map((subCategory) => (
+              <option key={subCategory} value={subCategory}>
+                {subCategory}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
