@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   LiaBarsSolid,
   LiaSignOutAltSolid,
@@ -8,30 +8,8 @@ import {
   LiaUserPlusSolid,
 } from "react-icons/lia";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/UserContext";
+import { useAuth } from "../helper/useAuth";
 
-// const menu = [
-//   {
-//     titre: "Accueil",
-//     page: "/",
-//   },
-//   {
-//     titre: "Apropos",
-//     page: "/#about",
-//   },
-//   {
-//     titre: "Shop",
-//     page: "/shop",
-//   },
-//   {
-//     titre:"Abonnements",
-//     page:"/abonnement"
-//   },
-//   {
-//     titre:"Nous Contactez",
-//     page:"/contact"
-//   }
-// ];
 const Navbar = () => {
   const { user } = useAuth();
   const [auth, setAuth] = useState(false);
@@ -55,11 +33,6 @@ const Navbar = () => {
           {/* menu */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
-              {/* {menu.map((page, index) => (
-                <Link key={index} to={page.titre} className="text-white">
-                  {page.titre}
-                </Link>
-              ))} */}
               <Link to="/" className="text-white">
                 Accueil
               </Link>
@@ -78,40 +51,45 @@ const Navbar = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {auth ? (
-              <>
-                <Link to="/profil" className="text-white flex items-center">
-                  <span className="flex px-3 py-3 items-center justify-center bg-white rounded-full text-gray-500">
-                    <LiaUser />
-                  </span>
-                </Link>
-                {user?.userGroup && (
-                  <Link to="/espace_vendeur/dash" className="text-white flex items-center">
-                    <span className="flex px-3 py-3 items-center justify-center border rounded-full">
-                      <LiaUserLockSolid />
+            <>
+              {auth ? (
+                <React.Fragment>
+                  <Link to="/profil" className="text-white flex items-center">
+                    <span className="flex px-3 py-3 items-center justify-center bg-white rounded-full text-gray-500">
+                      <LiaUser />
                     </span>
                   </Link>
-                )}
-                <Link to="/logout" className="text-white flex items-center">
-                  <span className="flex px-3 py-3 items-center justify-center border rounded-full">
-                    <LiaSignOutAltSolid />
-                  </span>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="text-white flex items-center">
-                  <span className="flex px-3 py-3 items-center justify-center bg-white rounded-full text-gray-500">
-                    <LiaUser />
-                  </span>
-                </Link>
-                <Link to="/register" className="text-white flex items-center">
-                  <span className="flex px-3 py-3 items-center justify-center border rounded-full">
-                    <LiaUserPlusSolid />
-                  </span>
-                </Link>
-              </>
-            )}
+                  {user?.userGroup === "Boutiks" && (
+                    <Link
+                      to="/espace_vendeur/dash"
+                      className="text-white flex items-center"
+                    >
+                      <span className="flex px-3 py-3 items-center justify-center border rounded-full">
+                        <LiaUserLockSolid />
+                      </span>
+                    </Link>
+                  )}
+                  <Link to="/logout" className="text-white flex items-center">
+                    <span className="flex px-3 py-3 items-center justify-center border rounded-full">
+                      <LiaSignOutAltSolid />
+                    </span>
+                  </Link>
+                </React.Fragment>
+              ) : (
+                <>
+                  <Link to="/login" className="text-white flex items-center">
+                    <span className="flex px-3 py-3 items-center justify-center bg-white rounded-full text-gray-500">
+                      <LiaUser />
+                    </span>
+                  </Link>
+                  <Link to="/register" className="text-white flex items-center">
+                    <span className="flex px-3 py-3 items-center justify-center border rounded-full">
+                      <LiaUserPlusSolid />
+                    </span>
+                  </Link>
+                </>
+              )}
+            </>
           </div>
           <div className="mr-2 flex md:hidden">
             <button
@@ -127,11 +105,6 @@ const Navbar = () => {
       {open ? (
         <div className="md:hidden">
           <div className="ox-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {/* {menu.map((page,index) => (
-                <Link key={index} to={page.titre} className="text-white hover:bg-white block px-3 py-2 rounded-md">
-                  {page.titre}
-                </Link>
-              ))} */}
             <Link
               to="/"
               className="text-white hover:bg-white block px-3 py-2 rounded-md"

@@ -8,7 +8,6 @@ import Register from "./components/Register";
 import Login from "./components/Login";
 import BaseShop from "./components/layouts/BaseShop";
 import Shop from "./components/shop/Shop";
-// import Sidebar from "./components/shop/Sidebar"
 import Vendeur from "./components/Vendeur";
 import registerConfirmation from "./components/registerConfirmation";
 import AppAdmin from "./components/admin/AppAdmin";
@@ -19,33 +18,25 @@ import ChangeUser from "./components/ChangeUser";
 import Logout from "./auth/Logout";
 import Add from "./components/admin/content/product/Add";
 import ProtectedRoute from "./context/ProtectedRoute";
+import ProductProvider from "./context/ProductContext";
+import Show from "./components/admin/content/product/Show";
+import ProductDetails from "./components/ProductDetails";
 function App() {
-
-  console.log(import.meta.env.REACT_API_URL);
   return (
-    <BrowserRouter>
-      {/* on utilise browserRouter pour definir nos route avec react-router-dom */}
+    <BrowserRouter future={{ v7_startTransition: true }}>
       <Routes>
-        {/* Routes permet de contenir les contenu utilisé */}
         <Route path="" Component={Base}>
-          {/* Route definit les section comme yeld de laravel utilisé sur react
-          on peut utilisé plusieurs Route */}
           <Route path="" index Component={Home} />
-          {/* <Route path="/register" Component={Register}/> */}
           <Route path="/contact" Component={Contact} />
           <Route path="/vendeur" Component={Vendeur} />
           <Route path="/profil" Component={Profil} />
           <Route path="/redirect" Component={ChangeUser} />
+          <Route path="/product/detail" Component={ProductDetails}/>
         </Route>
-
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/confirmCompte" Component={registerConfirmation} />
         <Route path="/logout" Component={Logout} />
-
-        {/* <Route path="/sidebar" Component={Sidebar}/> */}
-
-        {/* routes qui gère tous les shop */}
         <Route path="" Component={BaseShop}>
           <Route path="/shop" Component={Shop} />
         </Route>
@@ -55,14 +46,16 @@ function App() {
           path="/espace_vendeur"
           element={
             <ProtectedRoute role="Boutiks">
-              <AppAdmin />
+              <ProductProvider>
+                <AppAdmin />
+              </ProductProvider>
             </ProtectedRoute>
           }
         >
-          {/* <Route path="/sidebar" Component={Sidebar}/> */}
           <Route path="dash" Component={Dash}></Route>
           <Route path="products" Component={Content}></Route>
           <Route path="admin/addProduct" Component={Add}></Route>
+          <Route path="products/:id" Component={Show}></Route>
         </Route>
       </Routes>
     </BrowserRouter>

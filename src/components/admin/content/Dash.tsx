@@ -1,9 +1,9 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { FaRegSun, FaShoppingCart, FaSun, FaUsers } from "react-icons/fa";
-import { useAuth } from "../../../context/UserContext";
 import UserInfo from "../../modals/UserInfo";
 import { LiaUploadSolid } from "react-icons/lia";
 import { toast } from "react-toastify";
+import { useAuth } from "../../../helper/useAuth";
 
 function Dash() {
   const { user, token } = useAuth();
@@ -11,7 +11,7 @@ function Dash() {
   const closeModal = () => setIsModalOpen(false);
   const [cin, setCIN] = useState("");
   const [files, setFiles] = useState<File[]>([]);
-  const inputFile = useRef(null)
+  const inputFile = useRef<HTMLInputElement | null>(null)
   
 
   const handleSubmit = async(e: FormEvent<HTMLFormElement>)=>{
@@ -235,7 +235,7 @@ function Dash() {
                     ))}
                 </ul>
                 )}
-                <div className="w-16 h-16 border-2 shadow rounded-sm flex flex-col justify-center items-center" onClick={(e)=>{
+                <div className="w-16 h-16 border-2 shadow rounded-sm flex flex-col justify-center items-center" onClick={()=>{
                   inputFile?.current?.click();
                 }}>
                   <LiaUploadSolid/> <span className="text-[4px]">choisir une fichier</span>

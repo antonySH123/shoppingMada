@@ -7,17 +7,14 @@ import {
 import { Link } from "react-router-dom";
 import UserInfo from "./modals/UserInfo";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
-import { useAuth } from "../context/UserContext";
 import { FaHandshake } from "react-icons/fa";
 import Skeleton from "react-loading-skeleton";
+import { useAuth } from "../helper/useAuth";
 function Profil() {
-  const { user, token } = useAuth();
+  const { user} = useAuth();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const closeModal = () => setIsModalOpen(false);
-
   const [load,setLoad] = useState(false);
-
-
   const [userProfil, setUserProfil] = useState({
     firstName: "",
     lastName: "",
@@ -26,26 +23,20 @@ function Profil() {
     phoneNumber: "",
   });
 
-  const [userInfo, setUserInfo] = useState();
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [userInfo, setUserInfo] = useState<any>();
   const form = useRef(null);
   const fetchData = useCallback(async () => {
     setLoad(true)
     try {
-      if (!token) {
-        console.error("Token is missing.");
-        return;
-      }
-
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}personnal/info`,
         {
           headers: {
             "Content-Type": "application/json",
-            // Accept: "application/json",
-            "ngrok-skip-browser-warning": "69420",
-            Authorization: `Bearer ${token}`,
+            
           },
+          credentials:"include"
         }
       );
       if (!response.ok) {
@@ -64,14 +55,13 @@ function Profil() {
       console.error("Failed to fetch user profile:", error);
     }
     setLoad(false)
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (token) {
+    if (user) {
       fetchData()
-      
     }
-  }, [fetchData, token,load]);
+  }, [fetchData,load, user]);
 
   
 
@@ -97,9 +87,9 @@ function Profil() {
         method: "post",
         headers: {
           "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "69420",
-          Authorization: `Bearer ${token}`,
+          
         },
+        credentials:'include',
         body: JSON.stringify(userProfil),
       }
     );
@@ -129,7 +119,7 @@ function Profil() {
             </h1>
             <h1 className="flex items-center gap-3">
               <LiaUserCogSolid size={30} />
-              <span className="w-full">{user?.userGroup || <Skeleton className="w-full"/>}</span>
+              <span className="w-full">{user?.userGroup || <><Skeleton className="w-full"/></>}</span>
             </h1>
             {user?.userGroup == "Client" && (
               <Link className="flex items-center gap-3 border border-green-500 py-2 px-4 uppercase bg-green-500 text-white shadow-lg rounded-md" to={"/vendeur"}>

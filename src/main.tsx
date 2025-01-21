@@ -6,6 +6,7 @@ import './index.css'
 import { AuthProvider } from './context/UserContext.tsx'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css';
+import 'react-confirm-alert/src/react-confirm-alert.css' 
 import { SkeletonTheme } from 'react-loading-skeleton'
 
 

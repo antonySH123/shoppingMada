@@ -69,7 +69,7 @@ useEffect(()=>{
                 </div>
                 <div className="px-4 flex gap-2">
                   <Link
-                    to=""
+                    to="/product/detail"
                     className="rounded-md text-gray-500 border-2 border-solid border-gray-500 bg-white w-full flex items-center justify-center py-1 transition-all ease-in hover:bg-green-500 hover:text-white hover:border-solid hover:border-2 hover:border-white"
                   >
                     Détails

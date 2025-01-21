@@ -5,13 +5,15 @@ import {
   FaAngleRight,
   FaPlus,
 } from "react-icons/fa";
-import { useAuth } from "../../context/UserContext";
+
 import { toast } from "react-toastify";
+import { useCategory } from "../../context/ProductContext";
 
 // Types pour les catégories
 interface Category {
   _id: string;
   name: string;
+  slug: string;
   children?: Category[];
 }
 
@@ -26,7 +28,6 @@ interface NewCategory {
 }
 
 function Categorie() {
-  const { token } = useAuth();
   const [boutikInfo, setBoutikInfo] = useState<BoutikInfo | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [history, setHistory] = useState<Category[][]>([]); // Historique des niveaux
@@ -34,6 +35,7 @@ function Categorie() {
   const [displayForm, setDisplayForm] = useState(false);
   const [parentId, setParentId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const {setSelectedCategoryId} = useCategory();
   const [selectedCategoryDisplay, setSelectedDisplay] = useState<string | null>(
     null
   );
@@ -75,9 +77,8 @@ function Categorie() {
         {
           headers: {
             "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "69420",
-            Authorization: `Bearer ${token}`,
           },
+          credentials:"include"
         }
       );
 
@@ -92,7 +93,7 @@ function Categorie() {
     } catch (error) {
       console.error("Erreur:", error);
     }
-  }, [token]);
+  }, []);
 
   // Afficher/Masquer la liste des catégories
   const handleClick = () => {
@@ -162,10 +163,8 @@ function Categorie() {
 
   // Effet pour récupérer les données de la boutique
   useEffect(() => {
-    if (token) {
-      fetchData();
-    }
-  }, [token, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
   // Effet pour récupérer les catégories lorsque les informations de la boutique sont disponibles
   useEffect(() => {
@@ -173,6 +172,12 @@ function Categorie() {
       getCategory();
     }
   }, [boutikInfo, getCategory]);
+
+  useEffect(()=>{
+    if(selectedCategory){
+      setSelectedCategoryId(selectedCategory);
+    }
+  },[selectedCategory, setSelectedCategoryId])
 
   return (
     <div className="w-full">
@@ -199,9 +204,9 @@ function Categorie() {
               <input
                 type="checkbox"
                 name="category"
-                value={element._id}
-                checked={selectedCategory === element._id}
-                onChange={() => handleCheckboxChange(element._id, element.name)}
+                value={element.slug}
+                checked={selectedCategory === element.slug}
+                onChange={() => handleCheckboxChange(element.slug, element.name)}
               />
 
               {/* Conteneur pour le texte et l'icône */}
@@ -210,7 +215,7 @@ function Categorie() {
                 onClick={() =>
                   element.children &&
                   element.children.length > 0 &&
-                  handleCategoryClick(element.children, element._id)
+                  handleCategoryClick(element.children, element.slug)
                 }
               >
                 {element.name}

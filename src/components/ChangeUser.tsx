@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '../context/UserContext'
+import { useAuth } from '../helper/useAuth'
 
 function ChangeUser() {
     const {token, setToken, setUserInfo} = useAuth()
@@ -10,7 +10,6 @@ function ChangeUser() {
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
-                "ngrok-skip-browser-warning": "69420",
               },
           })
           const response = await regenerateToken.json();
@@ -22,7 +21,7 @@ function ChangeUser() {
         if(token) regenerate()
     },[regenerate, token])
   return (
-    <Navigate to={"/dash"}/>
+    <Navigate to={"/espace_vendeur/dash"}/>
   )
 }
 

@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "./UserContext";
 import { useEffect, useState } from "react";
 import ReactLoading from "react-loading"
+import { useAuth } from "../helper/useAuth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,25 +9,23 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simuler un temps de synchronisation
+    
     const checkAuth = setTimeout(() => {
-      setLoading(false); // Le chargement est terminé après un délai
+      setLoading(false); 
     }, 100);
-
     return () => clearTimeout(checkAuth);
-  }, [token, user]);
-
+  }, [user]);
   if (loading) {
     return <div>
         <ReactLoading type="bars"  height={'20%'} width={'20%'} />
     </div>; // Affichez un écran de chargement
   }
 
-  if (!token || (role && user?.userGroup !== role)) {
+  if (!user || (role && user?.userGroup !== role)) {
     return <Navigate to="/login" />;
   }
 
