@@ -128,7 +128,7 @@ function Content() {
                         <LiaEye />
                       </Link>
                       <Link
-                        to={""}
+                        to={`/espace_vendeur/admin/addProduct/${element._id}`}
                         className="w-10 h-10 border border-green-500 flex items-center justify-center rounded text-green-500"
                       >
                         <LiaEdit />

@@ -54,7 +54,7 @@ function App() {
         >
           <Route path="dash" Component={Dash}></Route>
           <Route path="products" Component={Content}></Route>
-          <Route path="admin/addProduct" Component={Add}></Route>
+          <Route path="admin/addProduct/:productId?" Component={Add}></Route>
           <Route path="products/:id" Component={Show}></Route>
         </Route>
       </Routes>
