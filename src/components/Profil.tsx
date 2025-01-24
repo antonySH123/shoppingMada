@@ -10,6 +10,7 @@ import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { FaHandshake } from "react-icons/fa";
 import Skeleton from "react-loading-skeleton";
 import { useAuth } from "../helper/useAuth";
+import Commande from "./commande/Commande";
 function Profil() {
   const { user} = useAuth();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -151,78 +152,6 @@ function Profil() {
           </div>
           <div>
             <h1 className="font-semibold text-3xl mb-5 mt-5">
-              Historique des achats de produits
-            </h1>
-            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-5">
-              <div className="card shadow-lg h-auto pb-5 w-full rounded-lg bg-gray-100">
-                <div className=" bg-gray-100 px-3 pt-3">
-                  <img
-                    src="/src/assets/image/product/pharm.jpg"
-                    alt=""
-                    className="w-full"
-                  />
-                </div>
-                <div className="mt-2 mb-3 px-4">
-                  <h3>Telephone</h3>
-                  <p className="font-semibold">Lorem ipsum dolor sit amet.</p>
-                </div>
-              </div>
-              <div className="card shadow-lg h-auto pb-5 w-full rounded-lg bg-gray-100">
-                <div className=" bg-gray-100 px-3 pt-3">
-                  <img
-                    src="/src/assets/image/product/pharm.jpg"
-                    alt=""
-                    className="w-full"
-                  />
-                </div>
-                <div className="mt-2 mb-3 px-4">
-                  <h3>Telephone</h3>
-                  <p className="font-semibold">Lorem ipsum dolor sit amet.</p>
-                </div>
-              </div>
-              <div className="card shadow-lg h-auto pb-5 w-full rounded-lg bg-gray-100">
-                <div className=" bg-gray-100 px-3 pt-3">
-                  <img
-                    src="/src/assets/image/product/pharm.jpg"
-                    alt=""
-                    className="w-full"
-                  />
-                </div>
-                <div className="mt-2 mb-3 px-4">
-                  <h3>Telephone</h3>
-                  <p className="font-semibold">Lorem ipsum dolor sit amet.</p>
-                </div>
-              </div>
-              <div className="card shadow-lg h-auto pb-5 w-full rounded-lg bg-gray-100">
-                <div className=" bg-gray-100 px-3 pt-3">
-                  <img
-                    src="/src/assets/image/product/pharm.jpg"
-                    alt=""
-                    className="w-full"
-                  />
-                </div>
-                <div className="mt-2 mb-3 px-4">
-                  <h3>Telephone</h3>
-                  <p className="font-semibold">Lorem ipsum dolor sit amet.</p>
-                </div>
-              </div>
-              <div className="card shadow-lg h-auto pb-5 w-full rounded-lg bg-gray-100">
-                <div className=" bg-gray-100 px-3 pt-3">
-                  <img
-                    src="/src/assets/image/product/pharm.jpg"
-                    alt=""
-                    className="w-full"
-                  />
-                </div>
-                <div className="mt-2 mb-3 px-4">
-                  <h3>Telephone</h3>
-                  <p className="font-semibold">Lorem ipsum dolor sit amet.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div>
-            <h1 className="font-semibold text-3xl mb-5 mt-5">
               Récommandations
             </h1>
             <p>Produit que vous aimeriez peut être </p>
@@ -336,6 +265,9 @@ function Profil() {
                 </div>
               </div>
             </div>
+          </div>
+          <div>
+            <Commande/>
           </div>
         </div>
       </div>

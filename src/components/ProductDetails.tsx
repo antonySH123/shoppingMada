@@ -1,25 +1,31 @@
-import { LiaShoppingBagSolid } from "react-icons/lia";
 import IProduct from "../Interface/IProduct";
-import { useEffect, useReducer } from "react";
+import { FormEvent, useEffect, useReducer } from "react";
 import { useParams } from "react-router-dom";
 import useFormatter from "../helper/useFormatter";
 import parse from "html-react-parser";
+import { LiaBuildingSolid, LiaCheckCircle, LiaMapMarkedSolid, LiaPhoneSolid } from "react-icons/lia";
+import useCSRF from "../helper/useCSRF";
+import { toast } from "react-toastify";
 
 interface IState {
   product: IProduct | null;
   loading: boolean;
   error: string | null;
+  counter?: number | undefined;
 }
 
 const initialState: IState = {
   product: null,
   loading: false,
   error: null,
+  counter:1
 };
 type Action =
   | { type: "FETCH_START" }
   | { type: "FETCH_SUCCESS"; payload: IProduct }
-  | { type: "FETCH_ERROR"; payload: string };
+  | { type: "FETCH_ERROR"; payload: string }
+  | { type: "INCREMENT"; payload: number | undefined }
+  | { type: "DECREMENT"; payload: number | undefined };
 
 const reducer = (state: IState, action: Action): IState => {
   switch (action.type) {
@@ -29,15 +35,49 @@ const reducer = (state: IState, action: Action): IState => {
       return { product: action.payload, loading: false, error: null };
     case "FETCH_ERROR":
       return { ...state, loading: false, error: action.payload };
+    case "INCREMENT":
+      return { ...state, counter: (state.counter || 1) + 1 }
+    case "DECREMENT":
+      return {...state, counter:state.counter && state.counter > 1 ? state.counter - 1 : 1}
     default:
       throw new Error("Action inconnue");
   }
 };
 
+
+
 function ProductDetails() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { id } = useParams();
-  const {priceInArriary} = useFormatter()
+  const { priceInArriary } = useFormatter();
+  const csrf = useCSRF();
+  const handleSubmit =async(e: FormEvent<HTMLFormElement>)=>{
+    e.preventDefault();
+    dispatch({type:"FETCH_START"});
+    try {
+      if(csrf){
+        const response = await fetch(`${import.meta.env.REACT_API_URL}command`,{
+          method:"POST",
+          credentials:"include",
+          headers:{
+            "Content-Type":"application/json",
+            "xsrf-token":csrf
+          },
+          body:JSON.stringify({quantity:state.counter,product_id:id})
+        });
+
+        const result = await response.json();
+        toast.success(result.message);
+      }
+    } catch (error) {
+      if(error instanceof Error){
+        dispatch({type:"FETCH_ERROR",payload:error.message})
+      }
+    }
+
+  }
+
+  
   useEffect(() => {
     dispatch({ type: "FETCH_START" });
     const fetchProduct = async () => {
@@ -50,6 +90,7 @@ function ProductDetails() {
         }
 
         const data = await response.json();
+
         dispatch({ type: "FETCH_SUCCESS", payload: data.data });
       } catch (error) {
         if (error instanceof Error) {
@@ -62,8 +103,8 @@ function ProductDetails() {
     fetchProduct();
   }, [id]);
   return (
-    <div className="px-10 py-5 grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-5">
-      <div className="py-10">
+    <div className="px-10 py-5 grid grid-cols-1 sm:grid-cols-1 md:grid-cols-5 gap-5">
+      <div className="py-10 col-span-2">
         <img
           src={`${import.meta.env.REACT_API_URL}uploads/${
             state.product && state.product.photos && state.product.photos[0]
@@ -71,62 +112,126 @@ function ProductDetails() {
           alt=""
           className="w-full mt-10 rounded-md"
         />
-        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4 gap-3">
           {state.product &&
             state.product.photos &&
             state.product.photos.map((photo, index) => {
               if (index != 0) {
                 return (
-                  <img
-                    src={`${import.meta.env.REACT_API_URL}uploads/${
-                      photo
-                    }`}
-                    alt=""
-                    className="w-full mt-10 rounded-md"
-                  />
+                  <div className="w-full mt-10 rounded-md h-32">
+                    <img
+                      src={`${import.meta.env.REACT_API_URL}uploads/${photo}`}
+                      alt=""
+                      className="w-full h-full object-fill"
+                      key={index + 1}
+                    />
+                  </div>
                 );
               }
             })}
         </div>
       </div>
-      <div className="py-10">
+      <div className="py-10 col-span-2">
         <div className="py-10 flex flex-col gap-5">
           <h1 className="text-3xl">Informations sur le produit</h1>
-          <p>
-            <strong>
-              {state.product &&
-                state.product.name &&
-                state.product.name.toUpperCase()}
-            </strong>
-          </p>
-          <p>
+          <div className="bg-lime-100 flex justify-between p-5">
+            <p>
+              <strong>
+                {state.product &&
+                  state.product.name &&
+                  state.product.name.toUpperCase()}
+              </strong>
+            </p>
+            <p>
+              <strong>
+                {state.product &&
+                  state.product.price &&
+                  priceInArriary(state.product.price)}
+              </strong>
+            </p>
+          </div>
+          <p className="capitalize">
             {state.product &&
-              state.product.price &&
-              priceInArriary(state.product.price)}
+              state.product.description &&
+              parse(state.product.description)}
           </p>
-          <p>
-            {state.product && state.product.details && parse(state.product.details)}
-          </p>
-          <p>
-            <strong>Variant</strong>
-          </p>
-          <p>
-            <strong>Quantité</strong>
-          </p>
-          <p>
-            <input type="number" name="" id="" value={1} />
-          </p>
-          <div className="w-1/4">
-            <a
-              href=""
-              className="rounded-md  border border-green-500 px-5 py-3 flex gap-3 hover:bg-green-500 hover:text-white"
-            >
-              <LiaShoppingBagSolid size={30} />
-              commander
-            </a>
+          <hr />
+          <div className="text-sm text-justify">
+            {state.product &&
+              state.product.details &&
+              parse(state.product.details)}
+          </div>
+          <hr />
+          <div>
+            <p>
+              <strong>Variant</strong>
+            </p>
+            {state.product && state.product.variant && state.product.variant.length > 0 && state.product.variant.map((element, index)=>(
+              <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5" key={index+1}>
+              <div className="col-span-1 flex justify-center items-center">
+                <h4 className="flex items-center gap-3"><LiaCheckCircle/><strong className="capitalize">{element.name}</strong></h4>
+              </div>
+              <div className="flex gap-3 sm:col-span-2 md:col-span-4">
+                {element.values.length > 0 && element.values.map((val,i)=>(
+                  <p className="px-3 py-2 rounded bg-gray-100 capitalize" key={i + 1}>{val}</p>
+                ))}
+                
+               
+              </div>
+            </div>
+            ))}
+            
           </div>
         </div>
       </div>
+      <form
+        method="post"
+        action=""
+        className="py-20  "
+        onSubmit={handleSubmit}
+      >
+        <div className="flex flex-col col-span-1 gap-10 border border-gray-50  shadow h-auto py-5">
+        <div className="px-5">
+          <h4 className="mb-2">
+            <strong>
+              Vendu par
+            </strong>
+          </h4>
+          <ul>
+            <li className="text-sm mb-1 flex items-center gap-2"> <LiaBuildingSolid size={15}/> {state.product && state.product.boutiks_id.name}</li>
+            <li className="text-sm mb-1 flex items-center gap-2"> <LiaPhoneSolid size={15}/> {state.product && state.product.boutiks_id.phoneNumber}</li>
+            <li className="text-sm mb-1 flex items-center gap-2"> <LiaMapMarkedSolid size={15}/> {state.product && state.product.boutiks_id.adresse}</li>
+          </ul>
+        </div>
+        <div className="px-5">
+          <p className="mb-2">
+            <strong>Quantités</strong>
+          </p>
+          <div className="flex items-center gap-1">
+          <button className="px-3 py-2 bg-gray-100 text-lg font-bold" type="button" onClick={()=>dispatch({type:"DECREMENT",payload:undefined})}>-</button>
+            <input
+              type="text"
+              name="quantity"
+              className="py-2 px-3 border border-gray-200 w-full"
+              defaultValue={1}
+              value={state.counter}
+              readOnly
+            />
+            <button className="px-3 py-2 bg-gray-100 text-lg font-bold" type="button" onClick={()=>dispatch({type:"INCREMENT",payload:undefined})}>+</button> 
+          </div>
+        </div>
+
+        <div className="w-full px-5">
+          <button
+            type="submit"
+            className="border border-green-500 bg-green-500 px-5 py-3 gap-3 text-white  rounded uppercase flex justify-center font-bold"
+          >
+            commander
+          </button>
+        </div>
+        </div>
+        
+      </form>
     </div>
   );
 }

@@ -50,9 +50,15 @@ function Add() {
     photos: [], // Initialiser les photos à un tableau vide
   });
 
+  const [content,setContent] = useState("");
+
+  useEffect(()=>{
+    setProduct((prevProduct)=>({...prevProduct, details:content}))
+  },[content])
   const { productId } = useParams();
   const config = {
     height: "350",
+    pastePlainText:false
   };
   const csrf = useCSRF();
 
@@ -73,7 +79,7 @@ function Add() {
     try {
       const formData = createFormDataFromObject(product);
       files.forEach((photo) => {
-        formData.append("photos", photo); // Changer de "image" à "photos"
+        formData.append("image", photo); // Changer de "image" à "photos"
       });
 
       if (csrf) {
@@ -275,10 +281,9 @@ function Add() {
               <label>Détails</label>
               <JodiEditor
                 ref={editor}
-                value={product.details}
+                value={content}
                 config={config}
-                onBlur={(newContent) =>
-                  setProduct({ ...product, details: newContent })
+                onBlur={(newContent) =>setContent(newContent)
                 }
               />
             </div>

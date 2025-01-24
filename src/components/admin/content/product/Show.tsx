@@ -202,7 +202,7 @@ function Show() {
           </div>
           <h1 className="font-semibold uppercase">{product?.description}</h1>
           <hr />
-          <>{parse(product?.details as string)}</>
+          <div className="text-justify mt-2">{parse(product?.details as string)}</div>
         </div>
       </div>
 

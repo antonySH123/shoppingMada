@@ -59,6 +59,7 @@ function Shop() {
         }
 
         const result = await response.json();
+        console.log(result.data);
         dispatch({ type: "FETCH_SUCCESS", payload: result.data });
 
       } catch (error: unknown) {

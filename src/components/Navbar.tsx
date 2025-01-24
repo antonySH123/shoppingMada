@@ -7,7 +7,7 @@ import {
   LiaUserLockSolid,
   LiaUserPlusSolid,
 } from "react-icons/lia";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../helper/useAuth";
 import useScroll from "../helper/useScroll";
 
@@ -15,7 +15,10 @@ const Navbar = () => {
   const { user } = useAuth();
   const [auth, setAuth] = useState(false);
   const scroll = useScroll();
+  const location = useLocation();
+  const segment = location.pathname.slice(1).split("/");
   useEffect(() => {
+    
     if (user) {
       setAuth(true);
     }
@@ -26,7 +29,7 @@ const Navbar = () => {
   };
 
   return (
-    <div className={`w-full ${scroll ?"bg-green-500 animate-translate-y shadow shadow-gray-500":""} font-semibold fixed top-0 left-0 z-30 transition-all ease-in duration-300`}>
+    <div className={`w-full ${(segment && segment[0].toLowerCase() === "product" || segment[0].toLowerCase() ==="profil" ) && "bg-green-500"} ${scroll ?"bg-green-500 animate-translate-y shadow shadow-gray-500":""} font-semibold fixed top-0 left-0 z-30 transition-all ease-in duration-300`}>
       <div className="mx-auto px-4 sm:px-6 lg-px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center text-white">

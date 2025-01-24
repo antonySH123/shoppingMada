@@ -20,7 +20,7 @@ function ProductCard({ product }: IProductProps) {
         </div>
         <div className="mt-2 mb-3 px-4">
           <h3>T{product.name}</h3>
-          <p className="font-semibold">{product.description}</p>
+          <p className="font-semibold">{product.description.length > 50 && `${product.description.slice(0,50)} ...`} </p>
         </div>
         <div className="px-4 flex gap-2">
           <Link

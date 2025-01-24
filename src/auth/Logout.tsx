@@ -1,30 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect} from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+
+import useCSRF from "../helper/useCSRF";
 
 function Logout() {
   const navigate = useNavigate();
-  const [csrf, setcsrf] = useState<string | null>(null);
-
-  const getCSRF = useCallback(async () => {
-    const response = await fetch(`${import.meta.env.REACT_API_URL}csrf-token`, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-      credentials: "include",
-    });
-    if (!response.ok) {
-      toast.error("Une erreur est survenu!");
-    } else {
-      const result = await response.json();
-      setcsrf(result.csrfToken);
-    }
-  }, []);
-
-  useEffect(() => {
-    getCSRF();
-  }, [getCSRF]);
+ const csrf = useCSRF();
 
   const logout = useCallback(async()=>{
     if(csrf){

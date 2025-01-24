@@ -73,7 +73,7 @@ function Content() {
 
   useEffect(() => {
     fetchData();
-  });
+  },[]);
   return (
     <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 py-5">
       <div className="py-5">
@@ -112,7 +112,7 @@ function Content() {
                       {element.name}
                     </td>
                     <td className="py-3 pr-6 whitespace-nowrap text-center">
-                      {element.description}
+                      {element.description.slice(0,50)} { element.description.length > 50 && "..."}
                     </td>
                     <td className="py-3 pr-6 whitespace-nowrap text-center">
                       {element.price}
