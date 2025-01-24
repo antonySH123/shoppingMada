@@ -21,9 +21,16 @@ import ProtectedRoute from "./context/ProtectedRoute";
 import ProductProvider from "./context/ProductContext";
 import Show from "./components/admin/content/product/Show";
 import ProductDetails from "./components/ProductDetails";
+import Page404 from "./error/Page404";
+import TopProgressBar from "./components/progress/TopProgressBar";
+import ScrollToTop from "./components/progress/ScrollToTop";
 function App() {
   return (
-    <BrowserRouter future={{ v7_startTransition: true }}>
+    <BrowserRouter
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <TopProgressBar />
+      <ScrollToTop/>
       <Routes>
         <Route path="" Component={Base}>
           <Route path="" index Component={Home} />
@@ -31,14 +38,14 @@ function App() {
           <Route path="/vendeur" Component={Vendeur} />
           <Route path="/profil" Component={Profil} />
           <Route path="/redirect" Component={ChangeUser} />
-          <Route path="/product/detail" Component={ProductDetails}/>
+          <Route path="/product/:id/details" Component={ProductDetails} />
         </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/confirmCompte" Component={registerConfirmation} />
         <Route path="/logout" Component={Logout} />
         <Route path="" Component={BaseShop}>
-          <Route path="/shop" Component={Shop} />
+          <Route path="/shop/:slug?" Component={Shop} />
         </Route>
 
         {/* Route pour les administrateurs */}
@@ -57,6 +64,8 @@ function App() {
           <Route path="admin/addProduct/:productId?" Component={Add}></Route>
           <Route path="products/:id" Component={Show}></Route>
         </Route>
+
+        <Route path="*" Component={Page404} />
       </Routes>
     </BrowserRouter>
   );

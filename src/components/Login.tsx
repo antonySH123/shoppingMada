@@ -13,7 +13,6 @@ function Login() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     setIsSubmited(true);
     event.preventDefault();
-    
     try {
       if (csrf) {
         const postdata = await fetch(

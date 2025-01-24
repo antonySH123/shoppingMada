@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+    font-family: 'MaPolice';
+    src: url('/fonts/Montserrat-Regular.ttf');
+  }
+  
+  body {
+    font-family: 'MaPolice', sans-serif;
+  }
+  

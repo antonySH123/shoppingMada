@@ -119,7 +119,7 @@ function Profil() {
             </h1>
             <h1 className="flex items-center gap-3">
               <LiaUserCogSolid size={30} />
-              <span className="w-full">{user?.userGroup || <><Skeleton className="w-full"/></>}</span>
+              <span className="w-full">{user?.userGroup as string || <><Skeleton className="w-full"/></>}</span>
             </h1>
             {user?.userGroup == "Client" && (
               <Link className="flex items-center gap-3 border border-green-500 py-2 px-4 uppercase bg-green-500 text-white shadow-lg rounded-md" to={"/vendeur"}>
@@ -153,7 +153,7 @@ function Profil() {
             <h1 className="font-semibold text-3xl mb-5 mt-5">
               Historique des achats de produits
             </h1>
-            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-5">
               <div className="card shadow-lg h-auto pb-5 w-full rounded-lg bg-gray-100">
                 <div className=" bg-gray-100 px-3 pt-3">
                   <img
