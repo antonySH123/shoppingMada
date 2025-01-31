@@ -24,6 +24,12 @@ import ProductDetails from "./components/ProductDetails";
 import Page404 from "./error/Page404";
 import TopProgressBar from "./components/progress/TopProgressBar";
 import ScrollToTop from "./components/progress/ScrollToTop";
+import List from "./components/admin/content/commande/List";
+import BoutiksInfo from "./components/admin/content/boutikInfo/BoutiksInfo";
+import ListAbonnement from "./components/admin/abonnements/ListAbonnement";
+import Compte from "./components/admin/compte/Compte";
+import CommandeDetails from "./components/admin/content/commande/CommandeDetails";
+import AccountsDetails from "./components/admin/compte/AccountsDetails";
 function App() {
   return (
     <BrowserRouter
@@ -52,17 +58,25 @@ function App() {
         <Route
           path="/espace_vendeur"
           element={
-            <ProtectedRoute role="Boutiks">
+            // <ProtectedRoute role="Boutiks">
               <ProductProvider>
                 <AppAdmin />
               </ProductProvider>
-            </ProtectedRoute>
+            // </ProtectedRoute>
           }
         >
           <Route path="dash" Component={Dash}></Route>
           <Route path="products" Component={Content}></Route>
           <Route path="admin/addProduct/:productId?" Component={Add}></Route>
           <Route path="products/:id" Component={Show}></Route>
+          {/* Route pour les commandes */}
+          <Route path="commandes" Component={List}></Route>
+          <Route path="commandeDetails" Component={CommandeDetails}></Route>
+          <Route path="boutiksInfo" Component={BoutiksInfo}></Route>
+          <Route path="abonnements" Component={ListAbonnement}></Route>
+          <Route path="shopaccounts" Component={Compte}></Route>
+          <Route path="accountsSettings" Component={AccountsDetails}></Route>
+          
         </Route>
 
         <Route path="*" Component={Page404} />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "./sidebar/Sidebar";
 import { Outlet } from "react-router-dom";
 
@@ -6,8 +6,22 @@ function AppAdmin() {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
   const toggleSidebar = (): void => {
-    setIsCollapsed(!isCollapsed);
+    setIsCollapsed((prev) => !prev);
   };
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setIsCollapsed(true);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    handleResize(); // Exécuter une première fois au chargement
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <div className="flex h-screen">
@@ -16,9 +30,7 @@ function AppAdmin() {
 
       {/* Contenu principal */}
       <div
-        className={`transition-all duration-300 ${
-          isCollapsed ? "ml-0" : "ml-0"
-        } flex-1 bg-gray-50 px-10 py-5 overflow-y-auto`}
+        className={`transition-all duration-300 flex-1 bg-gray-50 px-10 py-5 overflow-y-auto`}
       >
         <Outlet />
       </div>

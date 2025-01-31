@@ -167,9 +167,9 @@ function Add() {
           className="w-full shadow-md p-10 bg-white rounded-md "
           onSubmit={handleSubmit}
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <div className="flex w-full gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-3 gap-5">
                 <div className="w-full flex gap-3 flex-col">
                   <label>Nom du produit</label>
                   <input

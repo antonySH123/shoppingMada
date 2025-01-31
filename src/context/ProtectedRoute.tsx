@@ -12,13 +12,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  // useEffect(() => {
     
-    const checkAuth = setTimeout(() => {
-      setLoading(false); 
-    }, 100);
-    return () => clearTimeout(checkAuth);
-  }, [user]);
+  //   const checkAuth = setTimeout(() => {
+  //     setLoading(false); 
+  //   }, 100);
+  //   return () => clearTimeout(checkAuth);
+  // }, [user]);
   if (loading) {
     return <div>
         <ReactLoading type="bars"  height={'20%'} width={'20%'} />
