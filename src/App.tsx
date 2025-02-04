@@ -30,6 +30,8 @@ import ListAbonnement from "./components/admin/abonnements/ListAbonnement";
 import Compte from "./components/admin/compte/Compte";
 import CommandeDetails from "./components/admin/content/commande/CommandeDetails";
 import AccountsDetails from "./components/admin/compte/AccountsDetails";
+import EmailForgotPass from "./components/EmailForgotPass";
+import ResetPassword from "./components/ResetPassword";
 function App() {
   return (
     <BrowserRouter
@@ -48,6 +50,8 @@ function App() {
         </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgotPass" element={<EmailForgotPass/>}/>
+        <Route path="/resetPassword" element={<ResetPassword/>}/>
         <Route path="/confirmCompte" Component={registerConfirmation} />
         <Route path="/logout" Component={Logout} />
         <Route path="" Component={BaseShop}>
