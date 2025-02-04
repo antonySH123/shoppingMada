@@ -1,5 +1,4 @@
 
-import { FaRegEdit } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
 
 function ListAbonnement() {
@@ -35,10 +34,10 @@ function ListAbonnement() {
             <td className="py-3 px-3 border text-center">
               <Link
                 title="Modifier"
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-500 hover:bg-blue-200"
-                to="/edit-subscription/1"
+                className="w-10 h-10 flex items-center justify-center rounded-full text-green-500 "
+                to="/espace_vendeur/abonnementsDetails"
               >
-                <FaRegEdit size={20} />
+                Détails
               </Link>
             </td>
           </tr>
@@ -61,7 +60,7 @@ function ListAbonnement() {
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-500 hover:bg-blue-200"
                 to="/edit-subscription/2"
               >
-                <FaRegEdit size={20} />
+              Détails
               </Link>
             </td>
           </tr>

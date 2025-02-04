@@ -32,6 +32,7 @@ import CommandeDetails from "./components/admin/content/commande/CommandeDetails
 import AccountsDetails from "./components/admin/compte/AccountsDetails";
 import EmailForgotPass from "./components/EmailForgotPass";
 import ResetPassword from "./components/ResetPassword";
+import DetailsAbonnements from "./components/admin/abonnements/DetailsAbonnements";
 function App() {
   return (
     <BrowserRouter
@@ -78,6 +79,7 @@ function App() {
           <Route path="commandeDetails" Component={CommandeDetails}></Route>
           <Route path="boutiksInfo" Component={BoutiksInfo}></Route>
           <Route path="abonnements" Component={ListAbonnement}></Route>
+          <Route path="abonnementsDetails" Component={DetailsAbonnements}></Route>
           <Route path="shopaccounts" Component={Compte}></Route>
           <Route path="accountsSettings" Component={AccountsDetails}></Route>
           
