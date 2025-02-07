@@ -1,10 +1,19 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LiaSearchSolid, LiaShoppingCartSolid } from "react-icons/lia";
 import { useSidebar } from "../../context/ToggleSidebarContext";
 import useScroll from "../../helper/useScroll";
+import { FormEvent, useState } from "react";
 function Navbar() {
   const {toggler} = useSidebar();
   const scroll = useScroll();
+
+  const navigate = useNavigate();
+
+  const [searchTerm, setSearchTerm] = useState<string | null>();
+  const handleSearch = (event: FormEvent<HTMLFormElement>)=>{
+    event.preventDefault();
+    navigate(`/shop?q=${encodeURIComponent(searchTerm as string)}`);
+  }
   return (
     <header className={`z-50 h-32 w-full  ${scroll ? "fixed  top-0 animate-translate-y" : ""}`}>
       <div className="w-full bg-green-500 h-[4.5rem] ">
@@ -18,15 +27,18 @@ function Navbar() {
                 action=""
                 method="post"
                 className="relative p-0 h-full mt-4 w-full"
+                onSubmit={handleSearch}
               >
                 <input
-                  type="search"
+                  type="text"
                   className="w-full rounded-full h-10 relative text-black pl-8"
                   placeholder="Rechercher votre produit"
+                  value={searchTerm as string}
+                  onChange={(e)=> setSearchTerm(e.target.value)}
                 />
                 <button
                   type="submit"
-                  className=" hover:bg-gray-600/45 text-gray-500 h-16 w-16 rounded-full flex items-center justify-center absolute -top-2 right-0 "
+                  className=" hover:bg-gray-600/45 hover:text-white text-gray-500  h-10 w-10 rounded-full flex items-center justify-center absolute top-0 right-0 "
                 >
                   <LiaSearchSolid size={30} />
                 </button>

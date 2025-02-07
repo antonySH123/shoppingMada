@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
-import JodiEditor from "jodit-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Categorie from "../../../categorie/Categorie";
 import {
   LiaDatabaseSolid,
@@ -10,6 +9,8 @@ import { useCategory } from "../../../../context/ProductContext";
 import { toast } from "react-toastify";
 import useCSRF from "../../../../helper/useCSRF";
 import { useParams } from "react-router-dom";
+import Editor from "./Editor";
+import { useContent } from "../../../../context/JoditEditorContext";
 
 export interface IProduct {
   name: string;
@@ -36,7 +37,6 @@ function createFormDataFromObject(data: Record<string, unknown>): FormData {
 }
 
 function Add() {
-  const editor = useRef(null);
   const { selectedCategoryId, setSelectedCategoryId } = useCategory();
   const inputFile = useRef<HTMLInputElement | null>(null);
   const [files, setFiles] = useState<File[]>([]); // Liste des fichiers photo
@@ -50,24 +50,18 @@ function Add() {
     photos: [], // Initialiser les photos à un tableau vide
   });
 
-  const [content,setContent] = useState("");
+  const { content, setNewContent } = useContent();
 
-  useEffect(()=>{
-    setProduct((prevProduct)=>({...prevProduct, details:content}))
-  },[content])
+  useEffect(() => {
+    setProduct((prevProduct) => ({ ...prevProduct, details: content }));
+  }, [content]);
   const { productId } = useParams();
-  const config = {
-    height: "350",
-    pastePlainText:false
-  };
-  const csrf = useCSRF();
 
-  // Fonction pour supprimer un fichier
+  const csrf = useCSRF();
   const handleFileRemove = (index: number) => {
     setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
 
-  // Fonction pour gérer les changements des champs du formulaire
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setProduct((prev) => ({ ...prev, [name]: value }));
@@ -127,33 +121,37 @@ function Add() {
     setSelectedCategoryId(null);
     setFiles([]);
   };
+  const fetchProduct = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}shop/product/${productId}`,
+        { credentials: "include" }
+      );
+      if (response.ok) {
+        const { data } = await response.json();
 
-  // Remplir le formulaire avec les données du produit existant si productId est fourni
+        setProduct(data);
+        setFiles(data.photos || []);
+        setNewContent(data.details);
+        setSelectedCategoryId(data.category)
+      }
+    } catch (error) {
+      if(error instanceof Error){
+        toast.error(error.message);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, setSelectedCategoryId]);
+
   useEffect(() => {
     if (selectedCategoryId) {
       setProduct((prev) => ({ ...prev, category: selectedCategoryId }));
     }
 
     if (productId) {
-      const fetchProduct = async () => {
-        try {
-          const response = await fetch(
-            `${import.meta.env.REACT_API_URL}shop/product/${productId}`,
-            { credentials: "include" }
-          );
-          if (response.ok) {
-            const { data } = await response.json();
-
-            setProduct(data);
-            setFiles(data.photos || []); // Utiliser "photos" au lieu de "images"
-          }
-        } catch (error) {
-          console.error(error);
-        }
-      };
       fetchProduct();
     }
-  }, [selectedCategoryId, productId]);
+  }, [selectedCategoryId, productId, fetchProduct]);
 
   return (
     <div className="px-10">
@@ -277,16 +275,7 @@ function Add() {
                 />
               </div>
             </div>
-            <div className="w-full flex gap-3 flex-col">
-              <label>Détails</label>
-              <JodiEditor
-                ref={editor}
-                value={content}
-                config={config}
-                onBlur={(newContent) =>setContent(newContent)
-                }
-              />
-            </div>
+            <Editor />
           </div>
 
           <div className="w-full mt-10">

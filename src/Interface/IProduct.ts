@@ -22,5 +22,10 @@ export default interface IProduct{
 interface Ivariant{
     _id:string;
     name:string;
-    values:string[];
+    values:IVariantValue[];
 }
+interface IVariantValue {
+    value: string;
+    additionalPrice?: number;
+    stock: number;
+  }

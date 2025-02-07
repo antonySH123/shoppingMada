@@ -1,30 +1,65 @@
-import  { ChangeEvent, FormEvent, useState } from 'react'
+import  { ChangeEvent, FormEvent, useEffect, useState } from 'react'
 import { FaSave } from 'react-icons/fa';
+import useCSRF from '../../../../helper/useCSRF';
+import { toast } from 'react-toastify';
 type ShopInfo = {
     name: string;
-    address: string;
-    phone: string;
+    adresse: string;
+    phoneNumber: string;
     email: string;
     description: string;
   };
 function BoutiksInfo() {
     const [shopInfo, setShopInfo] = useState<ShopInfo>({
         name: "",
-        address: "",
-        phone: "",
+        adresse: "",
+        phoneNumber: "",
         email: "",
         description: "",
       });
+
+      const csrf = useCSRF();
+
+      useEffect(()=>{
+        const fetchData = async()=>{
+          const response  = await  fetch(`${import.meta.env.REACT_API_URL}boutiks/info`,{
+            credentials:"include"
+          })
+
+          const result = await response.json();
+          setShopInfo(result.boutiks);
+        }
+        fetchData();
+      },[])
     
       const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setShopInfo({ ...shopInfo, [name]: value });
       };
     
-      const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+      const handleSubmit = async(e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        // Logic to save the shop info (e.g., API call)
-        console.log("Shop info saved:", shopInfo);
+        if(csrf){
+          const response = await fetch(`${import.meta.env.REACT_API_URL}boutiks/update`,{
+            method:"PUT",
+            credentials:"include",
+            headers:{
+              "Content-Type":"application/json",
+              "xsrf-token": csrf
+            },
+            body:JSON.stringify(shopInfo)
+          });
+
+          const {status, message} = await response.json();
+
+          if((status as string).toLocaleLowerCase() === "success"){
+            toast.success(message);
+          }
+          if((status as string).toLocaleLowerCase() === "failed"){
+            toast.error(message);
+          }
+        }
+        
       };
     
       return (
@@ -54,7 +89,7 @@ function BoutiksInfo() {
                 <input
                   type="text"
                   name="address"
-                  value={shopInfo.address}
+                  value={shopInfo.adresse}
                   onChange={handleChange}
                   placeholder="Entrez l'adresse de la boutique"
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -67,7 +102,7 @@ function BoutiksInfo() {
                 <input
                   type="tel"
                   name="phone"
-                  value={shopInfo.phone}
+                  value={shopInfo.phoneNumber}
                   onChange={handleChange}
                   placeholder="Entrez le numéro de téléphone"
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -88,18 +123,7 @@ function BoutiksInfo() {
                 />
               </div>
     
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  name="description"
-                  value={shopInfo.description}
-                  onChange={handleChange}
-                  placeholder="Entrez une description de la boutique"
-                  rows={4}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                ></textarea>
-              </div>
+              
             </div>
     
             <div className="mt-6 flex justify-end">

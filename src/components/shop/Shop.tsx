@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import ProductCard from "../product/ProductCard";
 import IProduct from "../../Interface/IProduct";
@@ -37,7 +37,9 @@ const reducer = (state: IState, action: Action): IState => {
 
 function Shop() {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
   const [state, dispatch] = useReducer(reducer, initialState);
+  const query = searchParams.get("q");
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; 
@@ -47,7 +49,7 @@ function Shop() {
 
     const fetchProducts = async () => {
       try {
-        const url = slug ? `shop/${slug}/product` : "shop/product";
+        const url = slug ? `shop/${slug}/product` : query ? `product/search?q=${encodeURIComponent(query)}` : "shop/product";
         const response = await fetch(`${import.meta.env.REACT_API_URL}${url}`, {
           method: "GET",
           credentials: "include",
@@ -72,7 +74,7 @@ function Shop() {
     };
 
     fetchProducts();
-  }, [slug]);
+  }, [query, slug]);
 
   const totalProducts = state.allProducts ? state.allProducts.length : 0;
   const totalPages = Math.ceil(totalProducts / itemsPerPage);

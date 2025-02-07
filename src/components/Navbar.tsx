@@ -18,7 +18,6 @@ const Navbar = () => {
   const location = useLocation();
   const segment = location.pathname.slice(1).split("/");
   useEffect(() => {
-    
     if (user) {
       setAuth(true);
     }
@@ -50,7 +49,7 @@ const Navbar = () => {
               <Link to="/#abonnements" className="text-white">
                 Abonnements
               </Link>
-              <Link to="/contact" className="text-white">
+              <Link to="/#contact" className="text-white">
                 Contact
               </Link>
             </div>
@@ -64,7 +63,7 @@ const Navbar = () => {
                       <LiaUser />
                     </span>
                   </Link>
-                  {user?.userGroup === "Boutiks" && (
+                  {user?.userGroupMember_id && user?.userGroupMember_id.usergroup_id.name !== "Client" && (
                     <Link
                       to="/espace_vendeur/dash"
                       className="text-white flex items-center"

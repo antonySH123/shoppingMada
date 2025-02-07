@@ -1,9 +1,8 @@
 import { createContext, useContext } from "react";
+import Iuser from "../Interface/UserInterface";
 interface AuthContextType {
-  user: { [key: string]: unknown } | null; 
-  token: string | null;
-  setUserInfo: (user: { [key: string]: unknown } | null) => void;
-  setToken: (token: string | null) => void;
+  user: Iuser | null; 
+  setUserInfo: (user: Iuser | null) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

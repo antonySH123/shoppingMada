@@ -73,7 +73,7 @@ function Content() {
 
   useEffect(() => {
     fetchData();
-  },[]);
+  },[fetchData]);
   return (
     <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 py-5">
       <div className="py-5">

@@ -1,8 +1,6 @@
 import { useCallback, useEffect} from "react";
 import { useNavigate } from "react-router-dom";
-
 import useCSRF from "../helper/useCSRF";
-
 function Logout() {
   const navigate = useNavigate();
  const csrf = useCSRF();
@@ -20,7 +18,7 @@ function Logout() {
       if(response.status === 200){
         sessionStorage.removeItem("user");
         sessionStorage.clear();
-        navigate("/login");
+        navigate("/login", {replace:true});
       }
     }
   },[csrf, navigate])

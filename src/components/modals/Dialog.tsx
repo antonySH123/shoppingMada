@@ -24,7 +24,7 @@ const Dialog: React.FC<Props> = ({ title, message, ok, onClose, isOpen }) => {
           <p>{message}</p>
         </div>
         <div className=" flex flex-row justify-end gap-3">
-          <button onClick={ok} className="bg-blue-500 px-5 py-1 text-white rounded shadow">OK</button>
+          <button onClick={ok} className="bg-green-500 px-5 py-1 text-white rounded shadow">OK</button>
           <button onClick={() => onClose(false)} className="bg-red-500 px-5 py-1 text-white rounded shadow">Annulé</button>
         </div>
       </div>

@@ -20,12 +20,18 @@ import "swiper/css";
 import { Navigation } from "swiper/modules";
 import "swiper/css/navigation";
 import useFormatter from "../../../../helper/useFormatter";
+import Comment from "../../../comment/Comment";
 
 interface IProductVariant {
   _id?: string;
   name: string;
-  values: string[] | [];
+  values: IVariantValue[];
+}
+
+interface IVariantValue {
+  value: string;
   additionalPrice?: number;
+  stock: number;
 }
 
 interface IProduct {
@@ -42,15 +48,25 @@ interface IProduct {
 function Show() {
   const [variant, setVariant] = useState<IProductVariant>({
     name: "",
-    values: [],
-    additionalPrice: 0,
+    values: [
+      {
+        value: "",
+        additionalPrice: 0,
+        stock: 0,
+      },
+    ],
   });
   const [product, setProduct] = useState<IProduct | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { id } = useParams();
   const csrf = useCSRF();
-  const {priceInArriary} = useFormatter();
+  const { priceInArriary } = useFormatter();
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+
+  const handleIsOpen = () => {
+    setIsOpen(!isOpen);
+  };
 
   const getProduct = useCallback(async () => {
     setLoading(true);
@@ -87,29 +103,23 @@ function Show() {
 
   const handleVariantChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-
+    console.log(value)
     setVariant((prev) => {
-      if (name === "values") {
-        const valuesArray = value
-          .split(",")
-          .map((val) => val.trim())
-          .filter((val) => val);
-
-        return {
-          ...prev,
-          values: valuesArray,
-        };
-      }
-
       return {
         ...prev,
-        [name]: value,
+        values: [
+          {
+            ...prev.values[0],
+            [name]: name === "additionalPrice" ? parseFloat(value) || 0 : value,
+          },
+        ],
       };
     });
   };
 
   const handleSubmitNewVariant = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    console.log(variant);
     if (csrf) {
       try {
         const response = await fetch(
@@ -174,11 +184,11 @@ function Show() {
           </Swiper>
 
           <button className="custom-prev absolute left-5 top-1/2 transform -translate-y-1/2 bg-slate-100/10  p-2 rounded-full z-10">
-              <LiaAngleLeftSolid size={30} />
-            </button>
-            <button className="custom-next absolute right-5 top-1/2 transform -translate-y-1/2 bg-slate-100/10  p-2 rounded-full z-10">
-              <LiaAngleRightSolid size={30} />
-            </button>
+            <LiaAngleLeftSolid size={30} />
+          </button>
+          <button className="custom-next absolute right-5 top-1/2 transform -translate-y-1/2 bg-slate-100/10  p-2 rounded-full z-10">
+            <LiaAngleRightSolid size={30} />
+          </button>
         </div>
 
         <div>
@@ -188,7 +198,9 @@ function Show() {
                 <p className="font-semibold">Nom : {product?.name}</p>
               </div>
               <div className="mb-3">
-                <p className="font-semibold">Prix : {priceInArriary(product?.price as number)} </p>
+                <p className="font-semibold">
+                  Prix : {priceInArriary(product?.price as number)}{" "}
+                </p>
               </div>
             </div>
             <div className="mt-5">
@@ -202,7 +214,9 @@ function Show() {
           </div>
           <h1 className="font-semibold uppercase">{product?.description}</h1>
           <hr />
-          <div className="text-justify mt-2">{parse(product?.details as string)}</div>
+          <div className="text-justify mt-2">
+            {parse(product?.details as string)}
+          </div>
         </div>
       </div>
 
@@ -211,16 +225,56 @@ function Show() {
         <form onSubmit={handleSubmitNewVariant}>
           <div className="flex items-center gap-3 ">
             <strong>Ajouter une variante :</strong>
+            <div
+              className="flex items-center border relative"
+              onMouseLeave={() => setIsOpen(false)}
+            >
+              <input
+                type="text"
+                name="name"
+                placeholder="Nom"
+                value={variant.name}
+                className="px-4 py-2"
+                onChange={(e)=>{
+                  setVariant((prev)=>({...prev,name:e.target.value}))
+                }}
+              />
+              <div className="px-2 py-3 cursor-pointer" onClick={handleIsOpen}>
+                <LiaAngleRightSolid
+                  size={19}
+                  className={`${
+                    isOpen ? "rotate-90" : "rotate-0"
+                  } transition-all ease-in-out`}
+                />
+              </div>
+
+              <ul
+                className={`${
+                  isOpen
+                    ? "w-full py-3 absolute top-full left-0 bg-white border "
+                    : "hidden"
+                } transition-all ease-in-out`}
+              >
+                {Array.isArray(product?.variant) &&
+                  product.variant.map((variant) => (
+                    <li
+                      className="py-3 px-3 cursor-pointer hover:bg-gray-400"
+                      key={variant._id}
+                      onClick={() => {
+                        setVariant((prev) => ({
+                          ...prev,
+                          name: variant.name,
+                        }));
+                      }}
+                    >
+                      {variant.name}
+                    </li>
+                  ))}
+              </ul>
+            </div>
             <input
               type="text"
-              name="name"
-              placeholder="Nom"
-              className="border px-4 py-2"
-              onChange={handleVariantChange}
-            />
-            <input
-              type="text"
-              name="values"
+              name="value"
               placeholder="Valeur"
               className="border px-4 py-2"
               onChange={handleVariantChange}
@@ -253,26 +307,36 @@ function Show() {
             </thead>
             <tbody>
               {Array.isArray(product?.variant) &&
-                product.variant.map((variant) => (
-                  <tr key={variant._id}>
-                    <td className="py-2 px-3 text-center">{variant.name}</td>
-                    <td className="py-2 px-3 text-center">
-                      {variant.values.join(", ")}
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      {variant.additionalPrice === 0 ? priceInArriary(product.price as number):priceInArriary(variant.additionalPrice as number)}
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      <button className="text-red-500">
-                        <LiaTrashAltSolid />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                product.variant.map((variant) =>
+                  variant.values.map((v, index) => (
+                    <tr key={variant._id}>
+                      {index === 0 && (
+                        <td
+                          className="py-2 px-3 text-center"
+                          rowSpan={variant.values.length}
+                        >
+                          {variant.name}
+                        </td>
+                      )}
+                      <td className="py-2 px-3 text-center">{v.value}</td>
+                      <td className="py-2 px-3 text-center">
+                        {v.additionalPrice}
+                      </td>
+
+                      <td className="py-2 px-3 text-center">
+                        <button className="text-red-500">
+                          <LiaTrashAltSolid />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
             </tbody>
           </table>
         </div>
       </div>
+
+      <Comment product_id={id as string} csrf={csrf as string}/>
     </div>
   );
 }

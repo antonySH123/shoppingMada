@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "./sidebar/Sidebar";
 import { Outlet } from "react-router-dom";
+import JodiProvider from "../../context/JodiProvider";
 
 function AppAdmin() {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -18,21 +19,22 @@ function AppAdmin() {
 
     window.addEventListener("resize", handleResize);
 
-    handleResize(); // Exécuter une première fois au chargement
+    handleResize();
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
     <div className="flex h-screen">
-      {/* Sidebar */}
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
-      {/* Contenu principal */}
       <div
         className={`transition-all duration-300 flex-1 bg-gray-50 px-10 py-5 overflow-y-auto`}
       >
-        <Outlet />
+        <JodiProvider>
+          <Outlet />
+        </JodiProvider>
+        
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
-import React, {  useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { LiaUserSolid } from "react-icons/lia";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
@@ -10,6 +10,9 @@ function Login() {
   const [isSubmited, setIsSubmited] = useState<boolean>(false);
   const navigate = useNavigate();
   const csrf = useCSRF();
+  const location = useLocation();
+
+  const from = location.state?.from || "/profil";
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     setIsSubmited(true);
     event.preventDefault();
@@ -27,15 +30,26 @@ function Login() {
             body: JSON.stringify(userAuth),
           }
         );
-
         const response = await postdata.json();
-        if (response.status === "Failed") {
+        if (postdata.status === 403) {
+          setUserInfo(response.userInfo);
+          toast.warning(response.message);
+          navigate("/none");
+        }
+
+        if (postdata.status === 401 &&response.status === "Failed") {
           toast.error(response.message);
         }
 
-        if (response.status === "Success") {
+        if (postdata.status === 201 && response.status === "Success") {
           setUserInfo(response.userInfo);
-          navigate("/profil");
+          toast.success("Vous êtes connécté!");
+          navigate(from, { replace: true });
+        }
+        if (postdata.status === 401 && response.status === "Verification Failed") {
+          setUserInfo(response.userInfo);
+          toast.warning("Veuillez confimé votre adresse mail!");
+          navigate("/confirmCompte", { replace: true });
         }
       } else {
         toast.error("Une erreur est survenu!");
@@ -51,7 +65,10 @@ function Login() {
   };
 
   return (
-    <div className="text-white w-full h-[100vh] flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
+    <div className="relative top-0 left-0 text-white w-full h-[100vh] flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
+      <Link to={"/"} className="absolute top-5 left-5">
+        ShoppingMada
+      </Link>
       <div>
         <div className="bg-green-950  shadow-xl border border-green-500 shadow-green-500 rounded-md p-8  backdrop-filter backdrop-blur-sm  relative">
           <h1 className="text-white font-bold text-center mb-6 flex flex-col justify-center items-center">

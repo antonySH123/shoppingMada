@@ -83,6 +83,11 @@ function RegisterConfirmation() {
           toast.success("Compte vérifié avec succès !");
           setTimeout(() => navigate("/profil"), 2000); // Delay before navigation
         }
+        if(response.status === 403){
+          const result = await response.json();
+          toast.error(result.message);
+          setCode(new Array(6).fill(""))
+        }
       } else {
         toast.error("Erreur de sécurité. Veuillez réessayer.");
       }

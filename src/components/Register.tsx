@@ -5,7 +5,6 @@ import validator from "../helper/Reg";
 import { LiaUser } from "react-icons/lia";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
-import { useAuth } from "../helper/useAuth";
 
 const initialState = {
   user: {
@@ -50,7 +49,6 @@ function Register() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { setUserInfo, setToken } = useAuth();
   const csrf = useCSRF();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -82,13 +80,12 @@ function Register() {
           }
         );
         if (!response.ok) {
-          throw new Error("Erreur lors de l'enregistrement");
+          toast.error("Erreur lors de l'enregistrement");
         }
         if (response.status === 201) {
           const result = await response.json();
-          setUserInfo(result.userInfo);
-          setToken(result.userInfo.token);
-          navigate("/confirmCompte");
+          toast.success(result.message);
+          navigate("/login");
         }
       } else {
         toast.error("Une erreur est survenue !");
@@ -116,7 +113,7 @@ function Register() {
                   type={field === "password" ? "password" : "text"}
                   name={field}
                   onChange={handleChange}
-                  value={state.user[field as keyof Iuser]}
+                  value={state.user[field as keyof Iuser] as string}
                   className="block w-full py-4 px-0 text-white bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:text-white focus:border-blue-600 peer"
                   placeholder={
                     field === "username"
@@ -130,7 +127,7 @@ function Register() {
                 />
                 {state.error[field as keyof Iuser] && (
                   <strong className="text-red-400">
-                    {state.error[field as keyof Iuser]}
+                    {state.error[field as keyof Iuser] as string}
                   </strong>
                 )}
               </div>

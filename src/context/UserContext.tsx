@@ -1,12 +1,14 @@
-import React, { useState, ReactNode, useEffect } from "react";
+import React, { useState, ReactNode, useEffect, useCallback } from "react";
 import { AuthContext } from "../helper/useAuth";
+import useCSRF from "../helper/useCSRF";
+import Iuser from "../Interface/UserInterface";
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUserState] = useState<{ [key: string]: unknown } | null>(null);
-  const [token, setTokenState] = useState<string | null>(null);
+  const [user, setUserState] = useState<Iuser | null>(null);
+  const csrf = useCSRF();
   useEffect(() => {
     try {
       const savedUser = sessionStorage.getItem("user");
@@ -15,6 +17,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error("Error accessing localStorage", error);
     }
   }, []);
+
+  const regenerateToken = useCallback(async()=>{
+    if(csrf){
+      const response = await fetch(`${import.meta.env.REACT_API_URL}auth/refresh`,{
+        method:"POST",
+        credentials:"include",
+        headers:{
+          "Content-Type":"application/json",
+          "xsrf-token":csrf
+        }
+      })
+
+      if(response.ok && response.status === 201){
+        const result = await response.json();
+        sessionStorage.setItem("user", JSON.stringify(result.userInfo));
+      }
+    }
+  },[csrf])
+
+  useEffect(()=>{
+    if(csrf){
+      const intervale= setInterval(regenerateToken,60*1000);
+      return ()=>  clearInterval(intervale)
+    }
+  },[csrf, regenerateToken])
 
   useEffect(() => {
     try {
@@ -30,15 +57,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [user]);
 
-  const setUserInfo = (newUser: { [key: string]: unknown } | null) => {
+  const setUserInfo = (newUser: Iuser | null) => {
     setUserState(newUser);
   };
 
-  const setToken = (newToken: string | null) => {
-    setTokenState(newToken);
-  };
 
-  const value = { user, token, setUserInfo, setToken };
+
+  const value = { user, setUserInfo};
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

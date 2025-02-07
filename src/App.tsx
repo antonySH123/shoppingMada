@@ -3,7 +3,6 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./components/Home";
 import "./App.css";
 import Base from "./components/layouts/Base";
-import Contact from "./components/Contact";
 import Register from "./components/Register";
 import Login from "./components/Login";
 import BaseShop from "./components/layouts/BaseShop";
@@ -30,6 +29,7 @@ import ListAbonnement from "./components/admin/abonnements/ListAbonnement";
 import Compte from "./components/admin/compte/Compte";
 import CommandeDetails from "./components/admin/content/commande/CommandeDetails";
 import AccountsDetails from "./components/admin/compte/AccountsDetails";
+import CompteDesactiver from "./error/CompteDesactiver";
 function App() {
   return (
     <BrowserRouter
@@ -40,7 +40,6 @@ function App() {
       <Routes>
         <Route path="" Component={Base}>
           <Route path="" index Component={Home} />
-          <Route path="/contact" Component={Contact} />
           <Route path="/vendeur" Component={Vendeur} />
           <Route path="/profil" Component={Profil} />
           <Route path="/redirect" Component={ChangeUser} />
@@ -58,11 +57,11 @@ function App() {
         <Route
           path="/espace_vendeur"
           element={
-            // <ProtectedRoute role="Boutiks">
+            <ProtectedRoute>
               <ProductProvider>
                 <AppAdmin />
               </ProductProvider>
-            // </ProtectedRoute>
+            </ProtectedRoute>
           }
         >
           <Route path="dash" Component={Dash}></Route>
@@ -71,14 +70,14 @@ function App() {
           <Route path="products/:id" Component={Show}></Route>
           {/* Route pour les commandes */}
           <Route path="commandes" Component={List}></Route>
-          <Route path="commandeDetails" Component={CommandeDetails}></Route>
+          <Route path="commande/:id" Component={CommandeDetails}></Route>
           <Route path="boutiksInfo" Component={BoutiksInfo}></Route>
           <Route path="abonnements" Component={ListAbonnement}></Route>
           <Route path="shopaccounts" Component={Compte}></Route>
-          <Route path="accountsSettings" Component={AccountsDetails}></Route>
+          <Route path="accountsSettings/:id" Component={AccountsDetails}></Route>
           
         </Route>
-
+        <Route path="/none" Component={CompteDesactiver} />
         <Route path="*" Component={Page404} />
       </Routes>
     </BrowserRouter>

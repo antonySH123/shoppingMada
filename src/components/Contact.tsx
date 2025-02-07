@@ -1,13 +1,13 @@
 import {FaAddressBook,FaPhone} from 'react-icons/fa'
 function Contact() {
   return (
-    <section className="py-5 h-auto">
-      <div className="container px-10 mx-auto py-5 bg-gray-100">
+    <section className="py-5 h-auto" id='contact'>
+      <div className="container px-10 mx-auto py-5 ">
         <h1 className="text-center text-4xl font-thin my-5">Nous contacter</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2">
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 px-5 py-4 gap-4">
             {/* <h1>Eto ilay Maps</h1> */}
-            <div className="border bg-gray-50 h-80">
+            <div className="border  h-80">
               <div className='flex items-center px-5 text-5xl h-28 text-gray-700'>
                 <FaAddressBook/>
               </div>
@@ -17,7 +17,7 @@ function Contact() {
                 <p>Coum</p>
               </div>
             </div>
-            <div className="border bg-gray-50 h-80">
+            <div className="border  h-80">
               <div className='flex items-center px-5 text-5xl h-28 text-gray-700'>
                 <FaPhone/>
               </div>
@@ -33,21 +33,21 @@ function Contact() {
               <div className="mb-3 w-full">
                 <input
                   type="text"
-                  className="w-full h-10 px-5 py-5 border-gray-600"
+                  className="w-full h-10 px-5 py-5  border "
                   placeholder="Votre nom"
                 />
               </div>
               <div className="mb-3 w-full">
                 <input
                   type="text"
-                  className="w-full h-10 px-5 py-5 border-gray-600"
+                  className="w-full h-10 px-5 py-5  border"
                   placeholder="Adresse email"
                 />
               </div>
               <div className="mb-3 w-full">
                 <input
                   type="text"
-                  className="w-full h-10 px-5 py-5 border-gray-600"
+                  className="w-full h-10 px-5 py-5  border"
                   placeholder="Sujet"
                 />
               </div>
@@ -55,7 +55,7 @@ function Contact() {
                 <textarea
                   name=""
                   id=""
-                  className="px-5 py-5 w-full"
+                  className="px-5 py-5 w-full border"
                   placeholder="Votre message"
                   cols={76}
                   rows={5}

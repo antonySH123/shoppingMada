@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import { LiaTimesSolid } from 'react-icons/lia';
 
 interface ModalProps {
   isOpen: boolean; // Pour déterminer si le modal est ouvert
@@ -19,10 +20,10 @@ const UserInfo: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
         onClick={(e) => e.stopPropagation()} // Empêche la fermeture lorsque l'on clique dans le modal
       >
         <button
-          className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
+          className="absolute -top-3 text-xl -right-3 text-gray-600 hover:text-gray-800 rounded-full bg-gray-300 p-1 shadow-white "
           onClick={onClose}
         >
-          &times;
+          <LiaTimesSolid size={20}/>
         </button>
         {children}
       </div>
