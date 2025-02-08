@@ -254,25 +254,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
 
       <UserInfo isOpen={isModalOpen} onClose={closeModal}>
         <h2 className="text-xl font-bold mb-4">
-          Devenir une des nos vendeur Premium
+          Devenir une des nos vendeur Pro
         </h2>
         <div>
           <ul className="mb-3">
             <li className="flex items-center gap-3">
               <LiaCheckSolid color="green" size={20} />{" "}
-              <span>Lorem ipsum dolor sit amet.</span>
+              <span>Annonces illimitées : Publiez autant de produits que vous le souhaitez.</span>
             </li>
             <li className="flex items-center gap-3">
               <LiaCheckSolid color="green" size={20} />{" "}
-              <span>Lorem ipsum dolor sit amet.</span>
+              <span>Mise en avant premium: Vos produits apparaissent en priorité dans les recherches.</span>
             </li>
             <li className="flex items-center gap-3">
               <LiaCheckSolid color="green" size={20} />{" "}
-              <span>Lorem ipsum dolor sit amet.</span>
+              <span>Support prioritaire: Assistance rapide et dédiée.</span>
             </li>
             <li className="flex items-center gap-3">
               <LiaCheckSolid color="green" size={20} />{" "}
-              <span>Lorem ipsum dolor sit amet.</span>
+              <span>Promotions & Réductions exclusives.</span>
             </li>
           </ul>
 

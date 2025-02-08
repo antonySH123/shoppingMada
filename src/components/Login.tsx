@@ -109,7 +109,7 @@ function Login() {
               ></label>
             </div>
             <div className="flex justify-between items-center">
-              <Link to="" className="text-green-500">
+              <Link to="/forgotPass" className="text-green-500">
                 Mot de passe oublié
               </Link>
             </div>

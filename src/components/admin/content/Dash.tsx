@@ -7,6 +7,8 @@ import { useAuth } from "../../../helper/useAuth";
 import useCSRF from "../../../helper/useCSRF";
 import IProduct from "../../../Interface/IProduct";
 import ICommande from "../../../Interface/command.interfaces";
+import ListAbonnement from "../abonnements/ListAbonnement";
+import Iuser from "../../../Interface/UserInterface";
 
 function Dash() {
   const { user } = useAuth();
@@ -18,6 +20,7 @@ function Dash() {
   const csrf = useCSRF();
   const [products, setProduct] = useState<IProduct[]>();
   const [commandes, setCommandes] = useState<ICommande[]>();
+  const [users,setUsers] = useState<Iuser[]>();
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData();
@@ -34,7 +37,7 @@ function Dash() {
             "xsrf-token": csrf,
           },
           body: formData,
-          credentials:"include"
+          credentials: "include",
         }
       );
 
@@ -109,25 +112,41 @@ function Dash() {
       }
     }
   }, []);
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await fetch(`${import.meta.env.REACT_API_URL}users`, {
+        credentials: "include",
+      });
+
+      const result = await response.json();
+
+      if (response.status === 200) setUsers(result.data);
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      }
+    }
+  }, []);
 
   useEffect(() => {
+    fetchUsers();
     getPersonnalInfo();
     getProduct();
     fetchCommand();
-  }, [fetchCommand, getPersonnalInfo, getProduct, user]);
+  }, [fetchCommand, fetchUsers, getPersonnalInfo, getProduct, user]);
 
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-5">
         <div className="shadow-lg w-full h-auto bg-gray-100 flex flex-col justify-center items-center gap-3 py-5">
           <div>
-            <FaShoppingCart className="text-5xl text-orange-500" />
+            {users? <FaShoppingCart className="text-5xl text-orange-500" /> : <FaUsers className="text-5xl text-orange-500" />}
           </div>
           <div>
-            <h1 className="text-[20px]">{products?.length}</h1>
+            <h1 className="text-[20px]">{user && user.userGroupMember_id.usergroup_id.name ==="Super Admin"? users?.length: products?.length}</h1>
           </div>
           <div>
-            <h1 className="text-2xl font-extralight text-gray-900">Produits</h1>
+            <h1 className="text-2xl font-extralight text-gray-900">{user && user.userGroupMember_id.usergroup_id.name ==="Super Admin"? "Utilisateurs":"Product"}</h1>
           </div>
         </div>
         <div className="shadow-lg w-full h-auto bg-gray-100 flex flex-col justify-center items-center gap-3 py-5">
@@ -136,12 +155,12 @@ function Dash() {
           </div>
           <div>
             <h1 className="text-[20px]">
-              {commandes?.map((item) => item.status === "Pending").length}
+              {user && user.userGroupMember_id.usergroup_id.name ==="Super Admin"? users?.filter((item)=> item.userGroupMember_id?.usergroup_id.name=== "Boutiks").length: commandes?.map((item) => item.status === "Pending").length}
             </h1>
           </div>
           <div>
             <h1 className="text-2xl font-extralight text-gray-900">
-              Commande en Attente
+              {user && user.userGroupMember_id.usergroup_id.name ==="Super Admin"?"Nombres des boutiques":"Commande en Attente"}
             </h1>
           </div>
         </div>
@@ -150,67 +169,75 @@ function Dash() {
             <FaUsers className="text-5xl text-orange-500" />
           </div>
           <div>
-            <h1 className="text-[20px]">{commandes?.length}</h1>
+            <h1 className="text-[20px]">
+            {user && user.userGroupMember_id.usergroup_id.name ==="Super Admin"? users?.filter((item)=> item.userGroupMember_id.usergroup_id.name=== "Client").length: commandes?.map((item) => item.status === "Pending").length}
+            </h1>
           </div>
           <div>
             <h1 className="text-2xl font-extralight text-gray-900">
-              Tous les commandes
+            {user && user.userGroupMember_id.usergroup_id.name ==="Super Admin"?"Nombres des Abonné":"Tous les commandes"}
+              
             </h1>
           </div>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 mt-10 gap-10 py-5">
         <div className="shadow-md rounded-lg py-3 px-5">
-          <div className="py-5 text-2xl">
-            <h1>Listes des commandes en attente</h1>
-          </div>
-          <div className="overflow-auto">
-            <table className="w-full border-2">
-              <thead className="bg-gray-100 text-gray-700">
-                <tr>
-                  <th className="py-3 px-3 border">#</th>
-                  <th className="py-3 border">Produits</th>
-                  <th className="py-3 border">Prix</th>
-                  <th className="py-3 border">Quantité</th>
-                  <th className="py-3 border">Variant</th>
-                  <th className="py-3 border">Status</th>
-                  
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-500">
-                {commandes?.map((element, index) => (
-                  <tr className="hover:bg-gray-50" key={index + 1}>
-                    <td className="py-3 px-3 border text-center">
-                      {index + 1}
-                    </td>
-                    <td className="py-3 px-3 border text-center">
-                      {element.product_id && element.product_id.name}
-                    </td>
-                    <td className="py-3 px-3 border text-center">
-                      {element.product_id && element.product_id.price}
-                    </td>
-                    <td className="py-3 px-3 border text-center">
-                      {element.quantity}
-                    </td>
-                    <td className="py-3 px-3 border text-center">
-                      <ul>
-                        {Object.entries(element.variants).map(
-                          ([key, value]) => (
-                            <li key={key + 1}>
-                              {key} : {value}
-                            </li>
-                          )
-                        )}
-                      </ul>
-                    </td>
-                    <td className="py-3 px-3 border text-center text-yellow-500">
-                      {element.status}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {user && user.userGroupMember_id.usergroup_id.name === "Boutiks" ? (
+            <>
+              <div className="py-5 text-2xl">
+                <h1>Listes des commandes en attente</h1>
+              </div>
+              <div className="overflow-auto">
+                <table className="w-full border-2">
+                  <thead className="bg-gray-100 text-gray-700">
+                    <tr>
+                      <th className="py-3 px-3 border">#</th>
+                      <th className="py-3 border">Produits</th>
+                      <th className="py-3 border">Prix</th>
+                      <th className="py-3 border">Quantité</th>
+                      <th className="py-3 border">Variant</th>
+                      <th className="py-3 border">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-500">
+                    {commandes?.map((element, index) => (
+                      <tr className="hover:bg-gray-50" key={index + 1}>
+                        <td className="py-3 px-3 border text-center">
+                          {index + 1}
+                        </td>
+                        <td className="py-3 px-3 border text-center">
+                          {element.product_id && element.product_id.name}
+                        </td>
+                        <td className="py-3 px-3 border text-center">
+                          {element.product_id && element.product_id.price}
+                        </td>
+                        <td className="py-3 px-3 border text-center">
+                          {element.quantity}
+                        </td>
+                        <td className="py-3 px-3 border text-center">
+                          <ul>
+                            {Object.entries(element.variants).map(
+                              ([key, value]) => (
+                                <li key={key + 1}>
+                                  {key} : {value}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </td>
+                        <td className="py-3 px-3 border text-center text-yellow-500">
+                          {element.status}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <ListAbonnement />
+          )}
         </div>
       </div>
 

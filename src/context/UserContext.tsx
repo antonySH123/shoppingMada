@@ -37,11 +37,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   },[csrf])
 
   useEffect(()=>{
-    if(csrf){
+    if(csrf && user){
       const intervale= setInterval(regenerateToken,60*1000);
       return ()=>  clearInterval(intervale)
     }
-  },[csrf, regenerateToken])
+  },[csrf, regenerateToken, user])
 
   useEffect(() => {
     try {

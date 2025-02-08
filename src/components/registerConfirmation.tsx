@@ -7,7 +7,7 @@ import {
   FormEvent,
   useCallback,
 } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
 import { useAuth } from "../helper/useAuth";
@@ -20,8 +20,8 @@ function RegisterConfirmation() {
   const navigate = useNavigate();
   const csrf = useCSRF();
   const {user} = useAuth()
-
-
+  const location = useLocation()
+  const from = location.state?.from === "/forgotPass"? "/resetPassword" : "/profil";
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement>,
     index: number
@@ -48,6 +48,7 @@ function RegisterConfirmation() {
 
   const handleSubmit = useCallback(async () => {
     const codeEntered = code.join("");
+    console.log(codeEntered);
     if (codeEntered.length < 6) {
       toast.error("Veuillez entrer le code complet.");
       return;
@@ -81,7 +82,7 @@ function RegisterConfirmation() {
 
         if (response.status === 201) {
           toast.success("Compte vérifié avec succès !");
-          setTimeout(() => navigate("/profil"), 2000); // Delay before navigation
+          setTimeout(() => navigate(from, {replace:true}), 2000); // Delay before navigation
         }
         if(response.status === 403){
           const result = await response.json();
@@ -98,7 +99,7 @@ function RegisterConfirmation() {
         "Une erreur est survenue. Veuillez vérifier votre connexion."
       );
     }
-  }, [code, csrf, navigate]);
+  }, [code, csrf, from, navigate]);
 
   if(!user)
     return <Navigate to={"/login"}/>

@@ -38,6 +38,10 @@ type Action =
   | {
       type: "SELECT_VARIANT";
       payload: { name: string; value: string };
+    }
+  | {
+      type: "INITIAL_VARIANT";
+      payload: { [key:string]:string };
     };
 
 const reducer = (state: IState, action: Action): IState => {
@@ -89,6 +93,8 @@ const reducer = (state: IState, action: Action): IState => {
         totalPrice: (state.product?.price || 0) + totalVariantPrice,
       };
     }
+    case "INITIAL_VARIANT":
+      return {...state, selectedVariant:action.payload}
     default:
       throw new Error("Action inconnue");
   }
@@ -150,7 +156,17 @@ function ProductDetails() {
           dispatch({ type: "FETCH_ERROR", payload: "Une erreur est survenue" });
         }
         const data = await response.json();
+
+        const initialSelectedVariant : {[key:string]:string} = {};
+        if(data.data.variant){
+          data.data.variant.forEach((variant:{name:string, values:[{value:string}]})=>{
+            if(variant.values.length > 0){
+              initialSelectedVariant[variant.name]=variant.values[0].value
+            }
+          })
+        }
         dispatch({ type: "FETCH_SUCCESS", payload: data.data });
+        dispatch({type:"INITIAL_VARIANT",payload:initialSelectedVariant})
       } catch (error) {
         if (error instanceof Error) {
           dispatch({ type: "FETCH_ERROR", payload: error.message });

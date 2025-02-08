@@ -40,7 +40,7 @@ function Shop() {
   const [searchParams] = useSearchParams();
   const [state, dispatch] = useReducer(reducer, initialState);
   const query = searchParams.get("q");
-
+  const location = searchParams.get("location");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; 
 
@@ -49,7 +49,7 @@ function Shop() {
 
     const fetchProducts = async () => {
       try {
-        const url = slug ? `shop/${slug}/product` : query ? `product/search?q=${encodeURIComponent(query)}` : "shop/product";
+        const url = slug ? `shop/${slug}/product` : query ? `product/search?q=${encodeURIComponent(query)}${location ? `&location=${location && encodeURIComponent(location as string)}`:""}` : "shop/product";
         const response = await fetch(`${import.meta.env.REACT_API_URL}${url}`, {
           method: "GET",
           credentials: "include",
@@ -74,7 +74,7 @@ function Shop() {
     };
 
     fetchProducts();
-  }, [query, slug]);
+  }, [location, query, slug]);
 
   const totalProducts = state.allProducts ? state.allProducts.length : 0;
   const totalPages = Math.ceil(totalProducts / itemsPerPage);

@@ -8,6 +8,7 @@ type ShopInfo = {
     phoneNumber: string;
     email: string;
     description: string;
+    ville:string
   };
 function BoutiksInfo() {
     const [shopInfo, setShopInfo] = useState<ShopInfo>({
@@ -16,6 +17,7 @@ function BoutiksInfo() {
         phoneNumber: "",
         email: "",
         description: "",
+        ville:""
       });
 
       const csrf = useCSRF();
@@ -105,6 +107,18 @@ function BoutiksInfo() {
                   value={shopInfo.phoneNumber}
                   onChange={handleChange}
                   placeholder="Entrez le numéro de téléphone"
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Ville</label>
+                <input
+                  type="text"
+                  name="ville"
+                  value={shopInfo.ville}
+                  onChange={handleChange}
+                  placeholder="Ville"
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   required
                 />

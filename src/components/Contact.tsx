@@ -13,8 +13,8 @@ function Contact() {
               </div>
               <div className='px-5'>
                 <h3 className='font-bold text-2xl text-gray-700'>Adresse</h3>
-                <p>67ha ouest</p>
-                <p>Coum</p>
+                <p>logt 1484/3 67 Nord-Ouest</p>
+                
               </div>
             </div>
             <div className="border  h-80">
@@ -23,8 +23,8 @@ function Contact() {
               </div>
               <div className='px-5'>
                 <h3 className='font-bold text-2xl text-gray-700'>Appelez nous</h3>
-                <p>67ha ouest</p>
-                <p>Coum</p>
+                <p>+261 34 53 853 65</p>
+                
               </div>
             </div>
           </div>

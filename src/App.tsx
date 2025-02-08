@@ -30,6 +30,9 @@ import Compte from "./components/admin/compte/Compte";
 import CommandeDetails from "./components/admin/content/commande/CommandeDetails";
 import AccountsDetails from "./components/admin/compte/AccountsDetails";
 import CompteDesactiver from "./error/CompteDesactiver";
+import EmailForgotPass from "./components/EmailForgotPass";
+import ResetPassword from "./components/ResetPassword";
+import DetailsAbonnements from "./components/admin/abonnements/DetailsAbonnements";
 function App() {
   return (
     <BrowserRouter
@@ -47,6 +50,8 @@ function App() {
         </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgotPass" element={<EmailForgotPass/>}/>
+        <Route path="/resetPassword" element={<ResetPassword/>}/>
         <Route path="/confirmCompte" Component={registerConfirmation} />
         <Route path="/logout" Component={Logout} />
         <Route path="" Component={BaseShop}>
@@ -73,6 +78,7 @@ function App() {
           <Route path="commande/:id" Component={CommandeDetails}></Route>
           <Route path="boutiksInfo" Component={BoutiksInfo}></Route>
           <Route path="abonnements" Component={ListAbonnement}></Route>
+          <Route path="abonnementsDetails" Component={DetailsAbonnements}></Route>
           <Route path="shopaccounts" Component={Compte}></Route>
           <Route path="accountsSettings/:id" Component={AccountsDetails}></Route>
           

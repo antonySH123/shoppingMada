@@ -1,4 +1,4 @@
-import { LiaAtSolid, LiaUser, LiaUserCogSolid } from "react-icons/lia";
+import { LiaAtSolid, LiaUser, LiaUserCircle, LiaUserCogSolid} from "react-icons/lia";
 import { Link } from "react-router-dom";
 import UserInfo from "./modals/UserInfo";
 import { ChangeEvent,useEffect,useRef, useState } from "react";
@@ -67,7 +67,7 @@ function Profil() {
       <div className="w-full flex rounded-md shadow-2xl px-5 py-24 mt-14 sticky top-24 bg-gray-50">
         <div className="w-80 h-full">
           <div className="px-5 my-20">
-            <img src="/src/assets/image/product/pharm.jpg" alt="" />
+            <LiaUserCircle size={150}/>
           </div>
           <div className="px-5 my-5 flex flex-col gap-5">
             <h1 className="flex items-center gap-3">

@@ -12,6 +12,7 @@ const useCSRF = () => {
           method: "GET",
           headers: {
             Accept: "application/json",
+            "Content-Type":"application/json"
           },
           credentials: "include",
         }
@@ -27,7 +28,6 @@ const useCSRF = () => {
       }
     } catch (error) {
       console.log(error);
-
       toast.error("Erreur réseau lors de la récupération du CSRF !");
     }
   }, []);

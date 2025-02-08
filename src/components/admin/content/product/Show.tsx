@@ -35,6 +35,7 @@ interface IVariantValue {
 }
 
 interface IProduct {
+  _id:string
   name: string;
   description: string;
   price: number;
@@ -150,6 +151,30 @@ function Show() {
       }
     }
   };
+
+  const removeVariant = async(productID:string, variant_id:string, value:string)=>{
+   if(csrf){
+    const response = await fetch(
+      `${import.meta.env.REACT_API_URL}product/${productID}/variant/${variant_id}/${value}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "xsrf-token":csrf
+        },
+        credentials: "include",
+      }
+    );
+
+    if (!response.ok) {
+     toast.error("Erreur lors de la récupération des données du produit")
+    }
+
+    const { message } = await response.json();
+    toast.success(message)
+    getProduct();
+   }
+  }
 
   if (loading) return <p>Chargement des informations...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
@@ -324,7 +349,7 @@ function Show() {
                       </td>
 
                       <td className="py-2 px-3 text-center">
-                        <button className="text-red-500">
+                        <button className="text-red-500" onClick={()=> removeVariant(product._id,variant._id as string,v.value as string)}>
                           <LiaTrashAltSolid />
                         </button>
                       </td>
