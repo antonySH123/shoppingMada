@@ -80,14 +80,13 @@ function Home() {
     <React.Fragment>
       <div className="banner text-lg">
         <div className="container mx-auto px-4 sm:px-10 grid grid-cols-1 sm:grid-cols-2 h-full">
-          <div className="text-white px-10 h-full flex flex-col justify-center items-center sm:items-start gap-3">
-            <h1 className="text-7xl text-center sm:text-start ">
-              Bienvenue sur <span className="font-bold">ShoppingMada</span>
+          <div className="text-white sm:px-10 pt-16 sm:pt-0 h-full flex flex-col justify-center items-center sm:items-start gap-3">
+            <h1 className="text-5xl sm:text-5xl md:text-7xl text-center sm:text-start ">
+              Bienvenue sur <span className="font-bold">ShopInMada</span>
             </h1>
             <p className="text-base text-center sm:text-start">
-              ShoppingMada vous offre une expérience de shopping en ligne
-              unique, alliant produits de qualité, service client réactif, et
-              livraison rapide partout à Madagascar.
+              ShopInMada vous offre une expérience de vente en ligne
+              unique, alliant produits de qualité et de service, une service client réactif et partout à Madagascar.
             </p>
             <form
               action=""

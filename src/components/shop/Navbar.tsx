@@ -1,5 +1,5 @@
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { LiaSearchSolid, LiaShoppingCartSolid } from "react-icons/lia";
+import { LiaSearchSolid } from "react-icons/lia";
 import useScroll from "../../helper/useScroll";
 import { FormEvent, useState } from "react";
 function Navbar() {
@@ -23,7 +23,9 @@ function Navbar() {
         <div className="px-4 sm:px-6 lg:px-8 h-full">
           <div className="flex justify-center items-center gap-7 h-full">
             <div className="flex items-center text-white">
-              <Link to="/">ShopInMada</Link>
+              <Link to="/">
+              <img src="/src/assets/logo.png" alt="" className="h-16" />
+              </Link>
             </div>
             <div className="h-full w-full">
               <form
@@ -47,14 +49,7 @@ function Navbar() {
                 </button>
               </form>
             </div>
-            <div>
-              <Link to="" className="flex items-center">
-                <span className="text-white flex items-center px-3 py-3 text-lg">
-                  <LiaShoppingCartSolid />
-                  Panier
-                </span>
-              </Link>
-            </div>
+            
           </div>
         </div>
       </div>

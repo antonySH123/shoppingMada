@@ -87,6 +87,12 @@ function Register() {
           toast.success(result.message);
           navigate("/login");
         }
+
+        if(response.status === 400){
+          const result = await response.json();
+          console.log(result.errors)
+        }
+        
       } else {
         toast.error("Une erreur est survenue !");
       }

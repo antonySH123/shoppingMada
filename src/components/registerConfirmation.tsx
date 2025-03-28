@@ -117,15 +117,15 @@ function RegisterConfirmation() {
         chiffres.
       </p>
       <form
-        className="px-96 py-10"
+        className=""
         onSubmit={(e: FormEvent<HTMLFormElement>) => {
           e.preventDefault();
           handleSubmit();
         }}
       >
-        <div className="flex gap-5">
+        <div className="flex items-center justify-center gap-5">
           {code.map((digit, index) => (
-            <div key={index} className="border h-16">
+            <div key={index} className="border  min-w-10 h-10 sm:min-w-16 sm:w-16">
               <input
                 type="text"
                 className="w-full h-full text-5xl text-center py-2"
@@ -143,10 +143,10 @@ function RegisterConfirmation() {
           <button
             type="submit"
             name="valider"
-            className={`border h-10 w-20 text-white ${
+            className={`border h-10 w-48 text-white ${
               isSubmitting
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-600"
+                : "bg-green-500 hover:bg-green-600"
             }`}
             disabled={isSubmitting}
           >

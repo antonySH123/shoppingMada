@@ -37,7 +37,15 @@ function Login() {
           navigate("/none");
         }
 
-        if (postdata.status === 401 &&response.status === "Failed") {
+        if (postdata.status === 400) {
+          console.log(response.errors);
+        }
+
+        if (postdata.status === 412) {
+          toast.error(response.message);
+        }
+
+        if (postdata.status === 401 && response.status === "Failed") {
           toast.error(response.message);
         }
 
@@ -46,7 +54,10 @@ function Login() {
           toast.success("Vous êtes connécté!");
           navigate(from, { replace: true });
         }
-        if (postdata.status === 401 && response.status === "Verification Failed") {
+        if (
+          postdata.status === 401 &&
+          response.status === "Verification Failed"
+        ) {
           setUserInfo(response.userInfo);
           toast.warning("Veuillez confimé votre adresse mail!");
           navigate("/confirmCompte", { replace: true });
@@ -67,7 +78,7 @@ function Login() {
   return (
     <div className="relative top-0 left-0 text-white w-full h-[100vh] flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
       <Link to={"/"} className="absolute top-5 left-5">
-        ShoppingMada
+        <img src="/src/assets/logo.png" alt="" className="h-16" />
       </Link>
       <div>
         <div className="bg-green-950  shadow-xl border border-green-500 shadow-green-500 rounded-md p-8  backdrop-filter backdrop-blur-sm  relative">
