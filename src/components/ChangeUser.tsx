@@ -1,28 +1,52 @@
-import { useCallback, useEffect } from 'react'
-import { Navigate } from 'react-router-dom'
-import { useAuth } from '../helper/useAuth'
+import { useCallback, useEffect} from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../helper/useAuth";
+import useCSRF from "../helper/useCSRF";
 
 function ChangeUser() {
-    const {token, setToken, setUserInfo} = useAuth()
-    const regenerate = useCallback(async()=>{
-        const regenerateToken = await fetch(`${import.meta.env.REACT_API_URL}auth/refresh`,{
-            method: "POST",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-          })
-          const response = await regenerateToken.json();
-          const tokenUser = response.userInfo.token;
-          setToken(tokenUser);
-          setUserInfo(response.userInfo);
-    },[setToken, setUserInfo, token])
-    useEffect(()=>{
-        if(token) regenerate()
-    },[regenerate, token])
+  const { setUserInfo } = useAuth();
+  const csrf = useCSRF();
+  const navigate = useNavigate();
+
+  const regenerate = useCallback(async () => {
+    if (!csrf) return;
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}auth/refresh`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "xsrf-token": csrf,
+          },
+        }
+      );
+
+      if (response.status === 201) {
+        const data = await response.json();
+        setUserInfo(data.userInfo);
+        navigate("/espace_vendeur/dash");
+      } else {
+        // En cas d’échec, rediriger ou gérer différemment
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error("Erreur lors du rafraîchissement du token :", error);
+      navigate("/login");
+    }
+  }, [csrf, navigate, setUserInfo]);
+
+  useEffect(() => {
+    regenerate();
+  }, [regenerate]);
+
   return (
-    <Navigate to={"/espace_vendeur/dash"}/>
-  )
+    <div className="flex items-center justify-center h-screen bg-white">
+      <div className="animate-spin rounded-full h-16 w-16 border-4 border-green-500 border-t-transparent"></div>
+    </div>
+  );
 }
 
-export default ChangeUser
+export default ChangeUser;

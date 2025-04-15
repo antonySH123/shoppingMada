@@ -188,7 +188,7 @@ function ProductDetails() {
             alt=""
             className="w-full mt-10 rounded-md"
           />
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             {state.product &&
               state.product.photos &&
               state.product.photos.map((photo, index) => {
@@ -201,7 +201,7 @@ function ProductDetails() {
                       <img
                         src={`${import.meta.env.REACT_API_URL}uploads/${photo}`}
                         alt=""
-                        className="w-full h-full object-fill"
+                        className="w-full h-full object-contain"
                         key={index + 1}
                       />
                     </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "./sidebar/Sidebar";
 import { Outlet } from "react-router-dom";
 import JodiProvider from "../../context/JodiProvider";
+import { LiaBarsSolid } from "react-icons/lia";
 
 function AppAdmin() {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -29,12 +30,18 @@ function AppAdmin() {
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
       <div
-        className={`transition-all duration-300 flex-1 bg-gray-50 px-10 py-5 overflow-y-auto`}
+        className={`transition-all duration-300 flex-1 bg-gray-50  overflow-y-auto`}
       >
-        <JodiProvider>
-          <Outlet />
-        </JodiProvider>
-        
+        <div className="h-20 bg-green-500 flex items-center">
+          <button className="border p-5  cursor-pointer" onClick={toggleSidebar}>
+            <LiaBarsSolid/>
+          </button>
+        </div>
+        <div className="px-5 py-3">
+          <JodiProvider>
+            <Outlet />
+          </JodiProvider>
+        </div>
       </div>
     </div>
   );

@@ -154,8 +154,8 @@ function Add() {
   }, [selectedCategoryId, productId, fetchProduct]);
 
   return (
-    <div className="px-10">
-      <h1 className="text-center text-4xl uppercase my-5">
+    <div className="px-0 sm:px-5 md:px-10 overflow-y-auto">
+      <h1 className="text-center md:text-4xl uppercase my-5">
         {productId ? "Modifier le produit" : "Ajouter un nouveau produit"}
       </h1>
       <div className="w-full h-full">

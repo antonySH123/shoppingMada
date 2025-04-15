@@ -28,7 +28,7 @@ const Navbar = () => {
   };
 
   return (
-    <div className={`w-full ${(segment && segment[0].toLowerCase() === "product" || segment[0].toLowerCase() ==="profil" ) && "bg-green-500"} ${scroll ?"bg-green-500 animate-translate-y shadow shadow-gray-500":""} font-semibold fixed top-0 left-0 z-30 transition-all ease-in duration-300`}>
+    <div className={`w-full bg-green-500 transition-all ease-in-out animate-translate-y  ${(segment && segment[0].toLowerCase() === "product" || segment[0].toLowerCase() ==="profil" ) && "bg-green-500"} ${scroll  ?"bg-green-500 animate-translate-y shadow shadow-gray-500":"md:bg-transparent"} font-semibold fixed top-0 left-0 z-30 transition-all ease-in duration-300`}>
       <div className="mx-auto px-4 sm:px-6 lg-px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center text-white">
@@ -54,7 +54,7 @@ const Navbar = () => {
               </Link>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3 ">
             <>
               {auth ? (
                 <React.Fragment>
@@ -107,29 +107,30 @@ const Navbar = () => {
         </div>
       </div>
       {open ? (
-        <div className="md:hidden">
+       <>
+         <div className="md:hidden">
           <div className="ox-2 pt-2 pb-3 space-y-1 sm:px-3">
             <Link
               to="/"
-              className="text-white hover:bg-white block px-3 py-2 rounded-md"
+              className="text-white hover:text-green-500 hover:bg-white block px-3 py-2 rounded-md"
             >
               Accueil
             </Link>
             <Link
               to="/#about"
-              className="text-white hover:bg-white block px-3 py-2 rounded-md"
+              className="text-white hover:text-green-500 hover:bg-white block px-3 py-2 rounded-md"
             >
               A propos
             </Link>
             <Link
               to="/#product"
-              className="text-white hover:bg-white block px-3 py-2 rounded-md"
+              className="text-white hover:text-green-500 hover:bg-white block px-3 py-2 rounded-md"
             >
               Shop
             </Link>
             <Link
               to="/"
-              className="text-white hover:bg-white block px-3 py-2 rounded-md"
+              className="text-white hover:text-green-500 hover:bg-white block px-3 py-2 rounded-md"
             >
               Abonnements
             </Link>
@@ -141,6 +142,49 @@ const Navbar = () => {
             </Link>
           </div>
         </div>
+        <div className="md:hidden flex items-center gap-3 pb-5">
+            <>
+              {auth ? (
+                <React.Fragment>
+                  <Link to="/profil" className="text-white flex items-center">
+                    <span className="flex px-3 py-3 items-center justify-center bg-white rounded-full text-gray-500">
+                      <LiaUser />
+                    </span>
+                  </Link>
+                  {user?.userGroupMember_id && user?.userGroupMember_id.usergroup_id.name !== "Client" && (
+                    <Link
+                      to="/espace_vendeur/dash"
+                      className="text-white flex items-center"
+                    >
+                      <span className="flex px-3 py-3 items-center justify-center border rounded-full">
+                        <LiaUserLockSolid />
+                      </span>
+                    </Link>
+                  )}
+                  <Link to="/logout" className="text-white flex items-center">
+                    <span className="flex px-3 py-3 items-center justify-center border rounded-full">
+                      <LiaSignOutAltSolid />
+                    </span>
+                  </Link>
+                </React.Fragment>
+              ) : (
+                <>
+                  <Link to="/login" className="text-white flex items-center">
+                    <span className="flex px-3 py-3 items-center justify-center bg-white rounded-full text-gray-500">
+                      <LiaUser />
+                    </span>
+                  </Link>
+                  <Link to="/register" className="text-white flex items-center">
+                    <span className="flex px-3 py-3 items-center justify-center border rounded-full">
+                      <LiaUserPlusSolid />
+                    </span>
+                  </Link>
+                </>
+              )}
+            </>
+          </div>
+       </>
+        
       ) : null}
     </div>
   );

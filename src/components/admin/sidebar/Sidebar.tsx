@@ -1,9 +1,6 @@
 import React, { useState } from "react";
 import number from "./../../../data/number.json";
 import {
-  FaChevronLeft,
-  FaChevronRight,
-  FaCrown,
   FaHome,
   FaRegCreditCard,
   FaShoppingBag,
@@ -15,7 +12,7 @@ import {
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../helper/useAuth";
-import { LiaCheckSolid, LiaUser } from "react-icons/lia";
+import { LiaCheckSolid,  LiaTimesSolid, LiaUser } from "react-icons/lia";
 import UserInfo from "../../modals/UserInfo";
 import useFormatter from "../../../helper/useFormatter";
 import useCSRF from "../../../helper/useCSRF";
@@ -23,7 +20,7 @@ import { toast } from "react-toastify";
 
 interface SidebarProps {
   isCollapsed: boolean;
-  toggleSidebar: () => void;
+  toggleSidebar : ()=> void
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
@@ -78,12 +75,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
   return (
     <div
       className={`bg-green-500 h-full ${
-        isCollapsed ? "w-18" : "w-64"
+        isCollapsed ? "hidden" : " w-full sm:w-64"
       } transition-all duration-300 px-5 overflow-hidden`}
     >
       {/* Header */}
       <div
-        className={`flex items-center justify-between py-5 border-b-[1px] border-white ${
+        className={`flex items-center justify-between py-4 border-b-[1px] border-white ${
           isCollapsed && "hidden"
         }`}
       >
@@ -92,22 +89,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
             <LiaUser /> <>{user && user.username}</>
           </span>
           <span className="flex justify-between items-center w-full">
-          <strong>{user?.boutiks_id && user?.boutiks_id.plan}</strong>
-          {user?.boutiks_id && user?.boutiks_id.subscription_id && (
             <strong className="text-sm">
-              Expiration:{" "}
-              {new Date(
-                user.boutiks_id.subscription_id.endDate
-              ).toLocaleDateString("fr-FR")}
+              {user?.boutiks_id && user?.boutiks_id.plan}
             </strong>
-          )}
+            {user?.boutiks_id && user?.boutiks_id.subscription_id && (
+              <strong className="text-sm">
+                Expiration:{" "}
+                {new Date(
+                  user.boutiks_id.subscription_id.endDate
+                ).toLocaleDateString("fr-FR")}
+              </strong>
+            )}
           </span>
         </h1>
-        {user?.boutiks_id && !user?.boutiks_id.subscription_id && (
-          <button onClick={() => setIsModalOpen(true)}>
-            <FaCrown color="gold" size={20} />
-          </button>
-        )}
+        <button onClick={toggleSidebar} className="block sm:hidden">
+          <LiaTimesSolid  size={20} />
+        </button>
       </div>
 
       {/* Navigation Items */}
@@ -239,65 +236,72 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
       </div>
 
       {/* Toggle Button */}
-      <div className="flex items-center justify-center pt-5">
-        <div
-          className="h-10 w-10 bg-green-900 rounded-full flex justify-center items-center cursor-pointer"
-          onClick={toggleSidebar}
+
+      {user?.boutiks_id && !user?.boutiks_id.subscription_id && (
+        <button
+          className="bg-white w-full py-3 rounded-md mt-5 text-green-500 shadow"
+          onClick={() => setIsModalOpen(true)}
         >
-          {isCollapsed ? (
-            <FaChevronRight color="white" />
-          ) : (
-            <FaChevronLeft color="white" />
-          )}
-        </div>
-      </div>
+          Upgrade PRO
+        </button>
+      )}
 
       <UserInfo isOpen={isModalOpen} onClose={closeModal}>
         <h2 className="text-xl font-bold mb-4">
           Devenir une des nos vendeur Pro
         </h2>
         <div>
-          <ul className="mb-3">
-            <li className="flex items-center gap-3">
-              <LiaCheckSolid color="green" size={20} />{" "}
-              <span>Annonces illimitées : Publiez autant de produits que vous le souhaitez.</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <LiaCheckSolid color="green" size={20} />{" "}
-              <span>Mise en avant premium: Vos produits apparaissent en priorité dans les recherches.</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <LiaCheckSolid color="green" size={20} />{" "}
-              <span>Support prioritaire: Assistance rapide et dédiée.</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <LiaCheckSolid color="green" size={20} />{" "}
-              <span>Promotions & Réductions exclusives.</span>
-            </li>
-          </ul>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <ul className="mb-3">
+                <li className="flex items-center gap-3">
+                  <LiaCheckSolid color="green" size={20} />{" "}
+                  <span>
+                    Annonces illimitées : Publiez autant de produits que vous le
+                    souhaitez.
+                  </span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <LiaCheckSolid color="green" size={20} />{" "}
+                  <span>
+                    Mise en avant premium: Vos produits apparaissent en priorité
+                    dans les recherches.
+                  </span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <LiaCheckSolid color="green" size={20} />{" "}
+                  <span>Support prioritaire: Assistance rapide et dédiée.</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <LiaCheckSolid color="green" size={20} />{" "}
+                  <span>Promotions & Réductions exclusives.</span>
+                </li>
+              </ul>
 
-          <div className="px-2 py-2 rounded w-full  border-green-500 border-2">
-            <h2>Mensuel</h2>
-            <strong>{priceInArriary(50000)}</strong>
-          </div>
-          <hr className="my-2" />
-          <div>
-            <h3 className="m-2">
-              Veuillez choisir l'un des operateur que vous allez envoyer votre
-              payement
-            </h3>
-            {number.map((element, index) => (
-              <div
-                onClick={() => handleSelect(element.phonenumber)}
-                className={`px-2 py-2 rounded w-full mb-2 border-2 ${
-                  selectedNumber === element.phonenumber && "border-green-500"
-                }`}
-                key={index + 1}
-              >
-                <h2>{element.name}</h2>
-                <strong>{element.phonenumber}</strong>
+              <div className="px-2 py-2 rounded w-full  border-green-500 border-2">
+                <h2>Mensuel</h2>
+                <strong>{priceInArriary(50000)}</strong>
               </div>
-            ))}
+            </div>
+
+            <div>
+              <h3 className="mb-7">
+                Veuillez choisir l'un des operateur que vous allez envoyer votre
+                payement
+              </h3>
+              {number.map((element, index) => (
+                <div
+                  onClick={() => handleSelect(element.phonenumber)}
+                  className={`px-2 py-2 rounded w-full mb-2 border-2 ${
+                    selectedNumber === element.phonenumber && "border-green-500"
+                  }`}
+                  key={index + 1}
+                >
+                  <h2>{element.name}</h2>
+                  <strong>{element.phonenumber}</strong>
+                </div>
+              ))}
+            </div>
           </div>
           <hr />
           <div>
@@ -305,21 +309,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
               Veuillez entrer si aprés le numéro que vous avez utilisé pour
               transfert l'argent
             </h3>
-            <input
-              type="text"
-              className="px-2 py-2 rounded w-full mb-2 border-2"
-              placeholder="votre numéro"
-              value={transactionPhoneNumber}
-              onChange={(e) => setTransactionPhoneNumber(e.target.value)}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="text"
+                className="px-2 py-2 rounded w-full mb-2 border-2"
+                placeholder="votre numéro"
+                value={transactionPhoneNumber}
+                onChange={(e) => setTransactionPhoneNumber(e.target.value)}
+              />
 
-            <input
-              type="text"
-              className="px-2 py-2 rounded w-full mb-2 border-2"
-              placeholder="Reference du paiements"
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
-            />
+              <input
+                type="text"
+                className="px-2 py-2 rounded w-full mb-2 border-2"
+                placeholder="Reference du paiements"
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+              />
+            </div>
           </div>
 
           <button

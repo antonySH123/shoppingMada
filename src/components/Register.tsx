@@ -79,8 +79,9 @@ function Register() {
             body: JSON.stringify(state.user),
           }
         );
-        if (!response.ok) {
-          toast.error("Erreur lors de l'enregistrement");
+        if (response.status === 401) {
+          const result = await response.json();
+          toast.warning(result.message);
         }
         if (response.status === 201) {
           const result = await response.json();

@@ -88,7 +88,7 @@ function Content() {
         </Link>
       </div>
       <div className="overflow-auto">
-        <table className="w-full border-2">
+        <table className="w-full border-2 overflow-auto">
           <thead>
             <tr>
               <th className="py-3 px-3">#</th>

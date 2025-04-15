@@ -8,6 +8,7 @@ import {
 
 import { toast } from "react-toastify";
 import { useCategory } from "../../context/ProductContext";
+import useCSRF from "../../helper/useCSRF";
 
 // Types pour les catégories
 interface Category {
@@ -36,6 +37,7 @@ function Categorie() {
   const [parentId, setParentId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const {setSelectedCategoryId} = useCategory();
+  const csrf = useCSRF();
   const [selectedCategoryDisplay, setSelectedDisplay] = useState<string | null>(
     null
   );
@@ -154,7 +156,28 @@ function Categorie() {
       if (sendFrom.status === 201) {
         const response = await sendFrom.json();
         setNewCategory({ ...newCategory, name: "", slug: "", parent: null });
+        setSelectedCategoryId(response.category.name);
+        console.log(response.category._id);
+        
+        if(csrf){
+        const update = await fetch(`${import.meta.env.REACT_API_URL}boutiks/newCategories`,{
+          method:"PUT",
+          credentials:"include",
+          headers:{
+            "Content-Type": "application/json",
+            "xsrf-token":csrf
+          },
+          
+          
+          body:JSON.stringify({category_id:response.category._id})
+        })
+        if(update.status === 200){
+          fetchData();
+        }
         toast.success(response.message);
+      
+      }
+        
       }
     } catch (error) {
       console.log(error);

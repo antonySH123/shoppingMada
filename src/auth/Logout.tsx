@@ -1,33 +1,50 @@
-import { useCallback, useEffect} from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect } from "react";
+// import { useNavigate } from "react-router-dom";  
+import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
-function Logout() {
-  const navigate = useNavigate();
- const csrf = useCSRF();
 
-  const logout = useCallback(async()=>{
-    if(csrf){
-      const response = await fetch(`${import.meta.env.REACT_API_URL}auth/logout`,{
-        method:"post",
-        headers:{
-          "Content-Type":"application/json",
-          "xsrf-token": csrf
-        },
-        credentials:"include"
-      })
-      if(response.status === 200){
-        sessionStorage.removeItem("user");
-        sessionStorage.clear();
-        navigate("/login", {replace:true});
+function Logout() {
+  // const navigate = useNavigate();
+  const csrf = useCSRF();
+
+  const logout = useCallback(async () => {
+    if (!csrf) return;
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}auth/logout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "xsrf-token": csrf,
+          },
+          credentials: "include",
+        }
+      );
+
+      if (response.status === 200) {
+        localStorage.removeItem("user");
+        localStorage.clear();
+        window.location.href = "/login"
+      } else {
+        toast.error("La déconnexion a échoué.");
       }
-    }
-  },[csrf, navigate])
+    } catch (error) {
+      console.error("Erreur logout :", error);
+      toast.error("Erreur réseau lors de la déconnexion.");
+    } 
+  }, [csrf]);
+
   useEffect(() => {
-    logout();
-  }, [logout]);
+    if (csrf) {
+      logout();
+    }
+  }, [csrf, logout]);
+
   return (
-    <div>
-      <h1>Logout...</h1>
+    <div className="flex items-center justify-center h-screen bg-white">
+      <div className="animate-spin rounded-full h-16 w-16 border-4 border-green-500 border-t-transparent"></div>
     </div>
   );
 }

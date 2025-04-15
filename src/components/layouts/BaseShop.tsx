@@ -6,7 +6,7 @@ import ToggleSidebarContext from "../../context/ToggleSidebarContext";
 function BaseShop() {
   return (
     <ToggleSidebarContext>
-      <main className="flex flex-col h-full gap-1 overflow-hidden">
+      <main className="flex flex-col h-full gap-1 overflow-hidden ">
         <Navbar />
         <div className="flex gap-3 w-full  h-[inherit]">
           <Sidebar/>
