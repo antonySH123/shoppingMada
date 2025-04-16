@@ -45,7 +45,7 @@ const Sidebar: React.FC = () => {
   }, []);
 
   return (
-    <div className={`bg-white fixed md:relative transition-all duration-300 shadow-md ${isSidebarOpen ? "w-64" : "w-14"}`}>
+    <div className={`bg-white fixed md:relative transition-all duration-300 shadow-md z-50  ${isSidebarOpen ? "w-64" : "w-14"}`}>
       <div className={`flex justify-between items-center py-3 bg-gray-100 ${isSidebarOpen ? "px-4" : "px-2"}`}>
         <h1 className="text-lg font-bold text-gray-700">
           {isSidebarOpen ? "Catégories" : ""}

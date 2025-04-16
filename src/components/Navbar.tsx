@@ -28,11 +28,11 @@ const Navbar = () => {
   };
 
   return (
-    <div className={`w-full bg-green-500 transition-all ease-in-out animate-translate-y  ${(segment && segment[0].toLowerCase() === "product" || segment[0].toLowerCase() ==="profil" ) && "bg-green-500"} ${scroll  ?"bg-green-500 animate-translate-y shadow shadow-gray-500":"md:bg-transparent"} font-semibold fixed top-0 left-0 z-30 transition-all ease-in duration-300`}>
+    <div className={`w-full bg-green-500 transition-all ease-in-out  ${(segment && segment[0].toLowerCase() === "product" || segment[0].toLowerCase() ==="profil" ) && "bg-green-500"} ${scroll  ?"bg-green-500 animate-translate-y shadow shadow-gray-500":"md:bg-green-500"} font-semibold sticky top-0 left-0 z-30 transition-all ease-in duration-300`}>
       <div className="mx-auto px-4 sm:px-6 lg-px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center text-white">
-            <Link to="/"><img src="/src/assets/logo.png" alt="" className="h-16" /></Link>
+          <div className="flex items-center text-white h-28 w-28">
+            <Link to="/"><img src="/src/assets/logo.png" alt="" className="object-contain" /></Link>
           </div>
           {/* menu */}
           <div className="hidden md:block">

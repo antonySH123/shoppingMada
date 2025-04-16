@@ -108,7 +108,7 @@ function Register() {
   return (
     <div className="text-white w-full h-[100vh] flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
       <div>
-        <div className="bg-green-950 w-[500px] border border-green-500 shadow-green-500 rounded-md px-8 py-5 shadow-lg backdrop-filter backdrop-blur relative">
+        <div className="bg-green-950 w-fit md:w-[500px] border border-green-500 shadow-green-500 rounded-md px-8 py-5 shadow-lg backdrop-filter backdrop-blur relative">
           <h1 className="text-white flex flex-col justify-center items-center font-bold text-center mb-6 gap-3">
             <LiaUser size={60} />
             <strong className="text-2xl">S'inscrire</strong>
@@ -139,15 +139,7 @@ function Register() {
                 )}
               </div>
             ))}
-            <div className="flex justify-between items-center">
-              <div className="flex gap-2 items-center">
-                <input type="checkbox" id="remember" />
-                <label htmlFor="remember">Se souvenir</label>
-              </div>
-              <Link to="" className="text-green-500">
-                Mot de passe oublié
-              </Link>
-            </div>
+            
             <button
               className="w-full mb-4 text-[18px] mt-6 rounded-full bg-white text-emerald-800 hover:bg-emerald-600 hover:text-white py-2 transition-colors flex justify-center items-center"
               type="submit"

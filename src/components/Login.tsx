@@ -77,8 +77,8 @@ function Login() {
 
   return (
     <div className="relative top-0 left-0 text-white w-full h-[100vh] flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
-      <Link to={"/"} className="absolute top-5 left-5">
-        <img src="/src/assets/logo.png" alt="" className="h-16" />
+      <Link to={"/"} className="absolute top-0 left-5 h-28 w-28">
+        <img src="/src/assets/logo.png" alt="" className="object-contain" />
       </Link>
       <div>
         <div className="bg-green-950  shadow-xl border border-green-500 shadow-green-500 rounded-md p-8  backdrop-filter backdrop-blur-sm  relative">

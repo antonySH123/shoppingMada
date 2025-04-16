@@ -46,11 +46,13 @@
  
 .banner{
   width: 100%;
-  height: 600px;
+  height: 595px;
   background: url("./assets/image/banner/banner.jpg") rgba(0, 0, 0, 0.658);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-clip: border-box;
+  background-attachment: fixed;
   background-blend-mode: color-burn;
 }
 #about{
