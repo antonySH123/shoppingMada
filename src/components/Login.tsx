@@ -4,6 +4,7 @@ import { LiaUserSolid } from "react-icons/lia";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
 import { useAuth } from "../helper/useAuth";
+import Preloader from "./loading/Preloader";
 function Login() {
   const { setUserInfo } = useAuth();
   const [userAuth, setUserAuth] = useState({ emailOrPhone: "", password: "" });
@@ -76,6 +77,7 @@ function Login() {
   };
 
   return (
+    !csrf ? <Preloader/> :
     <div className="relative top-0 left-0 text-white w-full h-[100vh] flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
       <Link to={"/"} className="absolute top-0 left-5 h-28 w-28">
         <img src="/src/assets/logo.png" alt="" className="object-contain" />

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { LiaUserCogSolid} from "react-icons/lia";
+import { LiaUserCogSolid } from "react-icons/lia";
 import useCSRF from "../helper/useCSRF";
+import Preloader from "./loading/Preloader";
 
 function ResetPassword() {
   const [passwordData, setPasswordData] = useState({
@@ -25,30 +26,27 @@ function ResetPassword() {
 
     try {
       if (csrf) {
-        const response = await fetch(
-          `${import.meta.env.REACT_API_URL}user`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              "xsrf-token": csrf,
-            },
-            credentials: "include",
-            body: JSON.stringify({ password: passwordData.newPassword }),
-          }
-        );
+        const response = await fetch(`${import.meta.env.REACT_API_URL}user`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "xsrf-token": csrf,
+          },
+          credentials: "include",
+          body: JSON.stringify({ password: passwordData.newPassword }),
+        });
 
         const result = await response.json();
         if (result.status === "Failed") {
           toast.error(result.message);
         } else {
           toast.success("Mot de passe réinitialisé avec succès !");
-          navigate("/profil",{replace:true});
+          navigate("/profil", { replace: true });
         }
       } else {
         toast.error("Une erreur est survenue !");
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Erreur de connexion au serveur !");
     }
@@ -61,7 +59,9 @@ function ResetPassword() {
     setPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
-  return (
+  return !csrf ? (
+    <Preloader />
+  ) : (
     <div className="text-white w-full h-[100vh] flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
       <div>
         <div className="bg-green-950 shadow-xl border border-green-500 shadow-green-500 rounded-md p-8 backdrop-filter backdrop-blur-sm relative">

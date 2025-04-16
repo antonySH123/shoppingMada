@@ -11,6 +11,7 @@ import {
 import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
 import Comment from "./comment/Comment";
+import Preloader from "./loading/Preloader";
 
 interface IState {
   product: IProduct | null;
@@ -41,7 +42,7 @@ type Action =
     }
   | {
       type: "INITIAL_VARIANT";
-      payload: { [key:string]:string };
+      payload: { [key: string]: string };
     };
 
 const reducer = (state: IState, action: Action): IState => {
@@ -94,7 +95,7 @@ const reducer = (state: IState, action: Action): IState => {
       };
     }
     case "INITIAL_VARIANT":
-      return {...state, selectedVariant:action.payload}
+      return { ...state, selectedVariant: action.payload };
     default:
       throw new Error("Action inconnue");
   }
@@ -157,16 +158,18 @@ function ProductDetails() {
         }
         const data = await response.json();
 
-        const initialSelectedVariant : {[key:string]:string} = {};
-        if(data.data.variant){
-          data.data.variant.forEach((variant:{name:string, values:[{value:string}]})=>{
-            if(variant.values.length > 0){
-              initialSelectedVariant[variant.name]=variant.values[0].value
+        const initialSelectedVariant: { [key: string]: string } = {};
+        if (data.data.variant) {
+          data.data.variant.forEach(
+            (variant: { name: string; values: [{ value: string }] }) => {
+              if (variant.values.length > 0) {
+                initialSelectedVariant[variant.name] = variant.values[0].value;
+              }
             }
-          })
+          );
         }
         dispatch({ type: "FETCH_SUCCESS", payload: data.data });
-        dispatch({type:"INITIAL_VARIANT",payload:initialSelectedVariant})
+        dispatch({ type: "INITIAL_VARIANT", payload: initialSelectedVariant });
       } catch (error) {
         if (error instanceof Error) {
           dispatch({ type: "FETCH_ERROR", payload: error.message });
@@ -177,7 +180,9 @@ function ProductDetails() {
     };
     fetchProduct();
   }, [id]);
-  return (
+  return !csrf ? (
+    <Preloader />
+  ) : (
     <>
       <div className="px-10 py-5 grid grid-cols-1 sm:grid-cols-1 md:grid-cols-5 gap-5">
         <div className="py-10 col-span-2">
@@ -266,7 +271,7 @@ function ProductDetails() {
                                 type: "SELECT_VARIANT",
                                 payload: {
                                   name: variant.name,
-                                  value: v.value
+                                  value: v.value,
                                 },
                               });
 

@@ -9,6 +9,7 @@ import {
 import { toast } from "react-toastify";
 import { useCategory } from "../../context/ProductContext";
 import useCSRF from "../../helper/useCSRF";
+import Preloader from "../loading/Preloader";
 
 // Types pour les catégories
 interface Category {
@@ -203,6 +204,7 @@ function Categorie() {
   },[selectedCategory, setSelectedCategoryId])
 
   return (
+    !csrf ? <Preloader/> :
     <div className="w-full">
       {/* Bouton principal pour afficher les catégories */}
       <div

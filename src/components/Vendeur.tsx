@@ -11,6 +11,7 @@ import Select, { MultiValue } from "react-select";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
+import Preloader from "./loading/Preloader";
 
 interface CategoryOption {
   value: string;
@@ -136,7 +137,6 @@ function Vendeur() {
   };
 
   const handleClick = () => {
-    
     inputFile?.current?.click();
   };
 
@@ -157,7 +157,9 @@ function Vendeur() {
     setBoutik((prev) => ({ ...prev, logo: file }));
   };
 
-  return (
+  return !csrf ? (
+    <Preloader />
+  ) : (
     <form onSubmit={handleSubmit}>
       <section className="bg-green-900/50 bg-[url('/src/assets/image/banner/banner.jpg')] h-72 bg-center bg-cover bg-blend-color-burn bg-no-repeat flex justify-center items-center">
         <h1 className="text-center text-4xl uppercase text-white font-semibold">
@@ -183,16 +185,21 @@ function Vendeur() {
                     onChange={handleFileChange}
                     ref={inputFile}
                   />
-                  {
-                    !boutik.logo ? <>
-                    
-                  <FaCloudUploadAlt
-                    className="font-bold  text-green-500"
-                    size={50}
-                  />
-                  <h2>Votre logo</h2>
-                    </> : <img src={URL.createObjectURL(boutik.logo)} alt="" className="object-contain w-full h-full" />
-                  }
+                  {!boutik.logo ? (
+                    <>
+                      <FaCloudUploadAlt
+                        className="font-bold  text-green-500"
+                        size={50}
+                      />
+                      <h2>Votre logo</h2>
+                    </>
+                  ) : (
+                    <img
+                      src={URL.createObjectURL(boutik.logo)}
+                      alt=""
+                      className="object-contain w-full h-full"
+                    />
+                  )}
                 </div>
 
                 <Select

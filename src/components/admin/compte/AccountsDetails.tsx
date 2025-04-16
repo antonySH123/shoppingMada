@@ -6,6 +6,7 @@ import { LiaAtSolid, LiaPhoneAltSolid, LiaUser } from "react-icons/lia";
 import useCSRF from "../../../helper/useCSRF";
 import Dialog from "../../modals/Dialog";
 import { useAuth } from "../../../helper/useAuth";
+import Preloader from "../../loading/Preloader";
 
 interface IState {
   user: Iuser | null;
@@ -191,6 +192,7 @@ function AccountsDetails() {
     return <Navigate to={"/espace_vendeur/dash"} />;
   }
   return (
+    !csrf ? <Preloader/> :
     <div>
       <h1 className="text-2xl mb-3">Informations du compte</h1>
       <div className="border border-gray-300 py-5 px-5 flex justify-between gap-5 mb-7">

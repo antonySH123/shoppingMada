@@ -5,6 +5,7 @@ import Iuser from "../../../../Interface/UserInterface";
 import useCSRF from "../../../../helper/useCSRF";
 import { toast } from "react-toastify";
 import UserInfo from "../../../modals/UserInfo";
+import Preloader from "../../../loading/Preloader";
 
 interface ICommande {
   _id: string;
@@ -20,21 +21,21 @@ interface ICommande {
 type Action =
   | { type: "FETCH_START"; payload: ICommande }
   | { type: "ACCEPTED"; payload: string }
-  | { type: "HANDLE_MOTIF"; payload: string | null}
-  | { type: "REJECTED"; payload: string; text:string }
+  | { type: "HANDLE_MOTIF"; payload: string | null }
+  | { type: "REJECTED"; payload: string; text: string }
   | { type: "TOGGLE_MODAL"; payload: boolean };
 
 interface IState {
   commandes: ICommande | null;
   status: string | null;
-  isOpen:boolean;
-  motif:string | null
+  isOpen: boolean;
+  motif: string | null;
 }
 const initialState: IState = {
   commandes: null,
   status: null,
-  isOpen:false,
-  motif : null
+  isOpen: false,
+  motif: null,
 };
 const reducer = (state: IState, action: Action): IState => {
   switch (action.type) {
@@ -49,9 +50,14 @@ const reducer = (state: IState, action: Action): IState => {
     case "HANDLE_MOTIF":
       return { ...state, motif: action.payload };
     case "REJECTED":
-      return { ...state, status: action.payload, motif:action.text, isOpen:false };
+      return {
+        ...state,
+        status: action.payload,
+        motif: action.text,
+        isOpen: false,
+      };
     case "TOGGLE_MODAL":
-      return {...state,isOpen:action.payload}
+      return { ...state, isOpen: action.payload };
     default:
       throw new Error("Action inconnue");
   }
@@ -60,7 +66,7 @@ function CommandeDetails() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { id } = useParams();
   const csrf = useCSRF();
-  const close = ()=> dispatch({type:"TOGGLE_MODAL",payload:false})
+  const close = () => dispatch({ type: "TOGGLE_MODAL", payload: false });
 
   const handleClick = useCallback(async () => {
     console.log(state.status);
@@ -74,7 +80,7 @@ function CommandeDetails() {
               "Content-Type": "application/json",
               "xsrf-token": csrf,
             },
-            body: JSON.stringify({ status: state.status, motif:state.motif }),
+            body: JSON.stringify({ status: state.status, motif: state.motif }),
             credentials: "include",
           }
         );
@@ -83,11 +89,10 @@ function CommandeDetails() {
         const { message, status } = result;
         if ((status as string).toLocaleLowerCase() === "success") {
           toast.success(message);
-          
         } else {
           toast.error(message);
         }
-        dispatch({type:"HANDLE_MOTIF",payload:null})
+        dispatch({ type: "HANDLE_MOTIF", payload: null });
       }
     }
   }, [csrf, id, state.commandes?.status, state.motif, state.status]);
@@ -117,7 +122,9 @@ function CommandeDetails() {
     getCommand();
   }, [id, state.commandes?.status, state.status]);
 
-  return (
+  return !csrf ? (
+    <Preloader />
+  ) : (
     <div className="container mx-auto p-4">
       <div className="bg-white shadow-lg rounded-lg p-6 flex flex-col gap-3">
         <h2 className="text-2xl font-semibold text-gray-700 mb-4">
@@ -185,7 +192,7 @@ function CommandeDetails() {
               </button>
               <button
                 onClick={() =>
-                  dispatch({ type:"TOGGLE_MODAL", payload: true })
+                  dispatch({ type: "TOGGLE_MODAL", payload: true })
                 }
                 className="border  px-3 text-sm py-2 border-red-500  uppercase font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-all ease-in-out rounded"
               >
@@ -199,10 +206,31 @@ function CommandeDetails() {
         <div className="flex flex-col gap-3">
           <h1 className="text-2xl font-semibold">Confirmation</h1>
           <p>Vous êtes sûr de vouloir rejeter cette commande?</p>
-          <input type="text" name="motif" placeholder="veuillez entrer le motif*" className="px-3 py-2 border w-full" onChange={(e)=> dispatch({type:"HANDLE_MOTIF",payload:e.target.value})}  />
+          <input
+            type="text"
+            name="motif"
+            placeholder="veuillez entrer le motif*"
+            className="px-3 py-2 border w-full"
+            onChange={(e) =>
+              dispatch({ type: "HANDLE_MOTIF", payload: e.target.value })
+            }
+          />
           <div className="flex items-center gap-3 justify-end">
-            <button className="px-3 py-2 rounded bg-green-500 text-white" onClick={()=>dispatch({type:"REJECTED",payload:"Rejected", text:state.motif as string})}>OUI</button>
-            <button className="px-3 py-2 rounded bg-red-500 text-white">NON</button>
+            <button
+              className="px-3 py-2 rounded bg-green-500 text-white"
+              onClick={() =>
+                dispatch({
+                  type: "REJECTED",
+                  payload: "Rejected",
+                  text: state.motif as string,
+                })
+              }
+            >
+              OUI
+            </button>
+            <button className="px-3 py-2 rounded bg-red-500 text-white">
+              NON
+            </button>
           </div>
         </div>
       </UserInfo>

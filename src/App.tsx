@@ -39,7 +39,7 @@ function App() {
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <TopProgressBar />
-      <ScrollToTop/>
+      <ScrollToTop />
       <Routes>
         <Route path="" Component={Base}>
           <Route path="" index Component={Home} />
@@ -47,12 +47,12 @@ function App() {
           <Route path="/profil" Component={Profil} />
           <Route path="/redirect" Component={ChangeUser} />
           <Route path="/product/:id/details" Component={ProductDetails} />
+          <Route path="/confirmCompte" Component={registerConfirmation} />
         </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/forgotPass" element={<EmailForgotPass/>}/>
-        <Route path="/resetPassword" element={<ResetPassword/>}/>
-        <Route path="/confirmCompte" Component={registerConfirmation} />
+        <Route path="/forgotPass" element={<EmailForgotPass />} />
+        <Route path="/resetPassword" element={<ResetPassword />} />
         <Route path="/logout" Component={Logout} />
         <Route path="" Component={BaseShop}>
           <Route path="/shop/:slug?" Component={Shop} />
@@ -78,10 +78,15 @@ function App() {
           <Route path="commande/:id" Component={CommandeDetails}></Route>
           <Route path="boutiksInfo" Component={BoutiksInfo}></Route>
           <Route path="abonnements" Component={ListAbonnement}></Route>
-          <Route path="abonnementsDetails" Component={DetailsAbonnements}></Route>
+          <Route
+            path="abonnementsDetails"
+            Component={DetailsAbonnements}
+          ></Route>
           <Route path="shopaccounts" Component={Compte}></Route>
-          <Route path="accountsSettings/:id" Component={AccountsDetails}></Route>
-          
+          <Route
+            path="accountsSettings/:id"
+            Component={AccountsDetails}
+          ></Route>
         </Route>
         <Route path="/none" Component={CompteDesactiver} />
         <Route path="*" Component={Page404} />

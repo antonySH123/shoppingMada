@@ -9,6 +9,7 @@ import IProduct from "../../../Interface/IProduct";
 import ICommande from "../../../Interface/command.interfaces";
 import ListAbonnement from "../abonnements/ListAbonnement";
 import Iuser from "../../../Interface/UserInterface";
+import Preloader from "../../loading/Preloader";
 
 function Dash() {
   const { user } = useAuth();
@@ -20,7 +21,7 @@ function Dash() {
   const csrf = useCSRF();
   const [products, setProduct] = useState<IProduct[]>();
   const [commandes, setCommandes] = useState<ICommande[]>();
-  const [users,setUsers] = useState<Iuser[]>();
+  const [users, setUsers] = useState<Iuser[]>();
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData();
@@ -135,18 +136,34 @@ function Dash() {
     fetchCommand();
   }, [fetchCommand, fetchUsers, getPersonnalInfo, getProduct, user]);
 
-  return (
+  return !csrf ? (
+    <Preloader />
+  ) : (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-5">
         <div className="shadow-lg w-full h-auto bg-gray-100 flex flex-col justify-center items-center gap-3 py-5">
           <div>
-            {users? <FaShoppingCart className="text-5xl text-orange-500" /> : <FaUsers className="text-5xl text-orange-500" />}
+            {users ? (
+              <FaShoppingCart className="text-5xl text-orange-500" />
+            ) : (
+              <FaUsers className="text-5xl text-orange-500" />
+            )}
           </div>
           <div>
-            <h1 className="text-[20px]">{user && user.userGroupMember_id.usergroup_id.name ==="Super Admin"? users?.length: products?.length}</h1>
+            <h1 className="text-[20px]">
+              {user &&
+              user.userGroupMember_id.usergroup_id.name === "Super Admin"
+                ? users?.length
+                : products?.length}
+            </h1>
           </div>
           <div>
-            <h1 className="text-2xl font-extralight text-gray-900">{user && user.userGroupMember_id.usergroup_id.name ==="Super Admin"? "Utilisateurs":"Product"}</h1>
+            <h1 className="text-2xl font-extralight text-gray-900">
+              {user &&
+              user.userGroupMember_id.usergroup_id.name === "Super Admin"
+                ? "Utilisateurs"
+                : "Product"}
+            </h1>
           </div>
         </div>
         <div className="shadow-lg w-full h-auto bg-gray-100 flex flex-col justify-center items-center gap-3 py-5">
@@ -155,12 +172,21 @@ function Dash() {
           </div>
           <div>
             <h1 className="text-[20px]">
-              {user && user.userGroupMember_id.usergroup_id.name ==="Super Admin"? users?.filter((item)=> item.userGroupMember_id?.usergroup_id.name=== "Boutiks").length: commandes?.map((item) => item.status === "Pending").length}
+              {user &&
+              user.userGroupMember_id.usergroup_id.name === "Super Admin"
+                ? users?.filter(
+                    (item) =>
+                      item.userGroupMember_id?.usergroup_id.name === "Boutiks"
+                  ).length
+                : commandes?.map((item) => item.status === "Pending").length}
             </h1>
           </div>
           <div>
             <h1 className="text-2xl font-extralight text-gray-900">
-              {user && user.userGroupMember_id.usergroup_id.name ==="Super Admin"?"Nombres des boutiques":"Commande en Attente"}
+              {user &&
+              user.userGroupMember_id.usergroup_id.name === "Super Admin"
+                ? "Nombres des boutiques"
+                : "Commande en Attente"}
             </h1>
           </div>
         </div>
@@ -170,13 +196,21 @@ function Dash() {
           </div>
           <div>
             <h1 className="text-[20px]">
-            {user && user.userGroupMember_id.usergroup_id.name ==="Super Admin"? users?.filter((item)=> item.userGroupMember_id.usergroup_id.name=== "Client").length: commandes?.map((item) => item.status === "Pending").length}
+              {user &&
+              user.userGroupMember_id.usergroup_id.name === "Super Admin"
+                ? users?.filter(
+                    (item) =>
+                      item.userGroupMember_id.usergroup_id.name === "Client"
+                  ).length
+                : commandes?.map((item) => item.status === "Pending").length}
             </h1>
           </div>
           <div>
             <h1 className="text-2xl font-extralight text-gray-900">
-            {user && user.userGroupMember_id.usergroup_id.name ==="Super Admin"?"Nombres des Abonné":"Tous les commandes"}
-              
+              {user &&
+              user.userGroupMember_id.usergroup_id.name === "Super Admin"
+                ? "Nombres des Abonné"
+                : "Tous les commandes"}
             </h1>
           </div>
         </div>

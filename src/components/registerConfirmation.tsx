@@ -11,7 +11,7 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
 import { useAuth } from "../helper/useAuth";
-
+import Preloader from "./loading/Preloader";
 
 function RegisterConfirmation() {
   const [code, setCode] = useState<string[]>(new Array(6).fill(""));
@@ -19,9 +19,10 @@ function RegisterConfirmation() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const navigate = useNavigate();
   const csrf = useCSRF();
-  const {user} = useAuth()
-  const location = useLocation()
-  const from = location.state?.from === "/forgotPass"? "/resetPassword" : "/profil";
+  const { user } = useAuth();
+  const location = useLocation();
+  const from =
+    location.state?.from === "/forgotPass" ? "/resetPassword" : "/profil";
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement>,
     index: number
@@ -82,12 +83,12 @@ function RegisterConfirmation() {
 
         if (response.status === 201) {
           toast.success("Compte vérifié avec succès !");
-          setTimeout(() => navigate(from, {replace:true}), 2000); // Delay before navigation
+          setTimeout(() => navigate(from, { replace: true }), 2000); // Delay before navigation
         }
-        if(response.status === 403){
+        if (response.status === 403) {
           const result = await response.json();
           toast.error(result.message);
-          setCode(new Array(6).fill(""))
+          setCode(new Array(6).fill(""));
         }
       } else {
         toast.error("Erreur de sécurité. Veuillez réessayer.");
@@ -101,10 +102,11 @@ function RegisterConfirmation() {
     }
   }, [code, csrf, from, navigate]);
 
-  if(!user)
-    return <Navigate to={"/login"}/>
+  if (!user) return <Navigate to={"/login"} />;
 
-  return (
+  return !csrf ? (
+    <Preloader />
+  ) : (
     <div className="container mx-auto px-20 w-full h-[100vh] flex flex-col justify-center overflow-y-auto bg-gray-100">
       <div className="mx-auto text-8xl">
         <MdOutlinePhonelinkRing />
@@ -125,7 +127,10 @@ function RegisterConfirmation() {
       >
         <div className="flex items-center justify-center gap-5">
           {code.map((digit, index) => (
-            <div key={index} className="border  min-w-10 h-10 sm:min-w-16 sm:w-16">
+            <div
+              key={index}
+              className="border  min-w-10 h-10 sm:min-w-16 sm:w-16"
+            >
               <input
                 type="text"
                 className="w-full h-full text-5xl text-center py-2"

@@ -1,10 +1,11 @@
-import { useReducer, ChangeEvent, useState } from "react";
+import { useReducer, ChangeEvent, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Iuser from "../Interface/UserInterface";
 import validator from "../helper/Reg";
 import { LiaUser } from "react-icons/lia";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
+import Preloader from "./loading/Preloader";
 
 const initialState = {
   user: {
@@ -56,7 +57,7 @@ function Register() {
     dispatch({ type: "SET_FIELD", field: name as keyof Iuser, value });
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const errors = validator(state.user);
     if (Object.keys(errors).length > 0) {
@@ -66,47 +67,43 @@ function Register() {
 
     setIsSubmitting(true); // Start loading animation
     try {
-      if (csrf) {
-        const response = await fetch(
-          `${import.meta.env.REACT_API_URL}auth/register`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "xsrf-token": csrf,
-            },
-            credentials: "include",
-            body: JSON.stringify(state.user),
-          }
-        );
-        if (response.status === 401) {
-          const result = await response.json();
-          toast.warning(result.message);
+      if (!csrf) return;
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}auth/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "xsrf-token": csrf,
+          },
+          credentials: "include",
+          body: JSON.stringify(state.user),
         }
-        if (response.status === 201) {
-          const result = await response.json();
-          toast.success(result.message);
-          navigate("/login");
-        }
+      );
+      if (response.status === 401) {
+        const result = await response.json();
+        toast.warning(result.message);
+      }
+      if (response.status === 201) {
+        const result = await response.json();
+        toast.success(result.message);
+        navigate("/login");
+      }
 
-        if(response.status === 400){
-          const result = await response.json();
-          console.log(result.errors)
-        }
-        
-      } else {
-        toast.error("Une erreur est survenue !");
+      if (response.status === 400) {
+        const result = await response.json();
+        console.log(result.errors);
       }
     } catch (error) {
       console.error(error);
       toast.error("Une erreur est survenue !");
     } finally {
-      setIsSubmitting(false); 
+      setIsSubmitting(false);
     }
-  };
+  },[csrf, navigate, state.user])
 
   return (
-    <div className="text-white w-full h-[100vh] flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
+    !csrf ? <Preloader/> :  <div className="text-white w-full h-[100vh] flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
       <div>
         <div className="bg-green-950 w-fit md:w-[500px] border border-green-500 shadow-green-500 rounded-md px-8 py-5 shadow-lg backdrop-filter backdrop-blur relative">
           <h1 className="text-white flex flex-col justify-center items-center font-bold text-center mb-6 gap-3">
@@ -139,7 +136,7 @@ function Register() {
                 )}
               </div>
             ))}
-            
+
             <button
               className="w-full mb-4 text-[18px] mt-6 rounded-full bg-white text-emerald-800 hover:bg-emerald-600 hover:text-white py-2 transition-colors flex justify-center items-center"
               type="submit"
@@ -162,7 +159,8 @@ function Register() {
           </form>
         </div>
       </div>
-    </div>
+    </div> 
+   
   );
 }
 

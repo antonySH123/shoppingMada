@@ -6,6 +6,7 @@ import { LiaEdit, LiaEye, LiaTrashAltSolid } from "react-icons/lia";
 import Dialog from "../../modals/Dialog";
 import { toast } from "react-toastify";
 import useCSRF from "../../../helper/useCSRF";
+import Preloader from "../../loading/Preloader";
 
 function Content() {
   const csrf = useCSRF();
@@ -75,6 +76,7 @@ function Content() {
     fetchData();
   },[fetchData]);
   return (
+    !csrf ? <Preloader/> :
     <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 py-5">
       <div className="py-5">
         <h1 className="text-3xl">Nos produits</h1>

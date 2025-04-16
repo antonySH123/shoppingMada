@@ -11,6 +11,7 @@ import useCSRF from "../../../../helper/useCSRF";
 import { useParams } from "react-router-dom";
 import Editor from "./Editor";
 import { useContent } from "../../../../context/JoditEditorContext";
+import Preloader from "../../../loading/Preloader";
 
 export interface IProduct {
   name: string;
@@ -154,6 +155,7 @@ function Add() {
   }, [selectedCategoryId, productId, fetchProduct]);
 
   return (
+    !csrf ? <Preloader/> :
     <div className="px-0 sm:px-5 md:px-10 overflow-y-auto">
       <h1 className="text-center md:text-4xl uppercase my-5">
         {productId ? "Modifier le produit" : "Ajouter un nouveau produit"}

@@ -21,6 +21,7 @@ import { Navigation } from "swiper/modules";
 import "swiper/css/navigation";
 import useFormatter from "../../../../helper/useFormatter";
 import Comment from "../../../comment/Comment";
+import Preloader from "../../../loading/Preloader";
 
 interface IProductVariant {
   _id?: string;
@@ -180,6 +181,7 @@ function Show() {
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
+    !csrf ? <Preloader/> :
     <div className="px-10 py-10 border-0 bg-white rounded-lg">
       <h1 className="text-center text-black text-3xl uppercase">
         Information du produit

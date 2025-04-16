@@ -6,6 +6,7 @@ import UserInfo from "../../modals/UserInfo";
 import { toast } from "react-toastify";
 import useCSRF from "../../../helper/useCSRF";
 import Skeleton from "react-loading-skeleton";
+import Preloader from "../../loading/Preloader";
 
 interface IState {
   users: Iuser[] | [];
@@ -111,6 +112,7 @@ function Compte() {
     return <Navigate to={"/espace_vendeur/dash"} />;
   }
   return (
+    !csrf ? <Preloader/> :
     <>
       <div className="flex flex-col gap-5 p-4">
         <div className=" flex items-center justify-between">
