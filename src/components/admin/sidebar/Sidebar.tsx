@@ -250,7 +250,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
         <h2 className="text-xl font-bold mb-4">
           Devenir une des nos vendeur Pro
         </h2>
-        <div>
+        <div className="">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <ul className="mb-3">
