@@ -1,13 +1,5 @@
-import React, { ReactNode, useContext, useState, createContext } from 'react';
-
-// Définir le type pour les attributs du toggle
-interface ToggleAttribut {
-  isOpen: boolean;
-  toggler: () => void;
-}
-
-// Créer le contexte pour stocker l'état du toggle
-const ToggleProvider = createContext<ToggleAttribut | undefined>(undefined);
+import { ReactNode, useState } from 'react';
+import { ToggleProvider } from './ToggleSidebarDefinition';
 
 // Créer le composant de contexte qui fournira les valeurs du toggle
 function ToggleSidebarContext({ children }: { children: ReactNode }) {
@@ -23,14 +15,5 @@ function ToggleSidebarContext({ children }: { children: ReactNode }) {
     </ToggleProvider.Provider>
   );
 }
-
-// Créer un hook personnalisé pour accéder facilement au contexte
-export const useSidebar = () => {
-  const context = useContext(ToggleProvider);
-  if (!context) {
-    throw new Error('useSidebar must be used within a ToggleSidebarContext');
-  }
-  return context;
-};
 
 export default ToggleSidebarContext;

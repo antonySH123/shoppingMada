@@ -5,7 +5,7 @@ import {
   LiaImageSolid,
   LiaTimesSolid,
 } from "react-icons/lia";
-import { useCategory } from "../../../../context/ProductContext";
+import { useCategory } from "../../../../context/useCategory";
 import { toast } from "react-toastify";
 import useCSRF from "../../../../helper/useCSRF";
 import { useParams } from "react-router-dom";
@@ -27,6 +27,7 @@ export interface IProduct {
 function createFormDataFromObject(data: Record<string, unknown>): FormData {
   const formData = new FormData();
   Object.keys(data).forEach((key) => {
+    if (key === "photos") return;
     const value = data[key];
     if (typeof value === "object" && value !== null) {
       formData.append(key, JSON.stringify(value));
@@ -40,7 +41,10 @@ function createFormDataFromObject(data: Record<string, unknown>): FormData {
 function Add() {
   const { selectedCategoryId, setSelectedCategoryId } = useCategory();
   const inputFile = useRef<HTMLInputElement | null>(null);
-  const [files, setFiles] = useState<File[]>([]); // Liste des fichiers photo
+  const [files, setFiles] = useState<(File | string)[]>([]); // Existing names and newly selected files
+  const [filePreviews, setFilePreviews] = useState<Record<string, string>>({});
+  const filePreviewsRef = useRef(filePreviews);
+  filePreviewsRef.current = filePreviews;
   const [product, setProduct] = useState<IProduct>({
     name: "",
     price: 0.0,
@@ -56,10 +60,17 @@ function Add() {
   useEffect(() => {
     setProduct((prevProduct) => ({ ...prevProduct, details: content }));
   }, [content]);
+  useEffect(() => () => Object.values(filePreviewsRef.current).forEach((url) => URL.revokeObjectURL(url)), []);
   const { productId } = useParams();
 
   const csrf = useCSRF();
   const handleFileRemove = (index: number) => {
+    const removed = files[index];
+    if (removed instanceof File) {
+      const key = `${removed.name}-${removed.lastModified}`;
+      if (filePreviews[key]) URL.revokeObjectURL(filePreviews[key]);
+      setFilePreviews((prev) => { const next = { ...prev }; delete next[key]; return next; });
+    }
     setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
 
@@ -73,9 +84,11 @@ function Add() {
     event.preventDefault();
     try {
       const formData = createFormDataFromObject(product);
+      formData.set("details", content);
       files.forEach((photo) => {
-        formData.append("image", photo); // Changer de "image" à "photos"
+        if (photo instanceof File) formData.append("image", photo);
       });
+      formData.append("photos", JSON.stringify(files.filter((photo): photo is string => typeof photo === "string")));
 
       if (csrf) {
         const method = productId ? "PUT" : "POST"; // Utiliser PUT si productId existe (modification)
@@ -92,19 +105,17 @@ function Add() {
           body: formData,
         });
 
+        const result = await response.json().catch(() => null);
         if (!response.ok) {
-          toast.error("Une erreur s'est produite!");
-          resetForm();
+          toast.error(result?.message || "Une erreur s'est produite!");
+          return;
         }
 
-        if (response.status === 201 || response.status === 200) {
-          const result = await response.json();
-          toast.success(result.message);
-          resetForm();
-        }
+        toast.success(result?.message || "Produit enregistré avec succès.");
+        resetForm();
       }
     } catch (error) {
-      console.log(error);
+      toast.error(error instanceof Error ? error.message : "Impossible d'enregistrer le produit.");
     }
   };
 
@@ -121,6 +132,9 @@ function Add() {
     });
     setSelectedCategoryId(null);
     setFiles([]);
+    Object.values(filePreviews).forEach((url) => URL.revokeObjectURL(url));
+    setFilePreviews({});
+    setNewContent("");
   };
   const fetchProduct = useCallback(async () => {
     try {
@@ -172,7 +186,7 @@ function Add() {
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-3 gap-5">
                 <div className="w-full flex gap-3 flex-col">
                   <label>Nom du produit</label>
-                  <input
+                    <input
                     type="text"
                     className="w-full border border-green-500 py-2"
                     name="name"
@@ -242,7 +256,7 @@ function Add() {
                           file.type.startsWith("image/") && (
                             <div className="flex items-center space-x-2">
                               <img
-                                src={URL.createObjectURL(file)}
+                              src={filePreviews[`${file.name}-${file.lastModified}`]}
                                 alt={file.name}
                                 className="w-[100px] h-[100px] object-cover rounded"
                               />
@@ -268,10 +282,21 @@ function Add() {
                   ref={inputFile}
                   hidden
                   type="file"
+                  accept="image/jpeg,image/png,image/webp"
                   name="photos"
                   onChange={(e) => {
                     const selectedFiles = Array.from(e.target.files || []);
-                    setFiles((prevFiles) => [...prevFiles, ...selectedFiles]);
+                    const acceptedFiles = selectedFiles.slice(0, Math.max(0, 5 - files.length));
+                    setFiles((prevFiles) => [...prevFiles, ...acceptedFiles].slice(0, 5));
+                    setFilePreviews((prev) => {
+                      const next = { ...prev };
+                      acceptedFiles.forEach((file) => {
+                        const key = `${file.name}-${file.lastModified}`;
+                        if (!next[key]) next[key] = URL.createObjectURL(file);
+                      });
+                      return next;
+                    });
+                    e.target.value = "";
                   }}
                   multiple
                 />

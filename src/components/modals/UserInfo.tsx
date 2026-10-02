@@ -12,24 +12,26 @@ const UserInfo: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4"
+      className="market-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-5"
       onClick={onClose}
+      role="presentation"
     >
       <div
-        className="relative w-full max-w-md sm:max-w-lg md:max-w-xl max-h-screen overflow-y-auto bg-white rounded-lg shadow-lg"
+        className="market-modal-panel relative max-h-[88dvh] w-full max-w-2xl overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
       >
-        {/* Close button inside modal */}
         <button
-          className="absolute top-2 right-2 text-gray-600 hover:text-gray-800 rounded-full bg-gray-200 hover:bg-gray-300 p-1 z-10"
+          type="button"
+          aria-label="Fermer la fenêtre"
+          className="market-modal-close absolute right-4 top-4 z-10"
           onClick={onClose}
         >
           <LiaTimesSolid size={20} />
         </button>
 
-        <div className="p-6">
-          {children}
-        </div>
+        <div className="p-6 sm:p-8">{children}</div>
       </div>
     </div>
   );

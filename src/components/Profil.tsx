@@ -1,9 +1,4 @@
-import {
-  LiaAtSolid,
-  LiaUser,
-  LiaUserCircle,
-  LiaUserCogSolid,
-} from "react-icons/lia";
+import { LiaAtSolid, LiaUserCircle, LiaUserCogSolid } from "react-icons/lia";
 import { Link } from "react-router-dom";
 import UserInfo from "./modals/UserInfo";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
@@ -55,10 +50,10 @@ function Profil() {
           },
           credentials: "include",
           body: JSON.stringify(userProfil),
-        }
+        },
       );
       if (!response.ok) {
-        console.log("Erreur");
+        toast.error("Impossible de mettre � jour le profil.");
       }
       if (response.status === 201) {
         const result = await response.json();
@@ -76,33 +71,32 @@ function Profil() {
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="sticky top-0 left-0 w-full min-h-screen bg-gray-50 flex justify-center items-start py-10 px-4 md:px-10">
-      <div className="w-full max-w-6xl flex flex-col md:flex-row bg-white shadow-2xl rounded-lg overflow-hidden  mt-14 sticky top-24">
+    <div className="profile-page-root w-full py-8 md:py-12">
+      <div className="profile-card page-container mt-2 flex flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_20px_60px_rgba(24,53,36,0.09)] md:mt-0 md:flex-row">
         {/* Colonne Profil */}
-        <div className="w-full md:w-1/3 p-6 flex flex-col items-center bg-gray-100">
-          <div className="my-6">
-            <LiaUserCircle size={120} />
+        <div className="profile-summary flex w-full flex-col items-center p-6 md:w-1/3 md:p-8">
+          <div className="profile-avatar my-6">
+            <LiaUserCircle size={94} />
           </div>
           <div className="flex flex-col gap-4 text-center  w-full">
-            <h1 className="flex items-center gap-3 justify-center">
-              <LiaUser size={24} />
-              <span>{user?.personnalInfo_id?.firstName || <Skeleton />}</span>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+              {user?.personnalInfo_id?.firstName || <Skeleton />}
             </h1>
-            <h1 className="flex items-center gap-3 justify-center">
-              <LiaAtSolid size={24} />
-              <span>{user?.personnalInfo_id?.phoneNumber || <Skeleton />}</span>
-            </h1>
-            <h1 className="flex items-center gap-3 justify-center">
-              <LiaUserCogSolid size={24} />
+            <p className="-mt-3 text-sm text-gray-500">{user?.email}</p>
+            <div className="profile-role-badge mx-auto flex items-center gap-2">
+              <LiaUserCogSolid size={17} />
               <span>
                 {user?.userGroupMember_id.usergroup_id.name || <Skeleton />}
               </span>
-            </h1>
+            </div>
+            {user?.personnalInfo_id?.phoneNumber && (
+              <p className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                <LiaAtSolid size={17} />
+                {user.personnalInfo_id.phoneNumber}
+              </p>
+            )}
             {user?.userGroupMember_id.usergroup_id.name === "Client" && (
-              <Link
-                to="/vendeur"
-                className="flex items-center justify-center gap-2 mt-4 border border-green-500 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
-              >
+              <Link to="/vendeur" className="market-button-primary mt-2 w-full">
                 <FaHandshake size={20} />
                 Devenir vendeur
               </Link>
@@ -111,22 +105,32 @@ function Profil() {
         </div>
 
         {/* Colonne Détails */}
-        <div className="w-full md:w-2/3 p-6">
-          <h1 className="text-2xl font-bold mb-6">Informations personnelles</h1>
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-2">
+        <div className="w-full p-6 md:w-2/3 md:p-9">
+          <div className="mb-7">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
+              Mon espace
+            </p>
+            <h2 className="text-2xl font-bold tracking-tight text-gray-900">
+              Informations personnelles
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Vos coordonn�es et votre activit� sur ShopInMada.
+            </p>
+          </div>
+          <div className="profile-information-grid grid gap-3 sm:grid-cols-2">
+            <div className="profile-information-item">
               <span className="font-semibold">Nom :</span>
               <span>{user?.personnalInfo_id?.firstName || <Skeleton />}</span>
             </div>
-            <div className="flex gap-2">
+            <div className="profile-information-item">
               <span className="font-semibold">Prénom :</span>
               <span>{user?.personnalInfo_id?.lastName || <Skeleton />}</span>
             </div>
-            <div className="flex gap-2">
+            <div className="profile-information-item">
               <span className="font-semibold">Adresse :</span>
               <span>{user?.personnalInfo_id?.adresse || <Skeleton />}</span>
             </div>
-            <div className="flex gap-2">
+            <div className="profile-information-item">
               <span className="font-semibold">Contact :</span>
               <span>{user?.personnalInfo_id?.phoneNumber || <Skeleton />}</span>
             </div>
@@ -142,78 +146,101 @@ function Profil() {
 
       {/* Modale */}
       <UserInfo isOpen={isModalOpen} onClose={closeModal}>
-        <h2 className="text-xl font-bold mb-4">Informations personnelles</h2>
-        <form ref={form} onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            name="firstName"
-            placeholder="Votre nom"
-            value={userProfil.firstName}
-            onChange={handleChange}
-            className="w-full border border-green-500 rounded px-4 py-2"
-          />
-          <input
-            type="text"
-            name="lastName"
-            placeholder="Votre prénom"
-            value={userProfil.lastName}
-            onChange={handleChange}
-            className="w-full border border-green-500 rounded px-4 py-2"
-          />
-          <input
-            type="text"
-            name="adresse"
-            placeholder="Adresse"
-            value={userProfil.adresse}
-            onChange={handleChange}
-            className="w-full border border-green-500 rounded px-4 py-2"
-          />
-          <div>
-            <label className="mr-4">Sexe :</label>
-            <input
-              type="radio"
-              id="male"
-              name="gender"
-              value="male"
-              onChange={handleChange}
-            />
-            <label htmlFor="male" className="mr-4 ml-1">
-              Homme
-            </label>
-            <input
-              type="radio"
-              id="female"
-              name="gender"
-              value="female"
-              onChange={handleChange}
-            />
-            <label htmlFor="female" className="ml-1">
-              Femme
-            </label>
-          </div>
-          <input
-            type="text"
-            name="phoneNumber"
-            placeholder="Numéro téléphone"
-            value={userProfil.phoneNumber}
-            onChange={handleChange}
-            className="w-full border border-green-500 rounded px-4 py-2"
-          />
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="submit"
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-            >
-              Valider
-            </button>
-            <button
-              onClick={closeModal}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-            >
-              Fermer
-            </button>
-          </div>
-        </form>
+        <div className="personal-info-modal">
+          <header className="personal-info-modal-heading">
+            <span className="personal-info-modal-icon">
+              <LiaUserCircle size={25} />
+            </span>
+            <div>
+              <p className="personal-info-modal-eyebrow">Mon profil</p>
+              <h2>Informations personnelles</h2>
+              <p>Quelques détails pour compléter votre espace ShopInMada.</p>
+            </div>
+          </header>
+          <form
+            ref={form}
+            onSubmit={handleSubmit}
+            className="personal-info-form"
+          >
+            <div className="personal-info-fields">
+              <label className="personal-info-field">
+                Nom
+                <input
+                  type="text"
+                  name="firstName"
+                  placeholder="Votre nom"
+                  value={userProfil.firstName}
+                  onChange={handleChange}
+                />
+              </label>
+              <label className="personal-info-field">
+                Prénom
+                <input
+                  type="text"
+                  name="lastName"
+                  placeholder="Votre prénom"
+                  value={userProfil.lastName}
+                  onChange={handleChange}
+                />
+              </label>
+              <label className="personal-info-field personal-info-field-wide">
+                Adresse
+                <input
+                  type="text"
+                  name="adresse"
+                  placeholder="Votre adresse"
+                  value={userProfil.adresse}
+                  onChange={handleChange}
+                />
+              </label>
+              <fieldset className="personal-info-gender">
+                <legend>Sexe</legend>
+                <label className="personal-info-gender-option">
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="male"
+                    checked={userProfil.gender === "male"}
+                    onChange={handleChange}
+                  />
+                  Homme
+                </label>
+                <label className="personal-info-gender-option">
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="female"
+                    checked={userProfil.gender === "female"}
+                    onChange={handleChange}
+                  />
+                  Femme
+                </label>
+              </fieldset>
+              <label className="personal-info-field personal-info-field-wide">
+                Numéro de téléphone
+                <input
+                  type="tel"
+                  name="phoneNumber"
+                  placeholder="Ex. 034 00 000 00"
+                  value={userProfil.phoneNumber}
+                  onChange={handleChange}
+                />
+              </label>
+            </div>
+            <div className="personal-info-actions">
+              <button type="submit" className="market-button-primary">
+                Enregistrer
+              </button>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="market-button-secondary"
+              >
+                Fermer
+              </button>
+            </div>
+          </form>
+        </div>
       </UserInfo>
     </div>
   );

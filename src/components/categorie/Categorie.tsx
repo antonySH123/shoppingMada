@@ -7,7 +7,7 @@ import {
 } from "react-icons/fa";
 
 import { toast } from "react-toastify";
-import { useCategory } from "../../context/ProductContext";
+import { useCategory } from "../../context/useCategory";
 import useCSRF from "../../helper/useCSRF";
 import Preloader from "../loading/Preloader";
 
@@ -55,7 +55,6 @@ function Categorie() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "69420",
           },
           body: JSON.stringify(boutikInfo.product_category),
         }
@@ -144,21 +143,17 @@ function Categorie() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "69420",
           },
           body: JSON.stringify(newCategory),
         }
       );
 
-      if (!sendFrom.ok) {
-        console.log("error");
-      }
+      if (!sendFrom.ok) throw new Error("La catégorie n'a pas pu être créée.");
 
       if (sendFrom.status === 201) {
         const response = await sendFrom.json();
         setNewCategory({ ...newCategory, name: "", slug: "", parent: null });
         setSelectedCategoryId(response.category.name);
-        console.log(response.category._id);
         
         if(csrf){
         const update = await fetch(`${import.meta.env.REACT_API_URL}boutiks/newCategories`,{
@@ -181,7 +176,7 @@ function Categorie() {
         
       }
     } catch (error) {
-      console.log(error);
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la création de la catégorie.");
     }
   };
 

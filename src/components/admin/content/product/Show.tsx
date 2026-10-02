@@ -105,7 +105,6 @@ function Show() {
 
   const handleVariantChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-    console.log(value)
     setVariant((prev) => {
       return {
         ...prev,
@@ -121,7 +120,6 @@ function Show() {
 
   const handleSubmitNewVariant = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log(variant);
     if (csrf) {
       try {
         const response = await fetch(
@@ -248,7 +246,7 @@ function Show() {
       </div>
 
       <div className="mb-3">
-        <h1 className="font-semibold mt-5 mb-3">Variants :</h1>
+        <h1 className="font-semibold mt-5 mb-3">Variantes :</h1>
         <form onSubmit={handleSubmitNewVariant}>
           <div className="flex items-center gap-3 ">
             <strong>Ajouter une variante :</strong>

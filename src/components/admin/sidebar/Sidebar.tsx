@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import number from "./../../../data/number.json";
+import React, { useEffect, useRef } from "react";
 import {
   FaHome,
   FaRegCreditCard,
@@ -10,13 +9,9 @@ import {
   FaUserCog,
   FaWrench,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../../helper/useAuth";
-import { LiaCheckSolid,  LiaTimesSolid, LiaUser } from "react-icons/lia";
-import UserInfo from "../../modals/UserInfo";
-import useFormatter from "../../../helper/useFormatter";
-import useCSRF from "../../../helper/useCSRF";
-import { toast } from "react-toastify";
+import { LiaTimesSolid, LiaUser } from "react-icons/lia";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -25,76 +20,39 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
   const { user } = useAuth();
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const closeModal = () => setIsModalOpen(false);
-  const { priceInArriary } = useFormatter();
-  const [selectedNumber, setSelectedNumber] = useState<string | null>(null);
-  const [transactionPhoneNumber, setTransactionPhoneNumber] =
-    useState<string>();
-  const [reference, setReference] = useState<string>("");
-  const handleSelect = (num: string) => {
-    setSelectedNumber(num);
-  };
-  const csrf = useCSRF();
+  const location = useLocation();
+  const previousPath = useRef(location.pathname);
+  const navClass = (path: string) => `admin-nav-link ${location.pathname === path ? "admin-nav-link-active" : ""}`;
 
-  const handleValidate = async () => {
-    const data = {
-      transactionPhoneNumber: transactionPhoneNumber,
-      selectedPhoneNumber: selectedNumber,
-      refTransaction: reference,
-    };
+  useEffect(() => {
+    if (previousPath.current === location.pathname) return;
+    previousPath.current = location.pathname;
+    if (window.innerWidth < 768) toggleSidebar();
+  }, [location.pathname, toggleSidebar]);
 
-    if (csrf) {
-      const response = await fetch(
-        `${import.meta.env.REACT_API_URL}subscribe`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "xsrf-token": csrf,
-          },
-          credentials: "include",
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (response.ok) {
-        const result = await response.json();
-        if (response.status === 201) {
-          toast.success(result.message);
-        } else {
-          toast.warning(result.message);
-        }
-      }
-    }
-    setIsModalOpen(false);
-    setSelectedNumber(null);
-    setTransactionPhoneNumber("");
-    setReference("");
-  };
   return (
+    <>
+    {!isCollapsed && <button type="button" aria-label="Fermer le menu" onClick={toggleSidebar} className="fixed inset-0 z-30 bg-gray-950/40 md:hidden" />}
     <div
-      className={`bg-green-500 h-full ${
-        isCollapsed ? "hidden" : " w-full sm:w-64"
-      } transition-all duration-300 px-5 overflow-hidden`}
+      className={`admin-sidebar fixed inset-y-0 left-0 z-40 h-screen w-72 overflow-x-hidden overflow-y-auto bg-[#10271b] px-5 transition-transform duration-300 md:relative md:z-auto md:h-full md:w-64 md:translate-x-0 ${isCollapsed ? "-translate-x-full md:hidden" : "translate-x-0"}`}
     >
       {/* Header */}
       <div
-        className={`flex items-center justify-between py-4 border-b-[1px] border-white ${
+        className={`flex items-center justify-between border-b border-white/15 py-5 ${
           isCollapsed && "hidden"
         }`}
       >
-        <h1 className="text-white text-center w-full">
-          <span className="flex items-center gap-2">
-            <LiaUser /> <>{user && user.username}</>
+        <h1 className="w-full text-white">
+          <span className="flex items-center gap-2 text-left font-semibold">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10"><LiaUser /></span> <>{user && user.username}</>
           </span>
-          <span className="flex justify-between items-center w-full">
-            <strong className="text-sm">
+          <span className="mt-3 flex w-full items-center justify-between gap-2 text-white/65">
+            <strong className="text-xs font-medium">
               {user?.boutiks_id && user?.boutiks_id.plan}
             </strong>
             {user?.boutiks_id && user?.boutiks_id.subscription_id && (
-              <strong className="text-sm">
-                Expiration:{" "}
+              <strong className="text-right text-[10px] font-medium">
+                Expire le {" "}
                 {new Date(
                   user.boutiks_id.subscription_id.endDate
                 ).toLocaleDateString("fr-FR")}
@@ -102,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
             )}
           </span>
         </h1>
-        <button onClick={toggleSidebar} className="block sm:hidden">
+        <button onClick={toggleSidebar} aria-label="Fermer le menu" className="block rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white md:hidden">
           <LiaTimesSolid  size={20} />
         </button>
       </div>
@@ -114,7 +72,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
             isCollapsed ? "justify-center" : "justify-normal"
           }`}
         ></div>
-        <div className=" border-b-[1px] border-white">
+        <div className="border-b border-white/15 pb-3">
           <p
             className={`text-[14px] font-extrabold leading-[16px] text-white ${
               isCollapsed && "hidden"
@@ -129,7 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
           >
             <Link
               to="/espace_vendeur/dash"
-              className="flex items-center gap-4 text-white"
+              className={navClass("/espace_vendeur/dash")}
             >
               <FaTachometerAlt />
               {!isCollapsed && (
@@ -143,7 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                 <>
                   <Link
                     to="/espace_vendeur/products"
-                    className="flex items-center gap-4 text-white"
+                    className={navClass("/espace_vendeur/products")}
                   >
                     <FaShoppingBag />
                     {!isCollapsed && (
@@ -154,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                   </Link>
                   <Link
                     to="/espace_vendeur/commandes"
-                    className="flex items-center gap-4 text-white"
+                    className={navClass("/espace_vendeur/commandes")}
                   >
                     <FaShoppingBasket />
                     {!isCollapsed && (
@@ -169,8 +127,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
         </div>
       </div>
 
-      {/* Settings Section */}
-      <div className="pt-5 border-b-[1px] border-white">
+      {/* Section param�tres */}
+      <div className="border-b border-white/15 pt-5 pb-3">
         <p
           className={`text-[14px] font-extrabold leading-[16px] text-white ${
             isCollapsed && "hidden"
@@ -186,7 +144,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
           {user && user?.userGroupMember_id.usergroup_id.name === "Boutiks" && (
             <Link
               to="/espace_vendeur/boutiksInfo"
-              className="flex items-center gap-4 text-white"
+              className={navClass("/espace_vendeur/boutiksInfo")}
             >
               <FaUserCog />
               {!isCollapsed && (
@@ -198,7 +156,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
           )}
           <Link
             to="/espace_vendeur/abonnements"
-            className="flex items-center gap-4 text-white"
+            className={navClass("/espace_vendeur/abonnements")}
           >
             <FaRegCreditCard />
             {!isCollapsed && (
@@ -209,7 +167,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
             <>
               <Link
                 to="/espace_vendeur/shopaccounts"
-                className="flex items-center gap-4 text-white"
+                className={navClass("/espace_vendeur/shopaccounts")}
               >
                 <FaWrench />
                 {!isCollapsed && (
@@ -220,13 +178,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
               </Link>
             </>
           )}
-          <Link to="/" className="flex items-center gap-4 text-white">
+          <Link to="/" className={navClass("/")}>
             <FaHome />
             {!isCollapsed && (
               <span className="text-[14px] leading-[20px]">Accueil</span>
             )}
           </Link>
-          <Link to="/logout" className="flex items-center gap-4 text-white">
+          <Link to="/logout" className="admin-nav-link">
             <FaSignOutAlt />
             {!isCollapsed && (
               <span className="text-[14px] leading-[20px]">Déconnexion</span>
@@ -238,105 +196,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
       {/* Toggle Button */}
 
       {user?.boutiks_id && !user?.boutiks_id.subscription_id && (
-        <button
-          className="bg-white w-full py-3 rounded-md mt-5 text-green-500 shadow"
-          onClick={() => setIsModalOpen(true)}
-        >
-          Upgrade PRO
-        </button>
+        <Link to="/espace_vendeur/upgrade-pro" className="mt-5 flex w-full items-center justify-center rounded-xl border border-emerald-300/20 bg-gradient-to-r from-emerald-500/20 to-cyan-400/10 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-950/20 transition hover:border-emerald-200/40 hover:from-emerald-500/30">
+          D�couvrir ShopInMada Pro
+        </Link>
       )}
-
-      <UserInfo isOpen={isModalOpen} onClose={closeModal}>
-        <h2 className="text-xl font-bold mb-4">
-          Devenir une des nos vendeur Pro
-        </h2>
-        <div className="">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <ul className="mb-3">
-                <li className="flex items-center gap-3">
-                  <LiaCheckSolid color="green" size={20} />{" "}
-                  <span>
-                    Annonces illimitées : Publiez autant de produits que vous le
-                    souhaitez.
-                  </span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <LiaCheckSolid color="green" size={20} />{" "}
-                  <span>
-                    Mise en avant premium: Vos produits apparaissent en priorité
-                    dans les recherches.
-                  </span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <LiaCheckSolid color="green" size={20} />{" "}
-                  <span>Support prioritaire: Assistance rapide et dédiée.</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <LiaCheckSolid color="green" size={20} />{" "}
-                  <span>Promotions & Réductions exclusives.</span>
-                </li>
-              </ul>
-
-              <div className="px-2 py-2 rounded w-full  border-green-500 border-2">
-                <h2>Mensuel</h2>
-                <strong>{priceInArriary(50000)}</strong>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="mb-7">
-                Veuillez choisir l'un des operateur que vous allez envoyer votre
-                payement
-              </h3>
-              {number.map((element, index) => (
-                <div
-                  onClick={() => handleSelect(element.phonenumber)}
-                  className={`px-2 py-2 rounded w-full mb-2 border-2 ${
-                    selectedNumber === element.phonenumber && "border-green-500"
-                  }`}
-                  key={index + 1}
-                >
-                  <h2>{element.name}</h2>
-                  <strong>{element.phonenumber}</strong>
-                </div>
-              ))}
-            </div>
-          </div>
-          <hr />
-          <div>
-            <h3 className="m-2">
-              Veuillez entrer si aprés le numéro que vous avez utilisé pour
-              transfert l'argent
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="text"
-                className="px-2 py-2 rounded w-full mb-2 border-2"
-                placeholder="votre numéro"
-                value={transactionPhoneNumber}
-                onChange={(e) => setTransactionPhoneNumber(e.target.value)}
-              />
-
-              <input
-                type="text"
-                className="px-2 py-2 rounded w-full mb-2 border-2"
-                placeholder="Reference du paiements"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <button
-            className="w-full text-center px-2 py-2 bg-green-500 rounded text-white"
-            onClick={handleValidate}
-          >
-            Valider
-          </button>
-        </div>
-      </UserInfo>
     </div>
+    </>
   );
 };
 

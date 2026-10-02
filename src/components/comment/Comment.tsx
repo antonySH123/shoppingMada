@@ -2,6 +2,7 @@ import React, { FormEvent, useCallback, useEffect, useReducer } from "react";
 import { LiaCommentAltSolid, LiaPaperPlane } from "react-icons/lia";
 import { toast } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
+import { formatFrenchDateTime } from "../../helper/locale";
 type CommentProps = {
   product_id: string;
   csrf: string;
@@ -96,7 +97,7 @@ const Comment: React.FC<CommentProps> = ({
       }
     } catch (error) {
       if (error instanceof Error) {
-        console.log(error.message);
+        toast.error(error.message);
       }
     }
   };
@@ -112,11 +113,11 @@ const Comment: React.FC<CommentProps> = ({
 
       if (response.ok && response.status == 200) {
         const result = await response.json();
-        console.log(result.data);
+
         dispatch({ type: "FETCH_SUCCESS", payload: result.data });
       }
     } catch (error) {
-      if (error instanceof Error) console.log(error.message);
+      if (error instanceof Error) dispatch({ type: "FETCH_SUCCESS", payload: [] });
     }
   },[product_id])
   useEffect(() => {
@@ -125,44 +126,51 @@ const Comment: React.FC<CommentProps> = ({
   }, [fetchComment, product_id, state.id]);
   return (
     <React.Fragment>
-      <section>
-        <div className=" py-5">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold">Commentaires</h1>
-            <p className="flex items-center gap-2 font-bold">
-              <strong>{state.comments.length}</strong>
-              <LiaCommentAltSolid />
-            </p>
+      <section className="comments-section market-card p-5 sm:p-7">
+        <div className="mb-5 flex items-end justify-between gap-4 border-b border-gray-100 pb-5">
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Votre avis compte</p>
+            <h2 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">Commentaires</h2>
           </div>
-          <hr />
+          <div className="comments-count flex shrink-0 items-center gap-2">
+            <strong>{state.comments.length}</strong>
+            <LiaCommentAltSolid aria-hidden="true" />
+            <span className="sr-only">commentaires</span>
+          </div>
+        </div>
+        <div className="comments-list">
           {state.comments.length > 0 ? (
             state.comments.map((element, index) => (
-              <>
-                <div key={index + 1} className="py-3 px-3">
-                  <div className="flex gap-3 w-full items-center justify-between">
-                    <h2>{element.owner_id?.username}</h2>
-                    <strong className="text-sm">
-                      {element.date && new Date(element.date).toLocaleString()}
-                    </strong>
+              <article key={element._id || index} className="comment-item">
+                  <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                    <h3 className="font-bold text-gray-900">{element.owner_id?.username || "Client"}</h3>
+                    <time className="text-xs font-medium text-gray-400">
+                      {formatFrenchDateTime(element.date)}
+                    </time>
                   </div>
-                  <div>
-                    <p>{element.comment}</p>
+                  <div className="mt-3">
+                    <p className="whitespace-pre-wrap text-sm leading-7 text-gray-600">{element.comment}</p>
                   </div>
-                </div>
-                {state.comments.length - 1 != index && <hr />}
-              </>
+              </article>
             ))
           ) : (
-            <div className="py-3">
-              <h1>Aucun commentaire</h1>
+            <div className="comments-empty">
+              <span className="comments-empty-icon"><LiaCommentAltSolid /></span>
+              <h3 className="font-semibold text-gray-800">Aucun commentaire pour le moment</h3>
+              <p className="mt-1 text-sm text-gray-500">Partagez votre expérience et soyez le premier à donner votre avis.</p>
             </div>
           )}
-          <hr />
-          <form action="" className="py-3" onSubmit={handleSubmit}>
-            <div className="w-full h-fit flex bg-green-500 rounded-full">
+        </div>
+          <form action="" className="comments-form mt-6 border-t border-gray-100 pt-5" onSubmit={handleSubmit}>
+            <label htmlFor="product-comment" className="mb-2 block text-sm font-semibold text-gray-800">Ajouter un commentaire</label>
+            <div className="comments-composer">
               <textarea
+                id="product-comment"
                 name="comment"
-                className="h-max min-h-10  rounded-full border px-5 py-2 w-full"
+                className="market-input w-full resize-y"
+                rows={3}
+                placeholder="Qu’avez-vous pensé de ce produit ?"
+                required
                 value={state.newComment.comment}
                 onChange={(e) =>
                   dispatch({
@@ -175,10 +183,12 @@ const Comment: React.FC<CommentProps> = ({
                   })
                 }
               ></textarea>
-              <div className="w-15 relative top-0 right-0 bg-red-400">
+              <div className="comments-submit-wrap">
                 <button
                   type="submit"
-                  className="absolute  right-0 bottom-[1.5px] h-16 w-16 flex items-center justify-center  rounded-full text-gray-700"
+                  aria-label="Envoyer le commentaire"
+                  disabled={state.loading}
+                  className="comments-submit"
                 >
                   {state.loading ? (
                     <>
@@ -201,13 +211,12 @@ const Comment: React.FC<CommentProps> = ({
                       </svg>
                     </>
                   ) : (
-                    <LiaPaperPlane size={30} />
+                    <LiaPaperPlane size={21} />
                   )}
                 </button>
               </div>
             </div>
           </form>
-        </div>
       </section>
     </React.Fragment>
   );

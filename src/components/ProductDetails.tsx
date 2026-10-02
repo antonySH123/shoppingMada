@@ -1,5 +1,5 @@
 import IProduct from "../Interface/IProduct";
-import { FormEvent, useEffect, useReducer } from "react";
+import { FormEvent, useEffect, useReducer, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import useFormatter from "../helper/useFormatter";
 import parse from "html-react-parser";
@@ -103,6 +103,7 @@ const reducer = (state: IState, action: Action): IState => {
 
 function ProductDetails() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [activePhoto, setActivePhoto] = useState(0);
   const { id } = useParams();
   const { priceInArriary } = useFormatter();
   const csrf = useCSRF();
@@ -184,41 +185,40 @@ function ProductDetails() {
     <Preloader />
   ) : (
     <>
-      <div className="px-10 py-5 grid grid-cols-1 sm:grid-cols-1 md:grid-cols-5 gap-5">
-        <div className="py-10 col-span-2">
-          <img
-            src={`${import.meta.env.REACT_API_URL}uploads/${
-              state.product && state.product.photos && state.product.photos[0]
-            }`}
-            alt=""
-            className="w-full mt-10 rounded-md"
-          />
-          <div className="grid grid-cols-4 gap-3">
-            {state.product &&
-              state.product.photos &&
-              state.product.photos.map((photo, index) => {
-                if (index != 0) {
-                  return (
-                    <div
-                      className="w-full mt-10 rounded-md h-32"
-                      key={index + 1}
-                    >
-                      <img
-                        src={`${import.meta.env.REACT_API_URL}uploads/${photo}`}
-                        alt=""
-                        className="w-full h-full object-contain"
-                        key={index + 1}
-                      />
-                    </div>
-                  );
-                }
-              })}
+      <div className="product-detail-layout market-container grid grid-cols-1 gap-5 py-7 sm:gap-7 md:py-10">
+        <article className="product-main-card market-card min-w-0">
+          <div className="product-gallery">
+            <div className="product-gallery-stage">
+              {state.product?.photos?.length ? (
+                <img
+                  src={`${import.meta.env.REACT_API_URL}uploads/${state.product.photos[activePhoto] || state.product.photos[0]}`}
+                  alt={state.product.name}
+                  className="product-gallery-active"
+                />
+              ) : (
+                <div className="product-gallery-empty">Image indisponible</div>
+              )}
+            </div>
+            {(state.product?.photos?.length || 0) > 1 && (
+              <div className="product-gallery-thumbnails" aria-label="Galerie photos du produit">
+                {state.product?.photos?.map((photo, index) => (
+                  <button
+                    type="button"
+                    key={`${photo}-${index}`}
+                    className={`product-gallery-thumbnail ${activePhoto === index ? "is-active" : ""}`}
+                    onClick={() => setActivePhoto(index)}
+                    aria-label={`Afficher la photo ${index + 1}`}
+                    aria-pressed={activePhoto === index}
+                  >
+                    <img src={`${import.meta.env.REACT_API_URL}uploads/${photo}`} alt="" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-        <div className="py-10 col-span-2">
-          <div className="py-10 flex flex-col gap-5">
-            <h1 className="text-3xl">Informations sur le produit</h1>
-            <div className="bg-lime-100 flex justify-between p-5">
+          <div className="product-details-copy flex min-w-0 flex-col gap-5 p-5 sm:p-7">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Détails du produit</p>
+            <div className="product-price-row flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
               <p>
                 <strong>
                   {state.product &&
@@ -234,22 +234,19 @@ function ProductDetails() {
                 </strong>
               </p>
             </div>
-            <p className="capitalize">
+            <p className="capitalize leading-7 text-gray-600">
               {state.product &&
                 state.product.description &&
                 parse(state.product.description)}
             </p>
-            <hr />
-            <div className="text-sm text-justify">
+            <div className="product-description text-sm leading-7 text-gray-600">
               {state.product &&
                 state.product.details &&
                 parse(state.product.details)}
             </div>
-            <hr />
-            <div>
-              <p>
-                <strong>Variant</strong>
-              </p>
+            {(state.product?.variant?.some((variant) => variant.values.length > 0) ?? false) && (
+            <div className="border-t border-gray-100 pt-4">
+              <p className="mb-3 text-sm font-bold text-gray-900">Choisir une option</p>
               <div>
                 {state.product &&
                   state.product.variant &&
@@ -259,12 +256,13 @@ function ProductDetails() {
                       <div className="flex gap-2">
                         {variant.values.map((v, idx) => (
                           <button
+                            type="button"
                             key={idx + 1}
-                            className={`px-4 py-2 rounded ${
+                            className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
                               state.selectedVariant &&
                               state.selectedVariant[variant.name] === v.value
-                                ? "bg-green-500 text-white"
-                                : "bg-gray-100"
+                                ? "border-emerald-700 bg-emerald-700 text-white"
+                                : "border-gray-200 bg-white text-gray-700 hover:border-emerald-300"
                             }`}
                             onClick={() => {
                               dispatch({
@@ -274,9 +272,6 @@ function ProductDetails() {
                                   value: v.value,
                                 },
                               });
-
-                              console.log(state.totalPrice);
-                              console.log(state.counter);
                             }}
                           >
                             {v.value}
@@ -287,31 +282,32 @@ function ProductDetails() {
                   ))}
               </div>
             </div>
+            )}
           </div>
-        </div>
+        </article>
         <form
           method="post"
           action=""
-          className="py-20  "
+          className="product-purchase-form"
           onSubmit={handleSubmit}
         >
-          <div className="flex flex-col col-span-1 gap-10 border border-gray-50  shadow h-auto py-5">
+          <div className="product-purchase-card market-card sticky top-24 flex flex-col gap-6 p-5 sm:p-6">
             <div className="px-5">
-              <h4 className="mb-2">
+              <h4 className="mb-3 text-sm font-bold text-gray-900">
                 <strong>Vendu par</strong>
               </h4>
               <ul>
-                <li className="text-sm mb-1 flex items-center gap-2">
+                <li className="mb-2 flex items-center gap-2 text-sm text-gray-600">
                   {" "}
                   <LiaBuildingSolid size={15} />{" "}
                   {state.product && state.product.boutiks_id.name}
                 </li>
-                <li className="text-sm mb-1 flex items-center gap-2">
+                <li className="mb-2 flex items-center gap-2 text-sm text-gray-600">
                   {" "}
                   <LiaPhoneSolid size={15} />{" "}
                   {state.product && state.product.boutiks_id.phoneNumber}
                 </li>
-                <li className="text-sm mb-1 flex items-center gap-2">
+                <li className="mb-2 flex items-center gap-2 text-sm text-gray-600">
                   {" "}
                   <LiaMapMarkedSolid size={15} />{" "}
                   {state.product && state.product.boutiks_id.adresse}
@@ -319,12 +315,12 @@ function ProductDetails() {
               </ul>
             </div>
             <div className="px-5">
-              <p className="mb-2">
+              <p className="mb-2 text-sm font-bold text-gray-900">
                 <strong>Quantités</strong>
               </p>
               <div className="flex items-center gap-1">
                 <button
-                  className="px-3 py-2 bg-gray-100 text-lg font-bold"
+                  className="quantity-stepper rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-lg font-bold"
                   type="button"
                   onClick={() =>
                     dispatch({ type: "DECREMENT", payload: undefined })
@@ -335,13 +331,13 @@ function ProductDetails() {
                 <input
                   type="text"
                   name="quantity"
-                  className="py-2 px-3 border border-gray-200 w-full"
+                  className="quantity-input w-full rounded-lg border border-gray-200 py-2 px-3 text-center font-semibold"
                   defaultValue={1}
                   value={state.counter}
                   readOnly
                 />
                 <button
-                  className="px-3 py-2 bg-gray-100 text-lg font-bold"
+                  className="quantity-stepper rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-lg font-bold"
                   type="button"
                   onClick={() =>
                     dispatch({ type: "INCREMENT", payload: undefined })
@@ -352,12 +348,12 @@ function ProductDetails() {
               </div>
             </div>
             <div className="px-5">
-              <strong>Total d'achat: {priceInArriary(state.totalPrice)}</strong>
+              <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-sm"><span className="text-gray-500">Total estimé</span><strong className="text-lg text-gray-900">{priceInArriary(state.totalPrice)}</strong></div>
             </div>
             <div className="w-full px-5">
               <button
                 type="submit"
-                className="border border-green-500 bg-green-500 px-5 py-3 gap-3 text-white  rounded uppercase flex justify-center font-bold w-full"
+                className="market-button-primary w-full uppercase"
               >
                 commander
               </button>
@@ -366,7 +362,9 @@ function ProductDetails() {
         </form>
       </div>
 
-      <Comment product_id={id as string} csrf={csrf as string} />
+      <div className="product-comments-container market-container pb-10 sm:pb-14">
+        <Comment product_id={id as string} csrf={csrf as string} />
+      </div>
     </>
   );
 }

@@ -75,16 +75,18 @@ function BoutiksInfo() {
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+    <div className="admin-shop-info flex justify-center px-1 py-4 sm:py-8">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-6"
+        className="w-full max-w-3xl rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8"
       >
-        <h1 className="text-2xl font-bold text-center mb-6">
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Paramètres de la boutique</p>
+        <h1 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
           Modifier les informations de la boutique
         </h1>
+        <p className="mb-7 text-sm text-gray-500">Tenez à jour les coordonnées visibles par vos clients.</p>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Nom de la boutique
@@ -95,7 +97,7 @@ function BoutiksInfo() {
               value={shopInfo.name}
               onChange={handleChange}
               placeholder="Entrez le nom de la boutique"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="mt-1 block w-full"
               required
             />
           </div>
@@ -110,7 +112,7 @@ function BoutiksInfo() {
               value={shopInfo.adresse}
               onChange={handleChange}
               placeholder="Entrez l'adresse de la boutique"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="mt-1 block w-full"
               required
             />
           </div>
@@ -125,7 +127,7 @@ function BoutiksInfo() {
               value={shopInfo.phoneNumber}
               onChange={handleChange}
               placeholder="Entrez le numéro de téléphone"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="mt-1 block w-full"
               required
             />
           </div>
@@ -139,7 +141,7 @@ function BoutiksInfo() {
               value={shopInfo.ville}
               onChange={handleChange}
               placeholder="Ville"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="mt-1 block w-full"
               required
             />
           </div>
@@ -154,7 +156,7 @@ function BoutiksInfo() {
               value={shopInfo.email}
               onChange={handleChange}
               placeholder="Entrez l'email de la boutique"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="mt-1 block w-full"
               required
             />
           </div>
@@ -163,7 +165,7 @@ function BoutiksInfo() {
         <div className="mt-6 flex justify-end">
           <button
             type="submit"
-            className="flex items-center bg-green-500 text-white px-4 py-2 rounded-md shadow hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="market-button-primary"
           >
             <FaSave className="mr-2" /> Enregistrer
           </button>

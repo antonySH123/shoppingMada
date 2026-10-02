@@ -24,16 +24,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         setUserState(null); // déconnecté
       }
-    } catch (error) {
-      console.error("Erreur de session:", error);
+    } catch {
       setUserState(null);
     }
   }, []);
 
-  // Appel initial pour charger l'utilisateur
+  // Charger la session avant que les routes protégées évaluent l'utilisateur.
   useEffect(() => {
-    fetchCurrentUser();
-  }, [fetchCurrentUser]);
+    if (csrf) fetchCurrentUser();
+  }, [csrf, fetchCurrentUser]);
 
   // Rafraîchissement du token
   const regenerateToken = useCallback(async () => {

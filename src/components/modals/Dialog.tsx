@@ -10,22 +10,26 @@ const Dialog: React.FC<Props> = ({ title, message, ok, onClose, isOpen }) => {
   if (!isOpen) return null;
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="market-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-5"
       onClick={() => onClose(false)}
+      role="presentation"
     >
       <div
-        className="bg-white rounded-lg shadow-lg p-6 relative max-w-md w-full"
+        className="market-modal-panel relative w-full max-w-md p-6 sm:p-8"
         onClick={(e) => e.stopPropagation()}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="confirmation-title"
       >
         <div className="mb-3">
-          <h1>{title}</h1>
+          <h1 id="confirmation-title" className="text-xl font-bold tracking-tight text-gray-900">{title}</h1>
         </div>
         <div className="mb-3">
           <p>{message}</p>
         </div>
-        <div className=" flex flex-row justify-end gap-3">
-          <button onClick={ok} className="bg-green-500 px-5 py-1 text-white rounded shadow">OK</button>
-          <button onClick={() => onClose(false)} className="bg-red-500 px-5 py-1 text-white rounded shadow">Annulé</button>
+        <div className="flex flex-row justify-end gap-3 pt-3">
+          <button type="button" onClick={ok} className="market-button-primary">OK</button>
+          <button type="button" onClick={() => onClose(false)} className="market-button-secondary">Annuler</button>
         </div>
       </div>
     </div>

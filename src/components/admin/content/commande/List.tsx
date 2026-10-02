@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { IProduct } from "../product/Add";
 import Iuser from "../../../../Interface/UserInterface";
 import { useEffect, useReducer } from "react";
+import { formatStatus } from "../../../../helper/locale";
 
 interface ICommande {
   _id: string;
@@ -66,8 +67,8 @@ function List() {
                 <th className="py-3 border">Produits</th>
                 <th className="py-3 border">Prix</th>
                 <th className="py-3 border">Quantité</th>
-                <th className="py-3 border">Variant</th>
-                <th className="py-3 border">Status</th>
+                <th className="py-3 border">Variantes</th>
+                <th className="py-3 border">Statut</th>
                 <th className="py-3 border">Action</th>
               </tr>
             </thead>
@@ -101,7 +102,7 @@ function List() {
                           </ul>
                         </td>
                         <td className="py-3 px-3 border text-center text-yellow-500">
-                          {element.status}
+                          {formatStatus(element.status)}
                         </td>
                         <td className="py-3 px-3 border text-center">
                           <Link

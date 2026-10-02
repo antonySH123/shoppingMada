@@ -8,9 +8,10 @@ import {
 } from "react";
 import { FaCloudUploadAlt } from "react-icons/fa";
 import Select, { MultiValue } from "react-select";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
+import { useAuth } from "../helper/useAuth";
 import Preloader from "./loading/Preloader";
 
 interface CategoryOption {
@@ -30,6 +31,7 @@ interface BoutikState {
 
 function Vendeur() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [boutik, setBoutik] = useState<BoutikState>({
     name: "",
@@ -53,7 +55,7 @@ function Vendeur() {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -65,7 +67,7 @@ function Vendeur() {
         (element: { _id: string; slug: string }) => ({
           value: element._id,
           label: element.slug,
-        })
+        }),
       );
       setOption(datas);
     } catch (error) {
@@ -104,9 +106,10 @@ function Vendeur() {
       formData.append("image", boutik.logo);
     }
 
-    boutik.product_category.forEach((category, index) => {
-      formData.append(`product_category[${index}]`, category.value);
-    });
+    formData.append(
+      "product_category",
+      JSON.stringify(boutik.product_category.map((category) => category.value)),
+    );
 
     try {
       if (csrf) {
@@ -119,7 +122,7 @@ function Vendeur() {
             },
             credentials: "include",
             body: formData,
-          }
+          },
         );
 
         if (!response.ok) {
@@ -157,30 +160,92 @@ function Vendeur() {
     setBoutik((prev) => ({ ...prev, logo: file }));
   };
 
+  if (user?.userGroupMember_id?.usergroup_id?.name === "Boutiks") {
+    return <Navigate to="/espace_vendeur/dash" replace />;
+  }
+
   return !csrf ? (
     <Preloader />
   ) : (
-    <form onSubmit={handleSubmit}>
-      <section className="bg-green-900/50 bg-[url('/src/assets/image/banner/banner.jpg')] h-72 bg-center bg-cover bg-blend-color-burn bg-no-repeat flex justify-center items-center">
-        <h1 className="text-center text-4xl uppercase text-white font-semibold">
-          Devenir vendeur
-        </h1>
+    <form onSubmit={handleSubmit} className="seller-page">
+      <section className="seller-hero">
+        <div className="market-container seller-hero-inner">
+          <div className="seller-hero-copy">
+            <span className="seller-hero-kicker">
+              <FaCloudUploadAlt /> Espace des professionnels
+            </span>
+            <h1>
+              Votre boutique mérite une <span>vitrine remarquable.</span>
+            </h1>
+            <p>
+              Rejoignez ShopInMada et présentez vos produits aux clients partout
+              à Madagascar.
+            </p>
+            <div className="seller-hero-points">
+              <span>01 · Créez votre vitrine</span>
+              <span>02 · Ajoutez vos catégories</span>
+              <span>03 · Touchez de nouveaux clients</span>
+            </div>
+          </div>
+          <div className="seller-hero-visual" aria-hidden="true">
+            <div className="seller-visual-glow" />
+            <div className="seller-visual-card seller-visual-card-back" />
+            <div className="seller-visual-card seller-visual-card-front">
+              <span className="seller-visual-icon">
+                <FaCloudUploadAlt />
+              </span>
+              <strong>Votre marque, partout.</strong>
+              <small>Une vitrine pensée pour grandir</small>
+              <span className="seller-visual-bars">
+                <i />
+                <i />
+                <i />
+              </span>
+            </div>
+            <span className="seller-visual-orbit" />
+          </div>
+        </div>
       </section>
-      <section>
-        <div className="container mx-auto px-3 py-5">
-          <div className="container shadow rounded-lg mx-auto px-10 py-3">
-            <h2 className="text-xl font-semibold mx-5 my-5">
-              Informations de la boutique
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 px-5">
-              <div className="col-span-1 relative">
+      <section className="seller-onboarding-section py-9 sm:py-14">
+        <div className="market-container">
+          <div className="seller-onboarding-heading">
+            <span>COMMENÇONS ENSEMBLE</span>
+            <h2>Créez votre espace vendeur</h2>
+            <p>
+              Quelques informations suffisent pour préparer votre boutique en
+              ligne.
+            </p>
+          </div>
+          <div className="seller-form-card">
+            <div className="seller-form-card-heading">
+              <div>
+                <span>VOTRE VITRINE</span>
+                <h3>Informations de la boutique</h3>
+              </div>
+              <span className="seller-form-step">Étape 1 sur 1</span>
+            </div>
+            <div className="seller-form-grid grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="seller-form-identity col-span-1 relative">
+                <label htmlFor="seller-logo" className="seller-field-label">
+                  Logo de la boutique
+                </label>
                 <div
-                  className="bg-white/50 h-64 w-full mb-1 aspect-video relative left-0 top-0  shadow rounded flex flex-col justify-center items-center right-0  cursor-pointer"
+                  className="seller-logo-upload relative left-0 right-0 top-0 mb-3 flex h-64 w-full cursor-pointer flex-col items-center justify-center overflow-hidden"
                   onClick={handleClick}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleClick();
+                    }
+                  }}
                 >
                   <input
                     type="file"
+                    id="seller-logo"
                     name="logo"
+                    accept="image/*"
                     className="absolute hidden"
                     onChange={handleFileChange}
                     ref={inputFile}
@@ -188,10 +253,11 @@ function Vendeur() {
                   {!boutik.logo ? (
                     <>
                       <FaCloudUploadAlt
-                        className="font-bold  text-green-500"
+                        className="font-bold text-green-600"
                         size={50}
                       />
-                      <h2>Votre logo</h2>
+                      <strong>Déposez votre logo ici</strong>
+                      <small>Formats image · Cliquez pour parcourir</small>
                     </>
                   ) : (
                     <img
@@ -208,65 +274,87 @@ function Vendeur() {
                   isClearable
                   value={boutik.product_category}
                   onChange={handleSelectChange}
-                  placeholder={"Choisir votre categorie de produit"}
+                  placeholder={"Sélectionnez vos catégories"}
+                  classNamePrefix="seller-category"
                 />
+                <p className="seller-category-hint">
+                  Choisissez les catégories qui représentent le mieux vos
+                  produits.
+                </p>
               </div>
-              <div className="col-span-2">
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    name="name"
-                    value={boutik.name}
-                    onChange={handleInputChange}
-                    placeholder="Nom de la boutique"
-                    className="rounded w-full border border-green-500 py-5 px-3 mb-3"
-                    required
-                  />
-                  <input
-                    type="text"
-                    name="adresse"
-                    value={boutik.adresse}
-                    onChange={handleInputChange}
-                    placeholder="Adresse"
-                    className="rounded w-full border border-green-500 py-5 px-3 mb-3"
-                    required
-                  />
+              <div className="seller-form-fields col-span-2">
+                <div className="seller-form-intro">
+                  <h4>Présentez votre activité</h4>
+                  <p>
+                    Ces informations aideront vos clients à vous trouver et à
+                    vous contacter.
+                  </p>
                 </div>
-                <input
-                  type="text"
-                  name="phoneNumber"
-                  value={boutik.phoneNumber}
-                  onChange={handleInputChange}
-                  placeholder="Téléphone"
-                  className="rounded w-full border border-green-500 py-5 px-3 mb-3"
-                  required
-                />
-                <input
-                  type="email"
-                  name="email"
-                  value={boutik.email}
-                  onChange={handleInputChange}
-                  placeholder="Email"
-                  className="rounded w-full border border-green-500 py-5 px-3 mb-3"
-                  required
-                />
-                <input
-                  type="text"
-                  name="issuer"
-                  value={boutik.issuer}
-                  onChange={handleInputChange}
-                  placeholder="NIF/STAT"
-                  className="rounded w-full border border-green-500 py-5 px-3 mb-3"
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="seller-field-label">
+                    Nom de la boutique
+                    <input
+                      type="text"
+                      name="name"
+                      value={boutik.name}
+                      onChange={handleInputChange}
+                      placeholder="Ex. Atelier Mada"
+                      required
+                    />
+                  </label>
+                  <label className="seller-field-label">
+                    Adresse
+                    <input
+                      type="text"
+                      name="adresse"
+                      value={boutik.adresse}
+                      onChange={handleInputChange}
+                      placeholder="Ville, quartier, adresse"
+                      required
+                    />
+                  </label>
+                </div>
+                <label className="seller-field-label">
+                  Téléphone
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={boutik.phoneNumber}
+                    onChange={handleInputChange}
+                    placeholder="Ex. 034 12 345 67"
+                    required
+                  />
+                </label>
+                <label className="seller-field-label">
+                  Adresse e-mail
+                  <input
+                    type="email"
+                    name="email"
+                    value={boutik.email}
+                    onChange={handleInputChange}
+                    placeholder="contact@votreboutique.mg"
+                    required
+                  />
+                </label>
+                <label className="seller-field-label">
+                  NIF / STAT <span className="seller-optional">Facultatif</span>
+                  <input
+                    type="text"
+                    name="issuer"
+                    value={boutik.issuer}
+                    onChange={handleInputChange}
+                    placeholder="Vos références administratives"
+                  />
+                </label>
               </div>
-              <div></div>
             </div>
-            <div className="px-5">
-              <button
-                type="submit"
-                className="bg-green-500 text-white text-lg py-5 w-full uppercase  rounded-md"
-              >
-                Envoyer
+            <div className="seller-form-footer">
+              <p>
+                En envoyant ce formulaire, vous soumettez votre boutique à
+                validation.
+              </p>
+              <button type="submit" className="market-button-primary">
+                <FaCloudUploadAlt /> Envoyer ma demande <span>→</span>
               </button>
             </div>
           </div>

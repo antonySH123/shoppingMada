@@ -49,8 +49,8 @@ function EmailForgotPass() {
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="text-white w-full h-screen flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
-      <div className="bg-green-950 shadow-xl border border-green-500 shadow-green-500 rounded-md p-8 backdrop-filter backdrop-blur-sm relative">
+    <div className="auth-page flex items-center justify-center">
+      <div className="auth-panel w-full max-w-lg">
         <h1 className="text-white font-bold text-center mb-6 flex flex-col justify-center items-center">
           <LiaEnvelopeOpen size={60} />
           <strong className="text-2xl">Entrer votre Email</strong>

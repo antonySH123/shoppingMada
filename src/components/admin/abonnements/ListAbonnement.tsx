@@ -6,6 +6,7 @@ import { LiaEye } from "react-icons/lia";
 import UserInfo from "../../modals/UserInfo";
 import { useAuth } from "../../../helper/useAuth";
 import useCSRF from "../../../helper/useCSRF";
+import { formatStatus } from "../../../helper/locale";
 
 interface IState {
   subscription: Isubscription[] | [];
@@ -62,9 +63,7 @@ function ListAbonnement() {
       );
       if (response.ok) {
         const result = await response.json();
-        console.log(result);
-        if (response.status === 201)
-          dispatch({ type: "FETCH_START", payload: result.data });
+        dispatch({ type: "FETCH_START", payload: result.data ?? [] });
       }
     } catch (error) {
       if (error instanceof Error) toast.error(error.message);
@@ -81,8 +80,7 @@ function ListAbonnement() {
 
     if (response.ok) {
       const result = await response.json();
-      if (response.status === 201)
-        dispatch({ type: "GET_INFO", payload: result.data });
+      dispatch({ type: "GET_INFO", payload: result.data });
     }
   }, [state.selectedId]);
 
@@ -122,11 +120,12 @@ function ListAbonnement() {
       );
       if (response.ok) {
         const result = await response.json();
-        if (response.status === 201) {
-          toast.success(result.message);
-          dispatch({ type: "TOGGLE_MODAL", payload: false });
-          fetchData();
-        }
+        toast.success(result.message);
+        dispatch({ type: "TOGGLE_MODAL", payload: false });
+        fetchData();
+      } else {
+        const result = await response.json().catch(() => null);
+        toast.error(result?.message || "Impossible de mettre à jour l'abonnement.");
       }
       dispatch({type:"HANDLE_MOTIF",payload:null});
     }
@@ -151,7 +150,7 @@ function ListAbonnement() {
               <th className="py-3 px-3 border">Nom</th>
               <th className="py-3 border">Plan</th>
               <th className="py-3 border">Références</th>
-              <th className="py-3 border">Status</th>
+              <th className="py-3 border">Statut</th>
               <th className="py-3 border">Action</th>
             </tr>
           </thead>
@@ -168,7 +167,7 @@ function ListAbonnement() {
                     {item.refTransaction}
                   </td>
                   <td className="py-3 px-3 border text-center">
-                    {item.payementStatus}
+                    {formatStatus(item.payementStatus)}
                   </td>
                   <td className="py-3 px-3 border text-center">
                     <button
@@ -188,7 +187,7 @@ function ListAbonnement() {
           isOpen={state.isOpen}
           onClose={() => dispatch({ type: "TOGGLE_MODAL", payload: false })}
         >
-          <h1 className="text-xl font-bold mb-4">Abonnement details</h1>
+          <h1 className="text-xl font-bold mb-4">D�tails de l’abonnement</h1>
           <hr />
           <div className="px-2 py-2 rounded w-full  border-green-500 border-2">
             {!state.rejected ? (
@@ -196,7 +195,7 @@ function ListAbonnement() {
                 <h2>{state.subscribeinfo?.owner_id.boutiks_id.name}</h2>
                 <div className="flex flex-col gap-2">
                   <strong>{state.subscribeinfo?.plan}</strong>
-                  <strong>{state.subscribeinfo?.payementStatus}</strong>
+                  <strong>{formatStatus(state.subscribeinfo?.payementStatus)}</strong>
                   <strong>{state.subscribeinfo?.refTransaction}</strong>
                   <strong>{state.subscribeinfo?.transactionPhoneNumber}</strong>
                 </div>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { LiaUserCogSolid } from "react-icons/lia";
 import useCSRF from "../helper/useCSRF";
+import { useAuth } from "../helper/useAuth";
 import Preloader from "./loading/Preloader";
 
 function ResetPassword() {
@@ -13,6 +14,7 @@ function ResetPassword() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const csrf = useCSRF();
+  const { setUserInfo } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,8 +28,8 @@ function ResetPassword() {
 
     try {
       if (csrf) {
-        const response = await fetch(`${import.meta.env.REACT_API_URL}user`, {
-          method: "PUT",
+        const response = await fetch(`${import.meta.env.REACT_API_URL}email/reset-password`, {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             "xsrf-token": csrf,
@@ -37,11 +39,13 @@ function ResetPassword() {
         });
 
         const result = await response.json();
-        if (result.status === "Failed") {
-          toast.error(result.message);
+        if (!response.ok) {
+          toast.error(result.message || "Impossible de réinitialiser le mot de passe.");
         } else {
           toast.success("Mot de passe réinitialisé avec succès !");
-          navigate("/profil", { replace: true });
+          setPasswordData({ newPassword: "", confirmPassword: "" });
+          setUserInfo(null);
+          navigate("/login", { replace: true });
         }
       } else {
         toast.error("Une erreur est survenue !");
@@ -50,7 +54,6 @@ function ResetPassword() {
     } catch (error) {
       toast.error("Erreur de connexion au serveur !");
     }
-
     setIsSubmitting(false);
   };
 
@@ -62,9 +65,9 @@ function ResetPassword() {
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="text-white w-full h-[100vh] flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
+    <div className="auth-page flex items-center justify-center">
       <div>
-        <div className="bg-green-950 shadow-xl border border-green-500 shadow-green-500 rounded-md p-8 backdrop-filter backdrop-blur-sm relative">
+        <div className="auth-panel w-full max-w-lg">
           <h1 className="text-white font-bold text-center mb-6 flex flex-col justify-center items-center">
             <LiaUserCogSolid size={60} />
             <strong className="text-2xl">Réinitialiser le mot de passe</strong>

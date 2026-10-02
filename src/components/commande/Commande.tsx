@@ -3,6 +3,7 @@ import IAction from "../../Interface/action.interface";
 import React, { useCallback, useEffect, useReducer } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../../helper/useAuth";
+import { formatStatus } from "../../helper/locale";
 
 interface IState {
   commandes: ICommande[] | [];
@@ -33,7 +34,6 @@ function Commande({ csrf }: { csrf: string }) {
       });
 
       const result = await response.json();
-      console.log(result);
 
       if (response.status === 200)
         dispatch({ type: "FETCH_START", payload: result.data });
@@ -61,7 +61,7 @@ function Commande({ csrf }: { csrf: string }) {
 
         const result = await response.json();
         const { message, status } = result;
-        if ((status as string).toLocaleLowerCase() === "success") {
+        if (response.ok && (status as string).toLocaleLowerCase() === "success") {
           toast.success(message);
           fetchCommand();
         } else {
@@ -76,12 +76,17 @@ function Commande({ csrf }: { csrf: string }) {
     fetchCommand();
   }, [fetchCommand]);
   return (
-    <div className="overflow-x-auto">
-      <h1 className="font-semibold text-3xl mb-5 mt-5">
+    <section className="profile-orders mt-10">
+      <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+      <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Historique</p>
+      <h2 className="font-bold text-2xl tracking-tight text-gray-900">
         {user?.userGroupMember_id.usergroup_id.name === "Client"
           ? "Listes de vos achats"
           : "Liste de vos commandes en attentes"}
-      </h1>
+      </h2>
+      </div></div>
+      <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
       <table className="w-full border-collapse text-sm lg:text-base">
         <thead className="bg-gray-100 text-gray-700">
           <tr>
@@ -89,8 +94,8 @@ function Commande({ csrf }: { csrf: string }) {
             <th className="py-3 border">Produits</th>
             <th className="py-3 border">Prix</th>
             <th className="py-3 border">Quantité</th>
-            <th className="py-3 border">Variant</th>
-            <th className="py-3 border">Status</th>
+            <th className="py-3 border">Variantes</th>
+            <th className="py-3 border">Statut</th>
             <th className="py-3 border">Action</th>
           </tr>
         </thead>
@@ -124,10 +129,10 @@ function Commande({ csrf }: { csrf: string }) {
                       </ul>
                     </td>
                     <td className="py-3 px-3 border text-center text-yellow-500">
-                      {element.status}
+                      {formatStatus(element.status)}
                     </td>
                     <td className="py-3 px-3 border text-center">
-                      {element.status && element.status !== "Canceled" ? (
+                      {element.status === "Pending" ? (
                         <>
                           {" "}
                           <button
@@ -147,7 +152,8 @@ function Commande({ csrf }: { csrf: string }) {
             ))}
         </tbody>
       </table>
-    </div>
+      </div>
+    </section>
   );
 }
 

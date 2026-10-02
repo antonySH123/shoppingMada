@@ -44,6 +44,8 @@ function Shop() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; 
 
+  useEffect(() => setCurrentPage(1), [location, query, slug]);
+
   useEffect(() => {
     dispatch({ type: "FETCH_START" });
 
@@ -55,18 +57,15 @@ function Shop() {
           credentials: "include",
         });
 
-        if (!response.ok) {
-          toast.error("Une erreur est survenue");
-          return;
-        }
+        if (!response.ok) throw new Error("Impossible de charger les produits.");
 
         const result = await response.json();
-        console.log(result.data);
         dispatch({ type: "FETCH_SUCCESS", payload: result.data });
 
       } catch (error: unknown) {
         if (error instanceof Error) {
           dispatch({ type: "FETCH_ERROR", payload: error.message });
+          toast.error(error.message);
         } else {
           dispatch({ type: "FETCH_ERROR", payload: "Erreur inconnue" });
         }
@@ -83,9 +82,23 @@ function Shop() {
     : [];
 
   return (
-    <div className="overflow-y-auto w-[inherit]">
-      <div className="container mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-10 md:px-2">
+    <main className="min-h-[calc(100vh-4.5rem)] w-full flex-1 overflow-y-auto bg-[#f8faf8] py-8 md:py-10">
+      <div className="market-container">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="mb-1 text-sm font-semibold uppercase tracking-[0.14em] text-emerald-700">ShopInMada</p>
+            <h1 className="market-section-title">{slug ? "Explorez cette boutique" : query ? `Résultats pour « ${query} »` : "Tous les produits"}</h1>
+          </div>
+          {state.allProducts && <p className="text-sm text-gray-500">{totalProducts} produit{totalProducts > 1 ? "s" : ""}</p>}
+        </div>
+        {!state.loading && !state.error && state.allProducts?.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
+            <h2 className="text-lg font-semibold text-gray-800">Aucun produit trouvé</h2>
+            <p className="mt-2 text-sm text-gray-500">Essayez une autre recherche ou explorez toutes les catégories.</p>
+          </div>
+        )}
+        {state.error && <p role="status" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{state.error}</p>}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {state.loading
             ? Array.from({ length: 5 }).map((_, index) => <SkeletonCard key={index} />)
             : displayedProducts.map((product, index) => (
@@ -94,7 +107,7 @@ function Shop() {
         </div>
 
         {/* Pagination */}
-        <div className="mx-auto min-w-full py-5 flex justify-center items-center gap-3">
+        {totalPages > 1 && <nav aria-label="Pagination des produits" className="mx-auto flex min-w-full items-center justify-center gap-3 py-8">
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
@@ -110,9 +123,9 @@ function Shop() {
           >
             Suivant
           </button>
-        </div>
+        </nav>}
       </div>
-    </div>
+    </main>
   );
 }
 

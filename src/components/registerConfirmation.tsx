@@ -1,12 +1,5 @@
 import { MdOutlinePhonelinkRing } from "react-icons/md";
-import {
-  useState,
-  useRef,
-  ChangeEvent,
-  KeyboardEvent,
-  FormEvent,
-  useCallback,
-} from "react";
+import { useState, useRef, ChangeEvent, ClipboardEvent, KeyboardEvent, FormEvent, useCallback } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
@@ -21,144 +14,111 @@ function RegisterConfirmation() {
   const csrf = useCSRF();
   const { user } = useAuth();
   const location = useLocation();
-  const from =
-    location.state?.from === "/forgotPass" ? "/resetPassword" : "/profil";
-  const handleInputChange = (
-    e: ChangeEvent<HTMLInputElement>,
-    index: number
-  ) => {
-    const { value } = e.target;
-    if (/^[0-9]$/.test(value)) {
-      const newCode = [...code];
-      newCode[index] = value;
-      setCode(newCode);
+  const from = location.state?.from === "/forgotPass" ? "/resetPassword" : "/profil";
 
-      if (index < 5 && inputRefs.current[index + 1]) {
-        inputRefs.current[index + 1]?.focus();
-      }
-    }
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>, index: number) => {
+    const value = event.target.value.replace(/\D/g, "").slice(-1);
+    const nextCode = [...code];
+    nextCode[index] = value;
+    setCode(nextCode);
+    if (value && index < 5) inputRefs.current[index + 1]?.focus();
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
-    if (e.key === "Backspace" && code[index] === "") {
-      if (index > 0) {
-        inputRefs.current[index - 1]?.focus();
-      }
-    }
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (event.key === "Backspace" && !code[index] && index > 0) inputRefs.current[index - 1]?.focus();
+  };
+
+  const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
+    const pastedCode = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pastedCode) return;
+    event.preventDefault();
+    const nextCode = new Array(6).fill("");
+    pastedCode.split("").forEach((digit, index) => { nextCode[index] = digit; });
+    setCode(nextCode);
+    inputRefs.current[Math.min(pastedCode.length, 6) - 1]?.focus();
   };
 
   const handleSubmit = useCallback(async () => {
     const codeEntered = code.join("");
-    console.log(codeEntered);
     if (codeEntered.length < 6) {
       toast.error("Veuillez entrer le code complet.");
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
-      if (csrf) {
-        const response = await fetch(
-          import.meta.env.REACT_API_URL + "email/verify",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "xsrf-token": csrf,
-            },
-            credentials: "include",
-            body: JSON.stringify({ OTP: codeEntered }),
-          }
-        );
-
-        setIsSubmitting(false);
-
-        if (!response.ok) {
-          const error = await response.json();
-          toast.error(
-            error.message || "Erreur de vérification. Veuillez réessayer."
-          );
-          return;
-        }
-
-        if (response.status === 201) {
-          toast.success("Compte vérifié avec succès !");
-          setTimeout(() => navigate(from, { replace: true }), 2000); // Delay before navigation
-        }
-        if (response.status === 403) {
-          const result = await response.json();
-          toast.error(result.message);
-          setCode(new Array(6).fill(""));
-        }
-      } else {
+      if (!csrf) {
         toast.error("Erreur de sécurité. Veuillez réessayer.");
+        return;
       }
-    } catch (error) {
+      const response = await fetch(`${import.meta.env.REACT_API_URL}email/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "xsrf-token": csrf },
+        credentials: "include",
+        body: JSON.stringify({ OTP: codeEntered }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error.message || "Erreur de vérification. Veuillez réessayer.");
+        if (response.status === 403) setCode(new Array(6).fill(""));
+        return;
+      }
+      if (response.status === 201) {
+        toast.success("Compte vérifié avec succès !");
+        setTimeout(() => navigate(from, { replace: true }), 2000);
+      }
+    } catch {
+      toast.error("Une erreur est survenue. Veuillez vérifier votre connexion.");
+    } finally {
       setIsSubmitting(false);
-      console.error("Erreur réseau :", error);
-      toast.error(
-        "Une erreur est survenue. Veuillez vérifier votre connexion."
-      );
     }
   }, [code, csrf, from, navigate]);
 
-  if (!user) return <Navigate to={"/login"} />;
+  if (!user) return <Navigate to="/login" />;
+  if (!csrf) return <Preloader />;
 
-  return !csrf ? (
-    <Preloader />
-  ) : (
-    <div className="container mx-auto px-20 w-full h-[100vh] flex flex-col justify-center overflow-y-auto bg-gray-100">
-      <div className="mx-auto text-8xl">
-        <MdOutlinePhonelinkRing />
-      </div>
-      <h3 className="text-center text-4xl font-semibold">
-        Veuillez confirmer votre compte
-      </h3>
-      <p className="text-center mb-10 mt-5">
-        Vérifiez votre téléphone pour voir le code de validation composé de 6
-        chiffres.
-      </p>
-      <form
-        className=""
-        onSubmit={(e: FormEvent<HTMLFormElement>) => {
-          e.preventDefault();
-          handleSubmit();
-        }}
-      >
-        <div className="flex items-center justify-center gap-5">
-          {code.map((digit, index) => (
-            <div
-              key={index}
-              className="border  min-w-10 h-10 sm:min-w-16 sm:w-16"
-            >
-              <input
-                type="text"
-                className="w-full h-full text-5xl text-center py-2"
-                value={digit}
-                maxLength={1}
-                onChange={(e) => handleInputChange(e, index)}
-                onKeyDown={(e) => handleKeyDown(e, index)}
-                ref={(el) => (inputRefs.current[index] = el)}
-                disabled={isSubmitting} // Disable input during submission
-              />
-            </div>
-          ))}
-        </div>
-        <div className="mt-5 text-center">
-          <button
-            type="submit"
-            name="valider"
-            className={`border h-10 w-48 text-white ${
-              isSubmitting
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-green-500 hover:bg-green-600"
-            }`}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Envoi..." : "Valider"}
-          </button>
-        </div>
-      </form>
+  return (
+    <div className="otp-page">
+      <div className="otp-grid" aria-hidden="true" />
+      <div className="otp-orb otp-orb-one" aria-hidden="true" />
+      <div className="otp-orb otp-orb-two" aria-hidden="true" />
+      <main className="otp-card">
+        <div className="otp-security-badge"><span /><span /><span /> Connexion sécurisée</div>
+        <div className="otp-icon"><MdOutlinePhonelinkRing /></div>
+        <p className="otp-eyebrow">VALIDATION DE VOTRE COMPTE</p>
+        <h1>Entrez votre code de sécurité.</h1>
+        <p className="otp-description">Consultez votre téléphone ou votre boîte e-mail : un code à 6 chiffres vous a été envoyé.</p>
+        <div className="otp-progress" aria-label="Étape 2 sur 2"><span /><span className="is-active" /></div>
+        <form className="otp-form" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); void handleSubmit(); }}>
+          <div className="otp-inputs">
+            {code.map((digit, index) => (
+              <div key={index} className={`otp-input-shell ${digit ? "is-filled" : ""}`}>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete={index === 0 ? "one-time-code" : "off"}
+                  aria-label={`Chiffre ${index + 1} du code`}
+                  className="otp-input"
+                  value={digit}
+                  maxLength={1}
+                  onChange={(event) => handleInputChange(event, index)}
+                  onKeyDown={(event) => handleKeyDown(event, index)}
+                  onPaste={handlePaste}
+                  ref={(element) => { inputRefs.current[index] = element; }}
+                  disabled={isSubmitting}
+                />
+              </div>
+            ))}
+          </div>
+          <p className="otp-paste-hint">Vous pouvez coller le code complet.</p>
+          <div className="otp-submit-wrap">
+            <button type="submit" name="valider" className="otp-submit" disabled={isSubmitting}>
+              {isSubmitting ? "Validation…" : "Valider mon compte"}<span>→</span>
+            </button>
+          </div>
+        </form>
+        <p className="otp-footnote">Pour votre sécurité, le code expire après un court délai.</p>
+      </main>
     </div>
   );
 }

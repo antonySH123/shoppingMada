@@ -6,6 +6,7 @@ import useCSRF from "../../../../helper/useCSRF";
 import { toast } from "react-toastify";
 import UserInfo from "../../../modals/UserInfo";
 import Preloader from "../../../loading/Preloader";
+import { formatFrenchDateTime, formatStatus } from "../../../../helper/locale";
 
 interface ICommande {
   _id: string;
@@ -20,9 +21,7 @@ interface ICommande {
 
 type Action =
   | { type: "FETCH_START"; payload: ICommande }
-  | { type: "ACCEPTED"; payload: string }
   | { type: "HANDLE_MOTIF"; payload: string | null }
-  | { type: "REJECTED"; payload: string; text: string }
   | { type: "TOGGLE_MODAL"; payload: boolean };
 
 interface IState {
@@ -45,17 +44,8 @@ const reducer = (state: IState, action: Action): IState => {
         commandes: action.payload,
         status: action.payload.status,
       };
-    case "ACCEPTED":
-      return { ...state, status: action.payload };
     case "HANDLE_MOTIF":
       return { ...state, motif: action.payload };
-    case "REJECTED":
-      return {
-        ...state,
-        status: action.payload,
-        motif: action.text,
-        isOpen: false,
-      };
     case "TOGGLE_MODAL":
       return { ...state, isOpen: action.payload };
     default:
@@ -68,41 +58,24 @@ function CommandeDetails() {
   const csrf = useCSRF();
   const close = () => dispatch({ type: "TOGGLE_MODAL", payload: false });
 
-  const handleClick = useCallback(async () => {
-    console.log(state.status);
-    if (csrf) {
-      if (state.status != state.commandes?.status) {
-        const response = await fetch(
-          `${import.meta.env.REACT_API_URL}command/${id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              "xsrf-token": csrf,
-            },
-            body: JSON.stringify({ status: state.status, motif: state.motif }),
-            credentials: "include",
-          }
-        );
-
-        const result = await response.json();
-        const { message, status } = result;
-        if ((status as string).toLocaleLowerCase() === "success") {
-          toast.success(message);
-        } else {
-          toast.error(message);
-        }
-        dispatch({ type: "HANDLE_MOTIF", payload: null });
-      }
+  const handleStatusChange = useCallback(async (status: string, motif?: string | null) => {
+    if (!csrf || !id) return;
+    const response = await fetch(`${import.meta.env.REACT_API_URL}command/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "xsrf-token": csrf },
+      body: JSON.stringify({ status, motif }),
+      credentials: "include",
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      toast.error(result.message || "Impossible de mettre à jour la commande.");
+      return;
     }
-  }, [csrf, id, state.commandes?.status, state.motif, state.status]);
-  useEffect(() => {
-    const update = async () => {
-      await handleClick();
-    };
-    update();
-  }, [handleClick]);
-
+    toast.success(result.message);
+    dispatch({ type: "HANDLE_MOTIF", payload: null });
+    dispatch({ type: "TOGGLE_MODAL", payload: false });
+    dispatch({ type: "FETCH_START", payload: result.data });
+  }, [csrf, id]);
   useEffect(() => {
     const getCommand = async () => {
       const response = await fetch(
@@ -120,7 +93,7 @@ function CommandeDetails() {
       }
     };
     getCommand();
-  }, [id, state.commandes?.status, state.status]);
+  }, [id]);
 
   return !csrf ? (
     <Preloader />
@@ -131,17 +104,17 @@ function CommandeDetails() {
           Détails de la commande
         </h2>
         <p className="text-gray-600">
-          <strong>Client:</strong> {state.commandes?.owner_id.username}
+          <strong>Client :</strong> {state.commandes?.owner_id.username}
         </p>
         <p className="text-gray-600">
-          <strong>Date:</strong>{" "}
-          {new Date(state.commandes?.createdAt as string).toLocaleString()}
+          <strong>Date :</strong>{" "}
+          {formatFrenchDateTime(state.commandes?.createdAt)}
         </p>
         <p className="text-gray-600">
-          <strong>Total:</strong> {state.commandes?.total}
+          <strong>Total :</strong> {state.commandes?.total}
         </p>
         <p className="text-gray-600">
-          <strong>Status:</strong> {state.commandes?.status}
+          <strong>Statut :</strong> {formatStatus(state.commandes?.status)}
         </p>
         <h3 className="text-xl font-semibold text-gray-700 mt-4">Articles</h3>
         <table className="w-full border-collapse text-sm lg:text-base">
@@ -150,7 +123,7 @@ function CommandeDetails() {
               <th className="py-3 border">Produits</th>
               <th className="py-3 border">Prix</th>
               <th className="py-3 border">Quantité</th>
-              <th className="py-3 border">Variant</th>
+              <th className="py-3 border">Variantes</th>
             </tr>
           </thead>
           <tbody>
@@ -184,9 +157,7 @@ function CommandeDetails() {
             <>
               <button
                 className="border  px-3 text-sm py-2 bg-green-500 uppercase font-semibold text-white rounded"
-                onClick={() =>
-                  dispatch({ type: "ACCEPTED", payload: "Accepted" })
-                }
+                onClick={() => handleStatusChange("Accepted")}
               >
                 Valider
               </button>
@@ -218,17 +189,11 @@ function CommandeDetails() {
           <div className="flex items-center gap-3 justify-end">
             <button
               className="px-3 py-2 rounded bg-green-500 text-white"
-              onClick={() =>
-                dispatch({
-                  type: "REJECTED",
-                  payload: "Rejected",
-                  text: state.motif as string,
-                })
-              }
+              onClick={() => handleStatusChange("Rejected", state.motif)}
             >
               OUI
             </button>
-            <button className="px-3 py-2 rounded bg-red-500 text-white">
+            <button type="button" onClick={close} className="px-3 py-2 rounded bg-red-500 text-white">
               NON
             </button>
           </div>

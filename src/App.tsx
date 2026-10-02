@@ -1,12 +1,11 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import Home from "./components/Home";
-import "./App.css";
 import Base from "./components/layouts/Base";
 import Register from "./components/Register";
 import Login from "./components/Login";
 import BaseShop from "./components/layouts/BaseShop";
-import Shop from "./components/shop/Shop";
 import Vendeur from "./components/Vendeur";
 import registerConfirmation from "./components/registerConfirmation";
 import AppAdmin from "./components/admin/AppAdmin";
@@ -15,11 +14,8 @@ import Content from "./components/admin/content/Content";
 import Dash from "./components/admin/content/Dash";
 import ChangeUser from "./components/ChangeUser";
 import Logout from "./auth/Logout";
-import Add from "./components/admin/content/product/Add";
 import ProtectedRoute from "./context/ProtectedRoute";
 import ProductProvider from "./context/ProductContext";
-import Show from "./components/admin/content/product/Show";
-import ProductDetails from "./components/ProductDetails";
 import Page404 from "./error/Page404";
 import TopProgressBar from "./components/progress/TopProgressBar";
 import ScrollToTop from "./components/progress/ScrollToTop";
@@ -33,6 +29,12 @@ import CompteDesactiver from "./error/CompteDesactiver";
 import EmailForgotPass from "./components/EmailForgotPass";
 import ResetPassword from "./components/ResetPassword";
 import DetailsAbonnements from "./components/admin/abonnements/DetailsAbonnements";
+import UpgradePro from "./components/admin/abonnements/UpgradePro";
+
+const Shop = lazy(() => import("./components/shop/Shop"));
+const Add = lazy(() => import("./components/admin/content/product/Add"));
+const Show = lazy(() => import("./components/admin/content/product/Show"));
+const ProductDetails = lazy(() => import("./components/ProductDetails"));
 function App() {
   return (
     <BrowserRouter
@@ -40,7 +42,8 @@ function App() {
     >
       <TopProgressBar />
       <ScrollToTop />
-      <Routes>
+      <Suspense fallback={<div className="p-8 text-center">Chargement…</div>}>
+        <Routes>
         <Route path="" Component={Base}>
           <Route path="" index Component={Home} />
           <Route path="/vendeur" Component={Vendeur} />
@@ -78,8 +81,9 @@ function App() {
           <Route path="commande/:id" Component={CommandeDetails}></Route>
           <Route path="boutiksInfo" Component={BoutiksInfo}></Route>
           <Route path="abonnements" Component={ListAbonnement}></Route>
+          <Route path="upgrade-pro" Component={UpgradePro}></Route>
           <Route
-            path="abonnementsDetails"
+            path="abonnementsDetails/:id"
             Component={DetailsAbonnements}
           ></Route>
           <Route path="shopaccounts" Component={Compte}></Route>
@@ -90,7 +94,8 @@ function App() {
         </Route>
         <Route path="/none" Component={CompteDesactiver} />
         <Route path="*" Component={Page404} />
-      </Routes>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

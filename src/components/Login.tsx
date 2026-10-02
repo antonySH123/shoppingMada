@@ -15,8 +15,8 @@ function Login() {
 
   const from = location.state?.from || "/profil";
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    setIsSubmited(true);
     event.preventDefault();
+    setIsSubmited(true);
     try {
       if (csrf) {
         const postdata = await fetch(
@@ -38,10 +38,6 @@ function Login() {
           navigate("/none");
         }
 
-        if (postdata.status === 400) {
-          console.log(response.errors);
-        }
-
         if (postdata.status === 412) {
           toast.error(response.message);
         }
@@ -56,7 +52,7 @@ function Login() {
           navigate(from, { replace: true });
         }
         if (
-          postdata.status === 401 &&
+          postdata.status === 200 &&
           response.status === "Verification Failed"
         ) {
           setUserInfo(response.userInfo);
@@ -67,9 +63,10 @@ function Login() {
         toast.error("Une erreur est survenu!");
       }
     } catch (error) {
-      toast.error(new Error(error as string).message);
+      toast.error(error instanceof Error ? error.message : "Une erreur est survenue.");
+    } finally {
+      setIsSubmited(false);
     }
-    setIsSubmited(false);
   };
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -78,56 +75,52 @@ function Login() {
 
   return (
     !csrf ? <Preloader/> :
-    <div className="relative top-0 left-0 text-white w-full h-[100vh] flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
-      <Link to={"/"} className="absolute top-0 left-5 h-28 w-28">
+    <div className="auth-page auth-login-page relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 text-gray-900">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(22,131,75,0.12),transparent_35%),radial-gradient(circle_at_90%_90%,rgba(15,89,54,0.12),transparent_35%)]" aria-hidden="true" />
+      <Link to={"/"} aria-label="Retour à l'accueil" className="absolute left-5 top-4 h-16 w-32 sm:left-10 sm:top-7">
         <img src="/src/assets/logo.png" alt="" className="object-contain" />
       </Link>
-      <div>
-        <div className="bg-green-950  shadow-xl border border-green-500 shadow-green-500 rounded-md p-8  backdrop-filter backdrop-blur-sm  relative">
-          <h1 className="text-white font-bold text-center mb-6 flex flex-col justify-center items-center">
-            <LiaUserSolid size={60} />
-            <strong className="text-2xl">Se connecter</strong>
+      <div className="relative w-full max-w-md">
+        <div className="auth-panel auth-card rounded-3xl border border-gray-100 bg-white p-7 sm:p-10">
+          <h1 className="mb-2 flex flex-col items-center text-center font-bold text-gray-900">
+            <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800"><LiaUserSolid size={28} /></span>
+            <strong className="text-2xl">Bon retour</strong>
           </h1>
+          <p className="mb-7 text-center text-sm text-gray-500">Connectez-vous à votre espace ShopInMada.</p>
           <form action="" method="post" onSubmit={handleSubmit}>
-            <div className="relative my-4">
+            <div className="my-4">
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-gray-700">Adresse e-mail ou téléphone</label>
               <input
-                type="email"
+                type="text"
                 name="emailOrPhone"
                 value={userAuth.emailOrPhone}
                 onChange={handleChange}
                 id="email"
-                className="block w-72 py-5  px-0  text-white bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:text-white focus:border-blue-600 peer"
-                placeholder="Votre email"
+                className="market-input w-full"
+                placeholder="nom@exemple.com"
                 disabled={isSubmited}
               />
-              <label
-                htmlFor="email"
-                className="absolute  text-white duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600 peer-focus:left-0  peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
-              ></label>
             </div>
-            <div className="relative my-4">
+            <div className="my-4">
+              <label htmlFor="password" className="mb-2 block text-sm font-semibold text-gray-700">Mot de passe</label>
               <input
                 type="password"
                 name="password"
                 id="password"
                 value={userAuth.password}
                 onChange={handleChange}
-                className="block w-72 py-5 px-0  text-white bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:text-white focus:border-blue-600 peer"
+                className="market-input w-full"
                 placeholder="Votre mot de passe"
                 disabled={isSubmited}
               />
-              <label
-                htmlFor="password"
-                className="absolute  text-white duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600 peer-focus:left-0  peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
-              ></label>
             </div>
-            <div className="flex justify-between items-center">
-              <Link to="/forgotPass" className="text-green-500">
+            <div className="flex items-center justify-end">
+              <Link to="/forgotPass" className="text-sm font-semibold text-emerald-800 hover:text-emerald-950">
                 Mot de passe oublié
               </Link>
             </div>
             <button
-              className="w-full mb-4 text-[18px] mt-6 rounded-full bg-emerald-600 text-white shadow shadow-emerald-600 hover:bg-emerald-600 hover:text-white py-2 transition-colors"
+              className="market-button-primary mt-6 mb-4 w-full disabled:cursor-not-allowed disabled:opacity-60"
               type="submit"
               disabled={isSubmited}
             >
@@ -157,9 +150,9 @@ function Login() {
               )}
             </button>
             <div className="flex justify-between items-center">
-              <span className="m-4 flex gap-10">
-                Pas de compte ?
-                <Link to="/register" className="text-green-500">
+              <span className="mt-3 flex w-full justify-center gap-2 text-sm text-gray-600">
+                Pas encore de compte ?
+                <Link to="/register" className="font-semibold text-emerald-800">
                   S'inscrire
                 </Link>
               </span>

@@ -92,7 +92,7 @@ function Register() {
 
       if (response.status === 400) {
         const result = await response.json();
-        console.log(result.errors);
+        toast.error(result.message || "Veuillez v�rifier les informations saisies.");
       }
     } catch (error) {
       console.error(error);
@@ -103,9 +103,9 @@ function Register() {
   },[csrf, navigate, state.user])
 
   return (
-    !csrf ? <Preloader/> :  <div className="text-white w-full h-[100vh] flex justify-center items-center bg-green-900 bg-[url('../src/assets/image/about/about.jpg')] bg-blend-multiply">
+    !csrf ? <Preloader/> :  <div className="auth-page auth-register-page flex items-center justify-center">
       <div>
-        <div className="bg-green-950 w-fit md:w-[500px] border border-green-500 shadow-green-500 rounded-md px-8 py-5 shadow-lg backdrop-filter backdrop-blur relative">
+        <div className="auth-panel auth-card w-full max-w-lg">
           <h1 className="text-white flex flex-col justify-center items-center font-bold text-center mb-6 gap-3">
             <LiaUser size={60} />
             <strong className="text-2xl">S'inscrire</strong>
@@ -118,7 +118,7 @@ function Register() {
                   name={field}
                   onChange={handleChange}
                   value={state.user[field as keyof Iuser] as string}
-                  className="block w-full py-4 px-0 text-white bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:text-white focus:border-blue-600 peer"
+                  className="market-input w-full"
                   placeholder={
                     field === "username"
                       ? "Votre nom"

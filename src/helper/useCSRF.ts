@@ -2,12 +2,9 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 
 const useCSRF = () => {
-  const [csrf, setCsrf] = useState<string | null>(() => {
-    return localStorage.getItem("csrfToken");
-  });
+  const [csrf, setCsrf] = useState<string | null>(null);
 
   useEffect(() => {
-    // Si on a déjà le token, pas besoin de le récupérer
     if (csrf) return;
 
     const fetchCSRF = async () => {
@@ -34,7 +31,6 @@ const useCSRF = () => {
         const result = await response.json();
 
         if (result?.csrfToken) {
-          localStorage.setItem("csrfToken", result.csrfToken);
           setCsrf(result.csrfToken);
         } else {
           console.warn("CSRF token manquant dans la réponse :", result);
