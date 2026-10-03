@@ -70,6 +70,7 @@ function MarketplaceOrders() {
   const isSeller = role === "Boutiks";
   const [orders, setOrders] = useState<MarketplaceOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [busyId, setBusyId] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [refusalDraft, setRefusalDraft] = useState<Record<string, string>>({});
@@ -80,19 +81,25 @@ function MarketplaceOrders() {
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
+    setLoadError("");
     try {
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}marketplace/orders`,
         { credentials: "include" },
       );
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
+      if (response.status === 404) {
+        throw new Error(
+          "L’API marketplace n’est pas encore déployée sur le serveur. Déployez la dernière version backend.",
+        );
+      }
       if (!response.ok)
         throw new Error(
           result.message || "Impossible de charger les commandes.",
         );
       setOrders(result.data);
     } catch (error) {
-      toast.error(
+      setLoadError(
         error instanceof Error
           ? error.message
           : "Erreur de chargement des commandes.",
@@ -204,6 +211,23 @@ function MarketplaceOrders() {
       {loading ? (
         <div className="admin-panel p-8 text-center text-sm text-gray-500">
           Chargement des commandes…
+        </div>
+      ) : loadError ? (
+        <div
+          role="alert"
+          className="admin-panel border-amber-200 bg-amber-50 p-5 text-sm text-amber-950"
+        >
+          <p className="font-bold">
+            Impossible de charger les commandes marketplace
+          </p>
+          <p className="mt-1">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => void loadOrders()}
+            className="admin-button-secondary mt-4 min-h-10"
+          >
+            Réessayer
+          </button>
         </div>
       ) : visibleOrders.length === 0 ? (
         <div className="admin-panel p-10 text-center">

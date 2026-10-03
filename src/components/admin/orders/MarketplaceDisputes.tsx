@@ -39,6 +39,7 @@ function MarketplaceDisputes() {
   const { priceInArriary } = useFormatter();
   const [orders, setOrders] = useState<DisputedOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [resolutionsById, setResolutionsById] = useState<
     Record<string, string>
   >({});
@@ -47,17 +48,23 @@ function MarketplaceDisputes() {
 
   const loadDisputes = useCallback(async () => {
     setLoading(true);
+    setLoadError("");
     try {
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}marketplace/orders/disputes`,
         { credentials: "include" },
       );
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
+      if (response.status === 404) {
+        throw new Error(
+          "L’API marketplace n’est pas encore déployée sur le serveur. Déployez la dernière version backend.",
+        );
+      }
       if (!response.ok)
         throw new Error(result.message || "Impossible de charger les litiges.");
       setOrders(result.data);
     } catch (error) {
-      toast.error(
+      setLoadError(
         error instanceof Error
           ? error.message
           : "Erreur de chargement des litiges.",
@@ -126,7 +133,22 @@ function MarketplaceDisputes() {
         </button>
       </header>
 
-      {!orders.length ? (
+      {loadError ? (
+        <div
+          role="alert"
+          className="admin-panel border-amber-200 bg-amber-50 p-5 text-sm text-amber-950"
+        >
+          <p className="font-bold">Impossible de charger les litiges</p>
+          <p className="mt-1">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => void loadDisputes()}
+            className="admin-button-secondary mt-4 min-h-10"
+          >
+            Réessayer
+          </button>
+        </div>
+      ) : !orders.length ? (
         <div className="admin-panel p-10 text-center">
           <h2 className="font-bold text-gray-900">Aucun litige ouvert</h2>
           <p className="mt-1 text-sm text-gray-500">

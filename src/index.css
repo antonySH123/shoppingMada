@@ -1279,6 +1279,34 @@ select:focus-visible {
   padding: 0.7rem 0.85rem;
 }
 
+.admin-content-gutter { width: 100%; min-width: 0; padding-inline: clamp(0.75rem, 2vw, 1.5rem); }
+.admin-page.page-container { width: 100%; max-width: 1440px; min-width: 0; margin-inline: auto; }
+.admin-page .admin-toolbar,
+.admin-page .admin-panel,
+.admin-page .admin-panel-heading,
+.admin-page .admin-toolbar-actions { min-width: 0; }
+.admin-page .admin-panel-heading > div { min-width: 0; overflow-wrap: anywhere; }
+.admin-page table { display: block; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+.admin-page input,
+.admin-page select,
+.admin-page textarea { min-width: 0; max-width: 100%; }
+
+@media (max-width: 767px) {
+  .admin-content-gutter { padding-inline: 0.75rem; }
+  .admin-page .admin-toolbar { align-items: stretch; gap: 0.75rem; padding: 1rem; }
+  .admin-page .admin-toolbar-actions { width: 100%; align-items: stretch; }
+  .admin-page .admin-toolbar-actions > * { flex: 1 1 100%; min-width: 0; }
+  .admin-page .admin-panel-heading { align-items: flex-start; gap: 0.75rem; padding: 1rem; }
+  .admin-page .admin-panel-title { font-size: 1.35rem; line-height: 1.3; overflow-wrap: anywhere; }
+  .admin-page .admin-panel-subtitle { overflow-wrap: anywhere; }
+}
+
+@media (max-width: 420px) {
+  .admin-page .admin-toolbar-actions { flex-direction: column; }
+  .admin-page .admin-panel-heading .admin-status-badge { max-width: 100%; white-space: normal; }
+  .admin-page .admin-panel > .space-y-4 { padding: 0.75rem; }
+}
+
 .admin-page .admin-modal-form input:focus {
   border-color: var(--market-green);
   box-shadow: 0 0 0 3px rgb(22 131 75 / 12%);
