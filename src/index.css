@@ -1743,6 +1743,25 @@ select:focus-visible {
 .profile-information-item:hover { transform: none; box-shadow: none; }
 .profile-information-item .profile-field-label { color: #7a887e; font-size: 0.62rem; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
 .profile-information-item strong { min-width: 0; color: #263b2e; font-size: 0.8rem; font-weight: 700; overflow-wrap: anywhere; }
+.profile-sections-stack { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; margin-top: 1.2rem; }
+.profile-section-card { border: 1px solid #e7efe8; border-radius: 1rem; background: #fafcfb; overflow: hidden; }
+.profile-section-title { display: flex; align-items: flex-start; gap: 0.7rem; border-bottom: 1px solid #eef3ef; padding: 0.9rem 1rem; }
+.profile-section-icon { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 0.7rem; background: linear-gradient(145deg, #eafaf0, #edf4ff); color: #156a42; }
+.profile-section-title h3 { margin: 0; color: #1d3328; font-size: 0.96rem; font-weight: 800; }
+.profile-section-title p { margin: 0.2rem 0 0; color: #718078; font-size: 0.68rem; }
+.profile-section-body { display: grid; gap: 0.6rem; padding: 0.9rem 1rem 1rem; }
+.profile-inline-row { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; color: #31443b; font-size: 0.77rem; }
+.profile-pill { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 0.28rem 0.52rem; font-size: 0.62rem; font-weight: 800; }
+.profile-pill-success { border: 1px solid rgb(34 197 94 / 20%); background: rgb(34 197 94 / 10%); color: #1f8c5c; }
+.profile-pill-neutral { border: 1px solid #dfe9e1; background: #f4f7f4; color: #466055; }
+.profile-text-button { display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; color: #1a6f4d; font-size: 0.72rem; font-weight: 700; }
+.danger-row .profile-text-button { color: #d12f46; }
+.profile-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; color: #31443b; font-size: 0.77rem; }
+.profile-toggle-row input { accent-color: #16834b; width: 1.1rem; height: 1.1rem; }
+.compact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.profile-pref-field { display: grid; gap: 0.35rem; color: #31443b; font-size: 0.72rem; }
+.profile-pref-field select { min-height: 2.5rem; border: 1px solid #dde7df; border-radius: 0.75rem; background: #fff; padding: 0.55rem 0.7rem; color: #1d3328; }
+.seller-card { border-color: rgb(22 131 75 / 12%); background: linear-gradient(180deg, #f9fffb, #f3f8f6); }
 .profile-orders-content { min-width: 0; margin-top: 1.25rem; border-top: 1px solid #edf1ed; padding-top: 0.2rem; }
 
 @media (max-width: 800px) {
@@ -1751,6 +1770,7 @@ select:focus-visible {
   .profile-identity { grid-row: span 2; }
   .profile-completion { margin: 0; border-top: 0; border-left: 1px solid rgb(255 255 255 / 14%); padding: 0 0 0 1.25rem; }
   .profile-summary .profile-seller-link { grid-column: 2; margin-top: -0.4rem; }
+  .profile-sections-stack { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 560px) {
@@ -1763,10 +1783,9 @@ select:focus-visible {
   .profile-completion { border-top: 1px solid rgb(255 255 255 / 14%); border-left: 0; padding: 0.9rem 0 0; }
   .profile-summary .profile-seller-link { grid-column: auto; margin-top: 0; }
   .profile-details-panel { padding: 1rem; }
-  .profile-section-heading { align-items: flex-start; }
-  .profile-inline-edit { width: 2.4rem; padding-inline: 0; }
-  .profile-inline-edit span { display: none; }
-  .profile-information-grid { grid-template-columns: minmax(0, 1fr); }
+  .profile-information-grid,
+  .compact-grid { grid-template-columns: minmax(0, 1fr); }
+  .profile-inline-row { align-items: flex-start; flex-direction: column; }
 }
 
 .otp-page { position: relative; display: grid; min-height: 100vh; place-items: center; isolation: isolate; overflow: hidden; padding: 1.5rem; background: radial-gradient(ellipse at 12% 12%, rgb(45 212 191 / 15%), transparent 28%), radial-gradient(ellipse at 88% 88%, rgb(99 102 241 / 13%), transparent 31%), linear-gradient(140deg, #f4f8f4, #eef5f0 58%, #f5f5fa); }
