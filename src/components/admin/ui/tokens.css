@@ -33,11 +33,11 @@
 }
 
 .admin-shell[data-admin-theme="light"] {
-  --admin-canvas: #f3f7f5;
-  --admin-surface: #ffffff;
-  --admin-surface-raised: #f8fbf9;
-  --admin-surface-hover: #eef5f1;
-  --admin-border: #dce7e0;
+  --admin-canvas: #e8efeb;
+  --admin-surface: #f7faf8;
+  --admin-surface-raised: #edf4f0;
+  --admin-surface-hover: #e3eee7;
+  --admin-border: #cbd9d0;
   --admin-text: #172b22;
   --admin-muted: #5e7167;
   --admin-success: #16794e;
