@@ -29,6 +29,9 @@ const Navbar = () => {
   const visibleMenu = menu.filter(
     (item) => item.href !== "/vendeur" || !isSeller,
   );
+  const secondaryMobileMenu = visibleMenu.filter(
+    (item) => item.href !== "/shop" && item.href !== "/vendeur",
+  );
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -98,6 +101,33 @@ const Navbar = () => {
         <span className="xl:hidden">Inscription</span>
       </Link>
     </>
+  );
+
+  const mobileSessionActions = user ? (
+    <Link
+      to="/logout"
+      onClick={closeMenu}
+      className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-gray-700 transition hover:bg-red-50 hover:text-red-700"
+    >
+      <LiaSignOutAltSolid size={19} /> Déconnexion
+    </Link>
+  ) : (
+    <div className="flex flex-wrap items-center gap-2">
+      <Link
+        to="/login"
+        onClick={closeMenu}
+        className="rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
+      >
+        Connexion
+      </Link>
+      <Link
+        to="/register"
+        onClick={closeMenu}
+        className="market-button-primary !rounded-xl !px-4 !py-2.5 text-sm"
+      >
+        <LiaUserPlusSolid size={17} /> Inscription
+      </Link>
+    </div>
   );
 
   return (
@@ -219,7 +249,7 @@ const Navbar = () => {
             aria-label="Navigation mobile"
             className="market-container flex flex-col gap-1"
           >
-            {[...visibleMenu, { href: "/#contact", label: "Contact" }].map(
+            {[...secondaryMobileMenu, { href: "/#contact", label: "Contact" }].map(
               (item) => (
                 <Link
                   key={item.label}
@@ -231,8 +261,8 @@ const Navbar = () => {
                 </Link>
               ),
             )}
-            <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-4">
-              {accountLinks}
+            <div className="mt-2 border-t border-gray-100 pt-4">
+              {mobileSessionActions}
             </div>
           </nav>
         </div>

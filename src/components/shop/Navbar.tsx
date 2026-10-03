@@ -44,7 +44,7 @@ function Navbar() {
             <LiaSearchSolid size={18} />
           </button>
         </form>
-        <div className="hidden shrink-0 items-center gap-2 sm:flex">
+        <div className="hidden shrink-0 items-center gap-2 md:flex">
           <Link to={user ? "/profil" : "/login"} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-800"><LiaUser size={19} /></span>
             <span className="hidden xl:block">{user ? "Mon compte" : "Connexion"}</span>
@@ -73,7 +73,7 @@ function Navbar() {
               </button>
               <Link to="/shop" className="hidden text-xs font-semibold text-gray-600 transition hover:text-emerald-800 md:inline">Explorer les produits</Link>
             </div>
-            <Link to="/vendeur" className="text-xs font-semibold text-emerald-800 transition hover:text-emerald-950">Vous êtes vendeur ? Rejoignez-nous</Link>
+            <Link to="/vendeur" className="hidden text-xs font-semibold text-emerald-800 transition hover:text-emerald-950 md:inline-flex">Vous êtes vendeur ? Rejoignez-nous</Link>
           </div>
         )}
       </div>
