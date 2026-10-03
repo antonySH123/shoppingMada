@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import IProduct from "../../../Interface/IProduct";
 import { LiaEdit, LiaEye, LiaTrashAltSolid } from "react-icons/lia";
@@ -7,9 +7,13 @@ import Dialog from "../../modals/Dialog";
 import { toast } from "react-toastify";
 import useCSRF from "../../../helper/useCSRF";
 import Preloader from "../../loading/Preloader";
+import { DataTable, PageHeader, RowActions, type AdminDataColumn } from "../ui";
+import useFormatter from "../../../helper/useFormatter";
 
 function Content() {
   const csrf = useCSRF();
+  const navigate = useNavigate();
+  const { priceInArriary } = useFormatter();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [title, setTitle] = useState("Confirmation");
   const close = () => setOpenDialog(false);
@@ -42,6 +46,78 @@ function Content() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null,
   );
+  const productColumns: AdminDataColumn<IProduct>[] = [
+    {
+      id: "number",
+      header: "#",
+      render: (_product, index) => (
+        <span className="tabular-nums">{index + 1}</span>
+      ),
+    },
+    {
+      id: "name",
+      header: "Produit",
+      render: (product) => <strong>{product.name}</strong>,
+      sortValue: (product) => product.name,
+    },
+    {
+      id: "description",
+      header: "Description",
+      render: (product) => (
+        <span className="line-clamp-2 max-w-md">{product.description}</span>
+      ),
+    },
+    {
+      id: "price",
+      header: "Prix",
+      render: (product) => priceInArriary(product.price),
+      sortValue: (product) => product.price,
+    },
+    {
+      id: "stock",
+      header: "Stock",
+      render: (product) => (
+        <span className="tabular-nums">{product.stock ?? "—"}</span>
+      ),
+      sortValue: (product) => product.stock ?? 0,
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      className: "text-right",
+      render: (product) => (
+        <RowActions
+          actions={[
+            {
+              id: "view",
+              label: "Voir le produit",
+              icon: <LiaEye />,
+              onSelect: () => navigate(product._id),
+            },
+            {
+              id: "edit",
+              label: "Modifier le produit",
+              icon: <LiaEdit />,
+              onSelect: () =>
+                navigate(`/espace_vendeur/admin/addProduct/${product._id}`),
+            },
+            {
+              id: "delete",
+              label: "Supprimer le produit",
+              icon: <LiaTrashAltSolid />,
+              destructive: true,
+              confirmBeforeAction: false,
+              onSelect: () => {
+                setSelectedProductId(product._id);
+                setTitle("Êtes-vous sûr de vouloir supprimer ce produit ?");
+                setOpenDialog(true);
+              },
+            },
+          ]}
+        />
+      ),
+    },
+  ];
 
   const handleDeleteProduct = async () => {
     try {
@@ -78,82 +154,31 @@ function Content() {
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 py-5">
-      <div className="py-5">
-        <h1 className="text-3xl">Nos produits</h1>
-      </div>
-      <div className="py-5 w-full flex justify-end">
-        <Link
-          to="/espace_vendeur/admin/addProduct"
-          className="border px-3 py-2 bg-green-500 text-white rounded-md"
-        >
-          Nouveau produit
-        </Link>
-      </div>
-      <div className="overflow-auto">
-        <table className="w-full border-2 overflow-auto">
-          <thead>
-            <tr>
-              <th className="py-3 px-3">#</th>
-              <th className="py-3">Produits</th>
-              <th className="py-3">Déscription</th>
-              <th className="py-3">Prix</th>
-              <th className="py-3">Stock</th>
-              <th className="py-3">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products &&
-              products.length > 0 &&
-              products?.map((element, index) => {
-                return (
-                  <tr key={element._id}>
-                    <td className="py-3 pr-6 whitespace-nowrap font-semibold tabular-nums px-3 text-center">
-                      {index + 1}
-                    </td>
-                    <td className="py-3 pr-6 whitespace-nowrap text-center">
-                      {element.name}
-                    </td>
-                    <td className="py-3 pr-6 whitespace-nowrap text-center">
-                      {element.description.slice(0, 50)}{" "}
-                      {element.description.length > 50 && "..."}
-                    </td>
-                    <td className="py-3 pr-6 whitespace-nowrap text-center">
-                      {element.price}
-                    </td>
-                    <td className="py-3 pr-6 whitespace-nowrap text-center">
-                      {element.stock}
-                    </td>
-                    <td className="flex justify-center items-center py-5 gap-1">
-                      <Link
-                        to={element._id}
-                        className="w-10 h-10 bg-blue-500 flex items-center justify-center rounded text-white"
-                      >
-                        <LiaEye />
-                      </Link>
-                      <Link
-                        to={`/espace_vendeur/admin/addProduct/${element._id}`}
-                        className="w-10 h-10 border border-green-500 flex items-center justify-center rounded text-green-500"
-                      >
-                        <LiaEdit />
-                      </Link>
-                      <button
-                        onClick={() => {
-                          setSelectedProductId(element._id);
-                          setTitle("Êtes-vous sûr!");
-                          setOpenDialog(true);
-                        }}
-                        className="w-10 h-10 border border-red-500 flex items-center justify-center rounded text-red-500"
-                      >
-                        <LiaTrashAltSolid />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-4 py-2">
+      <PageHeader
+        eyebrow="Catalogue boutique"
+        title="Produits"
+        description="Gérez votre catalogue, vos tarifs et les niveaux de stock."
+        action={
+          <button
+            type="button"
+            className="admin-button admin-button--primary admin-button--lg"
+            onClick={() => navigate("/espace_vendeur/admin/addProduct")}
+          >
+            <span aria-hidden="true">+</span>Nouveau produit
+          </button>
+        }
+      />
+      <section className="admin-panel p-3 sm:p-4">
+        <DataTable
+          columns={productColumns}
+          rows={products ?? []}
+          getRowKey={(product) => product._id}
+          loading={!products}
+          emptyTitle="Votre catalogue est vide"
+          emptyDescription="Ajoutez votre premier produit pour commencer à vendre."
+        />
+      </section>
       <Dialog
         title={title}
         message={""}

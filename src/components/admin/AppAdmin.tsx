@@ -2,14 +2,21 @@ import { useState, useEffect } from "react";
 import Sidebar from "./sidebar/Sidebar";
 import { Outlet } from "react-router-dom";
 import JodiProvider from "../../context/JodiProvider";
-import { LiaBarsSolid } from "react-icons/lia";
+import { LiaBarsSolid, LiaMoonSolid, LiaSunSolid } from "react-icons/lia";
 import { useLocation } from "react-router-dom";
+import "./ui/tokens.css";
 
 function AppAdmin() {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.innerWidth < 768;
+  });
+  const [adminTheme, setAdminTheme] = useState<"dark" | "light">(() => {
+    if (typeof window === "undefined") return "dark";
+    return window.localStorage.getItem("shopinmada.admin-theme") === "light"
+      ? "light"
+      : "dark";
   });
   const currentPageLabels: Record<string, string> = {
     dash: "Tableau de bord",
@@ -45,12 +52,16 @@ function AppAdmin() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    window.localStorage.setItem("shopinmada.admin-theme", adminTheme);
+  }, [adminTheme]);
+
   return (
-    <div className="admin-shell flex h-screen bg-[#f5f8f5]">
+    <div className="admin-shell flex h-screen" data-admin-theme={adminTheme}>
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
-      <div className="admin-shell-main min-w-0 flex-1 overflow-y-auto bg-[#f5f8f5]">
-        <header className="admin-page-header sticky top-0 z-20 flex h-[4.5rem] items-center gap-4 border-b border-gray-200 bg-white/95 px-4 shadow-sm backdrop-blur-md sm:px-7">
+      <div className="admin-shell-main min-w-0 flex-1 overflow-y-auto">
+        <header className="admin-page-header sticky top-0 z-20 flex h-[4.5rem] items-center gap-3 border-b px-4 shadow-sm sm:px-6">
           <button
             aria-label="Afficher/masquer le menu"
             aria-expanded={!isCollapsed}
@@ -60,14 +71,29 @@ function AppAdmin() {
             <LiaBarsSolid size={20} />
           </button>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+            <p className="admin-brand-label text-xs font-semibold uppercase tracking-[0.14em]">
               ShopInMada
             </p>
-            <h1 className="text-sm font-semibold text-gray-800 sm:text-base">
+            <h1 className="text-sm font-semibold sm:text-base">
               Espace professionnel
             </h1>
           </div>
-          <span className="admin-mobile-page-badge ml-auto rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+          <button
+            type="button"
+            className="admin-theme-toggle"
+            aria-label={`Activer le thème ${adminTheme === "dark" ? "clair" : "sombre"}`}
+            title={`Thème ${adminTheme === "dark" ? "clair" : "sombre"}`}
+            onClick={() =>
+              setAdminTheme((theme) => (theme === "dark" ? "light" : "dark"))
+            }
+          >
+            {adminTheme === "dark" ? (
+              <LiaSunSolid size={18} />
+            ) : (
+              <LiaMoonSolid size={18} />
+            )}
+          </button>
+          <span className="admin-mobile-page-badge ml-auto rounded-full px-3 py-1.5 text-xs font-semibold">
             {currentPageLabels[pageKey] || "Espace professionnel"}
           </span>
         </header>

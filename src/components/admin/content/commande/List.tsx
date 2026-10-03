@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { IProduct } from "../product/Add";
 import Iuser from "../../../../Interface/UserInterface";
-import { Fragment, useEffect, useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import { formatStatus } from "../../../../helper/locale";
+import { DataTable, PageHeader, StatusBadge } from "../../ui";
 
 interface ICommande {
   _id: string;
@@ -34,6 +35,7 @@ const reducer = (state: IState, action: Action) => {
 
 function List() {
   const [state, dispatch] = useReducer(reducer, initialState);
+
   useEffect(() => {
     const fetchData = async () => {
       const response = await fetch(`${import.meta.env.REACT_API_URL}command`, {
@@ -52,75 +54,101 @@ function List() {
     fetchData();
   }, []);
 
+  const columns = [
+    {
+      id: "index",
+      header: "#",
+      render: (_row: ICommande, index: number) => (
+        <span className="font-medium">{index + 1}</span>
+      ),
+    },
+    {
+      id: "product",
+      header: "Produit",
+      render: (row: ICommande) => row.product_id?.name ?? "—",
+      sortValue: (row: ICommande) => row.product_id?.name ?? "",
+    },
+    {
+      id: "price",
+      header: "Prix",
+      render: (row: ICommande) => row.product_id?.price ?? 0,
+      sortValue: (row: ICommande) => Number(row.product_id?.price ?? 0),
+    },
+    {
+      id: "quantity",
+      header: "Quantité",
+      render: (row: ICommande) => row.quantity,
+      sortValue: (row: ICommande) => row.quantity,
+    },
+    {
+      id: "variants",
+      header: "Variantes",
+      render: (row: ICommande) => (
+        <ul className="space-y-1">
+          {Object.entries(row.variants ?? {}).map(([key, value]) => (
+            <li key={key} className="text-xs text-[var(--admin-muted)]">
+              {key} : {value}
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+    {
+      id: "status",
+      header: "Statut",
+      render: (row: ICommande) => (
+        <StatusBadge status={row.status} label={formatStatus(row.status)} />
+      ),
+      sortValue: (row: ICommande) => row.status,
+    },
+    {
+      id: "action",
+      header: "Action",
+      render: (row: ICommande) => (
+        <Link
+          to={`/espace_vendeur/commande/${row._id}`}
+          className="admin-button admin-button--outline admin-button--sm"
+        >
+          Détails
+        </Link>
+      ),
+    },
+  ];
+
   return (
-    <div className="flex flex-wrap lg:flex-nowrap gap-5 p-4">
-      {/* Liste des commandes */}
-      <div className="w-full lg:w-2/3 flex-grow">
-        <h1 className="text-center text-3xl font-bold mb-6">
-          Listes des commandes
-        </h1>
-        <div className="shadow-md border rounded-lg overflow-auto">
-          <table className="w-full border-collapse text-sm lg:text-base">
-            <thead className="bg-gray-100 text-gray-700">
-              <tr>
-                <th className="py-3 px-3 border">#</th>
-                <th className="py-3 border">Produits</th>
-                <th className="py-3 border">Prix</th>
-                <th className="py-3 border">Quantité</th>
-                <th className="py-3 border">Variantes</th>
-                <th className="py-3 border">Statut</th>
-                <th className="py-3 border">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.commandes.length > 0 &&
-                state.commandes.map((element, index) => (
-                  <Fragment key={element._id}>
-                    {element.product_id && (
-                      <tr className="hover:bg-gray-50">
-                        <td className="py-3 px-3 border text-center">
-                          {index + 1}
-                        </td>
-                        <td className="py-3 px-3 border text-center">
-                          {element.product_id && element.product_id.name}
-                        </td>
-                        <td className="py-3 px-3 border text-center">
-                          {element.product_id && element.product_id.price}
-                        </td>
-                        <td className="py-3 px-3 border text-center">
-                          {element.quantity}
-                        </td>
-                        <td className="py-3 px-3 border text-center">
-                          <ul>
-                            {Object.entries(element.variants).map(
-                              ([key, value]) => (
-                                <li key={key}>
-                                  {key} : {value}
-                                </li>
-                              ),
-                            )}
-                          </ul>
-                        </td>
-                        <td className="py-3 px-3 border text-center text-yellow-500">
-                          {formatStatus(element.status)}
-                        </td>
-                        <td className="py-3 px-3 border text-center">
-                          <Link
-                            title="Valider"
-                            className="w-10 h-10 flex items-center justify-center text-green-500"
-                            to={`/espace_vendeur/commande/${element._id}`}
-                          >
-                            Détails
-                          </Link>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                ))}
-            </tbody>
-          </table>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Commandes"
+        title="Listes des commandes"
+        description="Suivez les commandes et ouvrez le détail de chaque transaction."
+      />
+
+      <section className="admin-panel">
+        <div className="admin-panel-heading">
+          <div>
+            <h2>Commandes enregistrées</h2>
+            <p>Historique et détails des achats liés à votre boutique.</p>
+          </div>
         </div>
-      </div>
+
+        <div className="p-3 sm:p-5">
+          {state.commandes.length > 0 ? (
+            <DataTable
+              columns={columns}
+              rows={state.commandes.filter(Boolean)}
+              getRowKey={(row) => row._id}
+              pageSize={8}
+              emptyTitle="Aucune commande"
+              emptyDescription="Les commandes de votre boutique apparaîtront ici."
+            />
+          ) : (
+            <div className="admin-empty-state">
+              <h2>Aucune commande</h2>
+              <p>Les commandes de votre boutique apparaîtront ici.</p>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

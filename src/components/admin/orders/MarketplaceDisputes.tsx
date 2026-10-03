@@ -116,10 +116,10 @@ function MarketplaceDisputes() {
       <header className="admin-toolbar">
         <div>
           <p className="admin-kicker">Arbitrage marketplace</p>
-          <h1 className="text-2xl font-extrabold text-gray-900">
+          <h1 className="text-2xl font-extrabold text-[var(--admin-text)]">
             Litiges de commande
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-[var(--admin-muted)]">
             Examinez les éléments transmis avant de décider pour chaque
             sous-commande.
           </p>
@@ -150,8 +150,10 @@ function MarketplaceDisputes() {
         </div>
       ) : !orders.length ? (
         <div className="admin-panel p-10 text-center">
-          <h2 className="font-bold text-gray-900">Aucun litige ouvert</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="font-bold text-[var(--admin-text)]">
+            Aucun litige ouvert
+          </h2>
+          <p className="mt-1 text-sm text-[var(--admin-muted)]">
             Les sous-commandes signalées apparaîtront dans cette file.
           </p>
         </div>
@@ -190,10 +192,10 @@ function MarketplaceDisputes() {
                     >
                       <div className="flex flex-wrap justify-between gap-2">
                         <div>
-                          <h3 className="font-bold text-gray-900">
+                          <h3 className="font-bold text-[var(--admin-text)]">
                             {shop?.name ?? "Boutique"}
                           </h3>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-[var(--admin-muted)]">
                             {shop?.phoneNumber}{" "}
                             {shop?.email ? `· ${shop.email}` : ""}
                           </p>
@@ -204,7 +206,7 @@ function MarketplaceDisputes() {
                         {subOrder.items.map((item, index) => (
                           <p
                             key={`${item.name}-${index}`}
-                            className="text-xs text-gray-600"
+                            className="text-xs text-[var(--admin-muted)]"
                           >
                             {item.quantity} × {item.name} ·{" "}
                             {priceInArriary(item.unitPrice)}
@@ -228,15 +230,15 @@ function MarketplaceDisputes() {
                           Voir la capture fournie
                         </a>
                       )}
-                      <details className="mt-3 rounded-lg border border-gray-200 bg-white p-3">
-                        <summary className="cursor-pointer text-xs font-bold text-gray-700">
+                      <details className="mt-3 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] p-3">
+                        <summary className="cursor-pointer text-xs font-bold text-[var(--admin-text)]">
                           Historique des statuts
                         </summary>
                         <ul className="mt-2 space-y-2">
                           {subOrder.statusHistory.map((entry, index) => (
                             <li
                               key={`${entry.status}-${index}`}
-                              className="text-xs text-gray-600"
+                              className="text-xs text-[var(--admin-muted)]"
                             >
                               {new Date(entry.createdAt).toLocaleString(
                                 "fr-FR",
@@ -248,7 +250,7 @@ function MarketplaceDisputes() {
                         </ul>
                       </details>
                       <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_auto] sm:items-end">
-                        <label className="grid gap-1 text-xs font-bold text-gray-600">
+                        <label className="grid gap-1 text-xs font-bold text-[var(--admin-muted)]">
                           Décision
                           <select
                             className="admin-input min-h-10"
@@ -270,7 +272,7 @@ function MarketplaceDisputes() {
                             ))}
                           </select>
                         </label>
-                        <label className="grid gap-1 text-xs font-bold text-gray-600">
+                        <label className="grid gap-1 text-xs font-bold text-[var(--admin-muted)]">
                           Motif de décision
                           <textarea
                             maxLength={500}

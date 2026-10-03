@@ -174,16 +174,16 @@ function MarketplaceOrders() {
       <header className="admin-toolbar">
         <div>
           <p className="admin-kicker">Opérations marketplace</p>
-          <h1 className="text-2xl font-extrabold text-gray-900">
+          <h1 className="admin-panel-title text-2xl">
             {isSeller ? "Commandes de la boutique" : "Commandes multi-vendeurs"}
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="admin-panel-subtitle mt-1 text-sm">
             Chaque boutique traite sa sous-commande, son paiement et sa
             livraison.
           </p>
         </div>
         <div className="admin-toolbar-actions">
-          <label className="grid gap-1 text-xs font-bold text-gray-600">
+          <label className="grid gap-1 text-xs font-bold text-[var(--admin-muted)]">
             Statut
             <select
               className="admin-input min-h-11"
@@ -209,7 +209,7 @@ function MarketplaceOrders() {
       </header>
 
       {loading ? (
-        <div className="admin-panel p-8 text-center text-sm text-gray-500">
+        <div className="admin-panel p-8 text-center text-sm text-[var(--admin-muted)]">
           Chargement des commandes…
         </div>
       ) : loadError ? (
@@ -231,8 +231,10 @@ function MarketplaceOrders() {
         </div>
       ) : visibleOrders.length === 0 ? (
         <div className="admin-panel p-10 text-center">
-          <h2 className="font-bold text-gray-900">Aucune sous-commande</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="font-bold text-[var(--admin-text)]">
+            Aucune sous-commande
+          </h2>
+          <p className="mt-1 text-sm text-[var(--admin-muted)]">
             Les nouvelles commandes apparaîtront ici.
           </p>
         </div>
@@ -271,18 +273,18 @@ function MarketplaceOrders() {
                 return (
                   <section
                     key={subOrder._id}
-                    className="rounded-xl border border-gray-200 bg-white"
+                    className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)]"
                   >
-                    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 bg-gray-50 px-4 py-3">
+                    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--admin-border)] bg-[var(--admin-surface-raised)] px-4 py-3">
                       <div>
-                        <p className="text-xs font-bold text-gray-900">
+                        <p className="text-xs font-bold text-[var(--admin-text)]">
                           {shopName}
                         </p>
-                        <p className="mt-0.5 text-xs text-gray-500">
+                        <p className="mt-0.5 text-xs text-[var(--admin-muted)]">
                           {statusLabels[subOrder.status] ?? subOrder.status}
                         </p>
                       </div>
-                      <strong className="text-sm text-gray-900">
+                      <strong className="text-sm text-[var(--admin-text)]">
                         {priceInArriary(subOrder.payableTotal)}
                       </strong>
                     </header>
@@ -293,16 +295,16 @@ function MarketplaceOrders() {
                             key={`${item.name}-${index}`}
                             className="flex justify-between gap-3 text-xs"
                           >
-                            <span className="text-gray-600">
+                            <span className="text-[var(--admin-muted)]">
                               {item.quantity} × {item.name}
                             </span>
-                            <strong>
+                            <strong className="text-[var(--admin-text)]">
                               {priceInArriary(item.quantity * item.unitPrice)}
                             </strong>
                           </div>
                         ))}
                       </div>
-                      <div className="flex flex-wrap gap-x-5 gap-y-1 border-t border-gray-100 pt-3 text-xs text-gray-500">
+                      <div className="flex flex-wrap gap-x-5 gap-y-1 border-t border-[var(--admin-border)] pt-3 text-xs text-[var(--admin-muted)]">
                         <span>
                           Sous-total : {priceInArriary(subOrder.subtotal)}
                         </span>
@@ -337,7 +339,7 @@ function MarketplaceOrders() {
                         </div>
                       )}
                       {subOrder.shipping.trackingNumber && (
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-[var(--admin-muted)]">
                           Expédition :{" "}
                           {subOrder.shipping.carrier || "Transporteur"} ·{" "}
                           {subOrder.shipping.trackingNumber}
@@ -457,7 +459,7 @@ function MarketplaceOrders() {
                                   );
                                 }}
                               >
-                                <label className="grid gap-1 text-[10px] font-bold text-gray-500">
+                                <label className="grid gap-1 text-[10px] font-bold text-[var(--admin-muted)]">
                                   Transporteur
                                   <input
                                     className="admin-input min-h-10"
@@ -473,7 +475,7 @@ function MarketplaceOrders() {
                                     }
                                   />
                                 </label>
-                                <label className="grid gap-1 text-[10px] font-bold text-gray-500">
+                                <label className="grid gap-1 text-[10px] font-bold text-[var(--admin-muted)]">
                                   N° de suivi
                                   <input
                                     className="admin-input min-h-10"

@@ -12,6 +12,8 @@ import { useParams } from "react-router-dom";
 import Editor from "./Editor";
 import { useContent } from "../../../../context/JoditEditorContext";
 import Preloader from "../../../loading/Preloader";
+import { Link } from "react-router-dom";
+import { AdminButton, AdminField, AdminInput, PageHeader } from "../../ui";
 
 export interface IProduct {
   name: string;
@@ -60,7 +62,13 @@ function Add() {
   useEffect(() => {
     setProduct((prevProduct) => ({ ...prevProduct, details: content }));
   }, [content]);
-  useEffect(() => () => Object.values(filePreviewsRef.current).forEach((url) => URL.revokeObjectURL(url)), []);
+  useEffect(
+    () => () =>
+      Object.values(filePreviewsRef.current).forEach((url) =>
+        URL.revokeObjectURL(url),
+      ),
+    [],
+  );
   const { productId } = useParams();
 
   const csrf = useCSRF();
@@ -69,7 +77,11 @@ function Add() {
     if (removed instanceof File) {
       const key = `${removed.name}-${removed.lastModified}`;
       if (filePreviews[key]) URL.revokeObjectURL(filePreviews[key]);
-      setFilePreviews((prev) => { const next = { ...prev }; delete next[key]; return next; });
+      setFilePreviews((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
     }
     setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
@@ -88,7 +100,12 @@ function Add() {
       files.forEach((photo) => {
         if (photo instanceof File) formData.append("image", photo);
       });
-      formData.append("photos", JSON.stringify(files.filter((photo): photo is string => typeof photo === "string")));
+      formData.append(
+        "photos",
+        JSON.stringify(
+          files.filter((photo): photo is string => typeof photo === "string"),
+        ),
+      );
 
       if (csrf) {
         const method = productId ? "PUT" : "POST"; // Utiliser PUT si productId existe (modification)
@@ -115,7 +132,11 @@ function Add() {
         resetForm();
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Impossible d'enregistrer le produit.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Impossible d'enregistrer le produit.",
+      );
     }
   };
 
@@ -140,7 +161,7 @@ function Add() {
     try {
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}shop/product/${productId}`,
-        { credentials: "include" }
+        { credentials: "include" },
       );
       if (response.ok) {
         const { data } = await response.json();
@@ -148,14 +169,14 @@ function Add() {
         setProduct(data);
         setFiles(data.photos || []);
         setNewContent(data.details);
-        setSelectedCategoryId(data.category)
+        setSelectedCategoryId(data.category);
       }
     } catch (error) {
-      if(error instanceof Error){
+      if (error instanceof Error) {
         toast.error(error.message);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId, setSelectedCategoryId]);
 
   useEffect(() => {
@@ -168,150 +189,188 @@ function Add() {
     }
   }, [selectedCategoryId, productId, fetchProduct]);
 
-  return (
-    !csrf ? <Preloader/> :
-    <div className="px-0 sm:px-5 md:px-10 overflow-y-auto">
-      <h1 className="text-center md:text-4xl uppercase my-5">
-        {productId ? "Modifier le produit" : "Ajouter un nouveau produit"}
-      </h1>
-      <div className="w-full h-full">
-        <form
-          action=""
-          method="post"
-          className="w-full shadow-md p-10 bg-white rounded-md "
-          onSubmit={handleSubmit}
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-3">
+  return !csrf ? (
+    <Preloader />
+  ) : (
+    <div className="space-y-4">
+      <PageHeader
+        eyebrow="Catalogue boutique"
+        title={productId ? "Modifier le produit" : "Ajouter un produit"}
+        description="Présentez votre article avec des informations claires, un prix et un stock à jour."
+        action={
+          <Link
+            to="/espace_vendeur/products"
+            className="admin-button admin-button--outline admin-button--md"
+          >
+            Retour au catalogue
+          </Link>
+        }
+      />
+
+      <form
+        action=""
+        method="post"
+        className="admin-panel grid gap-5 p-4 sm:p-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]"
+        onSubmit={handleSubmit}
+      >
+        <div className="grid min-w-0 content-start gap-4">
+          <section className="grid min-w-0 gap-4 sm:grid-cols-2">
+            <AdminInput
+              label="Nom du produit"
+              name="name"
+              value={product.name}
+              onChange={handleInputChange}
+              required
+            />
+            <AdminField label="Catégorie" required>
+              <Categorie />
+            </AdminField>
+            <AdminInput
+              label="Prix (Ar)"
+              type="number"
+              min="0"
+              step="1"
+              name="price"
+              value={product.price}
+              onChange={handleInputChange}
+              required
+            />
+            <AdminInput
+              label="Stock disponible"
+              type="number"
+              min="0"
+              step="1"
+              name="stock"
+              value={product.stock}
+              onChange={handleInputChange}
+              required
+            />
+          </section>
+
+          <AdminInput
+            label="Description courte"
+            name="description"
+            value={product.description}
+            onChange={handleInputChange}
+            required
+          />
+
+          <section className="admin-product-images">
             <div>
-              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="w-full flex gap-3 flex-col">
-                  <label>Nom du produit</label>
-                    <input
-                    type="text"
-                    className="w-full border border-green-500 py-2"
-                    name="name"
-                    value={product.name}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="w-full flex gap-3 flex-col">
-                  <label>Prix</label>
-                  <input
-                    type="number"
-                    className="w-full border border-green-500 py-2"
-                    name="price"
-                    value={product.price}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="w-full flex gap-3 flex-col">
-                  <label>Stock</label>
-                  <input
-                    type="number"
-                    className="w-full border border-green-500 py-2"
-                    name="stock"
-                    value={product.stock}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-              <div className="w-full py-5">
-                <div className="">
-                  <label>Categorie</label>
-                  <Categorie />
-                </div>
-              </div>
-              <div className="w-full flex gap-3 flex-col mb-3">
-                <label>Description</label>
-                <input
-                  type="text"
-                  className="w-full border border-green-500 py-2"
-                  name="description"
-                  value={product.description}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {files && files.length > 0 && (
-                  <ul className="flex gap-2">
-                    {files.map((file, index) => (
-                      <li key={index} className="mb-2 relative">
-                        <div
-                          onClick={() => handleFileRemove(index)}
-                          className="w-6 absolute cursor-pointer -right-2 -top-2 h-6 rounded-full bg-slate-100 shadow flex justify-center items-center"
-                        >
-                          <LiaTimesSolid size={10} />
+              <h2 className="admin-subsection-title">Images du produit</h2>
+              <p className="admin-helper-text">
+                Jusqu’à 5 images, au format JPEG, PNG ou WebP.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              {files && files.length > 0 && (
+                <ul className="flex gap-2">
+                  {files.map((file, index) => (
+                    <li
+                      key={
+                        typeof file === "string"
+                          ? file
+                          : `${file.name}-${file.lastModified}`
+                      }
+                      className="relative"
+                    >
+                      <button
+                        type="button"
+                        aria-label={`Retirer l’image ${index + 1}`}
+                        onClick={() => handleFileRemove(index)}
+                        className="absolute -right-2 -top-2 z-10 grid h-7 w-7 place-items-center rounded-full border border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text)] shadow-sm"
+                      >
+                        <LiaTimesSolid size={10} />
+                      </button>
+
+                      {typeof file === "string" ? (
+                        <div className="flex items-center space-x-2">
+                          <img
+                            src={`${import.meta.env.REACT_API_URL}uploads/${file}`}
+                            alt={file}
+                            className="admin-product-preview"
+                          />
                         </div>
-                        {typeof file === "string" ? (
+                      ) : (
+                        file.type.startsWith("image/") && (
                           <div className="flex items-center space-x-2">
                             <img
-                              src={`${
-                                import.meta.env.REACT_API_URL
-                              }uploads/${file}`} // Replace with your image URL structure
-                              alt={file}
-                              className="w-[100px] h-[100px] object-cover rounded"
+                              src={
+                                filePreviews[
+                                  `${file.name}-${file.lastModified}`
+                                ]
+                              }
+                              alt={file.name}
+                              className="admin-product-preview"
                             />
                           </div>
-                        ) : (
-                          file.type.startsWith("image/") && (
-                            <div className="flex items-center space-x-2">
-                              <img
-                              src={filePreviews[`${file.name}-${file.lastModified}`]}
-                                alt={file.name}
-                                className="w-[100px] h-[100px] object-cover rounded"
-                              />
-                            </div>
-                          )
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {files.length < 5 && (
-                  <div
-                    className="w-[100px] h-[100px] border-2 shadow rounded-sm flex flex-col justify-center items-center"
-                    onClick={() => {
-                      inputFile?.current?.click();
-                    }}
-                  >
-                    <LiaImageSolid size={30} />
-                    <span className="text-[10px]">Choisir un fichier</span>
-                  </div>
-                )}
-                <input
-                  ref={inputFile}
-                  hidden
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  name="photos"
-                  onChange={(e) => {
-                    const selectedFiles = Array.from(e.target.files || []);
-                    const acceptedFiles = selectedFiles.slice(0, Math.max(0, 5 - files.length));
-                    setFiles((prevFiles) => [...prevFiles, ...acceptedFiles].slice(0, 5));
-                    setFilePreviews((prev) => {
-                      const next = { ...prev };
-                      acceptedFiles.forEach((file) => {
-                        const key = `${file.name}-${file.lastModified}`;
-                        if (!next[key]) next[key] = URL.createObjectURL(file);
-                      });
-                      return next;
-                    });
-                    e.target.value = "";
-                  }}
-                  multiple
-                />
-              </div>
-            </div>
-            <Editor />
-          </div>
+                        )
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
 
-          <div className="w-full mt-10">
-            <button className="bg-green-500 w-1/2 px-10 py-3 mx-auto text-white rounded-md flex justify-center items-center gap-2 uppercase">
-              <LiaDatabaseSolid size={20} /> <strong>Valider</strong>
-            </button>
-          </div>
-        </form>
-      </div>
+              {files.length < 5 && (
+                <button
+                  type="button"
+                  className="flex h-[100px] w-[100px] flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-[var(--admin-border)] bg-[var(--admin-surface-raised)] text-[var(--admin-muted)] shadow-sm transition hover:border-[var(--admin-accent-solid)] hover:text-[var(--admin-accent-solid)]"
+                  onClick={() => {
+                    inputFile?.current?.click();
+                  }}
+                >
+                  <LiaImageSolid size={30} />
+                  <span className="text-[10px]">Choisir une image</span>
+                </button>
+              )}
+
+              <input
+                ref={inputFile}
+                hidden
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                name="photos"
+                onChange={(e) => {
+                  const selectedFiles = Array.from(e.target.files || []);
+                  const acceptedFiles = selectedFiles.slice(
+                    0,
+                    Math.max(0, 5 - files.length),
+                  );
+                  setFiles((prevFiles) =>
+                    [...prevFiles, ...acceptedFiles].slice(0, 5),
+                  );
+                  setFilePreviews((prev) => {
+                    const next = { ...prev };
+                    acceptedFiles.forEach((file) => {
+                      const key = `${file.name}-${file.lastModified}`;
+                      if (!next[key]) next[key] = URL.createObjectURL(file);
+                    });
+                    return next;
+                  });
+                  e.target.value = "";
+                }}
+                multiple
+              />
+            </div>
+          </section>
+        </div>
+
+        <section className="admin-editor-panel min-w-0">
+          <h2 className="admin-subsection-title">Description détaillée</h2>
+          <Editor />
+        </section>
+
+        <footer className="admin-form-footer xl:col-span-2">
+          <p>
+            Les modifications seront visibles sur la page de votre boutique.
+          </p>
+          <AdminButton type="submit" variant="primary" size="lg">
+            <LiaDatabaseSolid size={18} />
+            {productId ? "Enregistrer les modifications" : "Publier le produit"}
+          </AdminButton>
+        </footer>
+      </form>
     </div>
   );
 }

@@ -190,7 +190,7 @@ function ListAbonnement() {
       <header className="admin-toolbar">
         <div>
           <p className="admin-kicker">Paiements & abonnements</p>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-950">
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--admin-text)]">
             Abonnements marketplace
           </h1>
         </div>
@@ -211,10 +211,12 @@ function ListAbonnement() {
             <span className={`admin-metric-icon ${metric.tone}`}>
               {metric.value ?? 0}
             </span>
-            <span className="mt-4 text-2xl font-bold tabular-nums text-gray-950">
+            <span className="mt-4 text-2xl font-bold tabular-nums text-[var(--admin-text)]">
               {metric.value ?? 0}
             </span>
-            <span className="mt-1 text-sm text-gray-600">{metric.label}</span>
+            <span className="mt-1 text-sm text-[var(--admin-muted)]">
+              {metric.label}
+            </span>
           </article>
         ))}
       </section>
@@ -242,7 +244,7 @@ function ListAbonnement() {
               {filteredSubscriptions.length > 0 ? (
                 filteredSubscriptions.map((item, index) => (
                   <tr key={item._id || index}>
-                    <td className="font-semibold text-gray-900">
+                    <td className="font-semibold text-[var(--admin-text)]">
                       {item.owner_id?.boutiks_id?.name || "Boutique inconnue"}
                     </td>
                     <td>{item.plan}</td>
@@ -288,10 +290,10 @@ function ListAbonnement() {
         <div className="px-2 py-3 rounded w-full border border-emerald-200 bg-emerald-50/70">
           {!state.rejected ? (
             <>
-              <h2 className="text-lg font-bold text-gray-900 mb-3">
+              <h2 className="mb-3 text-lg font-bold text-[var(--admin-text)]">
                 {state.subscribeinfo?.owner_id?.boutiks_id?.name || "Boutique"}
               </h2>
-              <div className="flex flex-col gap-2 text-sm text-gray-700">
+              <div className="flex flex-col gap-2 text-sm text-[var(--admin-muted)]">
                 <strong>Plan : {state.subscribeinfo?.plan}</strong>
                 <strong>
                   Statut : {formatStatus(state.subscribeinfo?.payementStatus)}
@@ -306,13 +308,13 @@ function ListAbonnement() {
             </>
           ) : (
             <div>
-              <h2 className="mb-2 text-base font-semibold text-gray-900">
+              <h2 className="mb-2 text-base font-semibold text-[var(--admin-text)]">
                 Confirmez-vous le rejet de cette demande ?
               </h2>
               <input
                 type="text"
                 name="motif"
-                className="w-full px-2 py-2 rounded border border-gray-200 bg-white"
+                className="admin-field__control w-full"
                 placeholder="Motif du rejet"
                 value={state.motif ?? ""}
                 onChange={(e) =>

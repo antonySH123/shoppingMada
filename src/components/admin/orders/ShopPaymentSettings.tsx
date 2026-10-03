@@ -150,15 +150,13 @@ function ShopPaymentSettings() {
       <header className="admin-toolbar">
         <div>
           <p className="admin-kicker">Configuration boutique</p>
-          <h1 className="text-2xl font-extrabold text-gray-900">
-            Paiement et livraison
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500">
+          <h1 className="admin-panel-title text-2xl">Paiement et livraison</h1>
+          <p className="admin-panel-subtitle mt-1 max-w-2xl text-sm">
             Les clients vous paient directement. ShopInMada n’encaisse et ne
             traite aucun paiement.
           </p>
         </div>
-        <label className="grid gap-1 text-xs font-bold text-gray-600">
+        <label className="grid gap-1 text-xs font-bold text-[var(--admin-muted)]">
           Frais de livraison par commande
           <input
             type="number"
@@ -192,7 +190,7 @@ function ShopPaymentSettings() {
                 key={id}
                 className="grid gap-4 p-4 sm:grid-cols-[minmax(12rem,0.8fr)_minmax(0,1.2fr)] sm:p-5"
               >
-                <label className="flex min-h-11 items-center gap-3 text-sm font-bold text-gray-900">
+                <label className="flex min-h-11 items-center gap-3 text-sm font-bold text-[var(--admin-text)]">
                   <input
                     type="checkbox"
                     checked={setting.enabled}
@@ -205,7 +203,7 @@ function ShopPaymentSettings() {
                 </label>
                 {setting.enabled && (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="grid gap-1 text-xs font-semibold text-gray-600">
+                    <label className="grid gap-1 text-xs font-semibold text-[var(--admin-muted)]">
                       Nom du bénéficiaire
                       <input
                         required
@@ -219,7 +217,7 @@ function ShopPaymentSettings() {
                     </label>
                     {needsAccount && (
                       <>
-                        <label className="grid gap-1 text-xs font-semibold text-gray-600">
+                        <label className="grid gap-1 text-xs font-semibold text-[var(--admin-muted)]">
                           {id === "virement"
                             ? "Téléphone de contact (facultatif)"
                             : "Téléphone destinataire"}
@@ -233,7 +231,7 @@ function ShopPaymentSettings() {
                             className="admin-input min-h-10"
                           />
                         </label>
-                        <label className="grid gap-1 text-xs font-semibold text-gray-600">
+                        <label className="grid gap-1 text-xs font-semibold text-[var(--admin-muted)]">
                           {id === "virement"
                             ? "Coordonnées bancaires"
                             : "Référence du compte (facultatif)"}
@@ -249,7 +247,7 @@ function ShopPaymentSettings() {
                         </label>
                       </>
                     )}
-                    <label className="grid gap-1 text-xs font-semibold text-gray-600 sm:col-span-2">
+                    <label className="grid gap-1 text-xs font-semibold text-[var(--admin-muted)] sm:col-span-2">
                       Instructions pour le client
                       <textarea
                         value={setting.instructions}

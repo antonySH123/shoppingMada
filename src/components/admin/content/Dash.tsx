@@ -20,6 +20,13 @@ import ListAbonnement from "../abonnements/ListAbonnement";
 import Iuser from "../../../Interface/UserInterface";
 import Preloader from "../../loading/Preloader";
 import { formatStatus } from "../../../helper/locale";
+import {
+  DataTable,
+  PageHeader,
+  StatCard,
+  StatusBadge,
+  type AdminDataColumn,
+} from "../ui";
 
 const formatAriary = (amount: number) =>
   new Intl.NumberFormat("fr-FR", {
@@ -42,6 +49,117 @@ function Dash() {
   const [products, setProduct] = useState<IProduct[]>();
   const [commandes, setCommandes] = useState<ICommande[]>();
   const [users, setUsers] = useState<Iuser[]>();
+  const dashboardMetrics = isSuperAdmin
+    ? [
+        {
+          label: "Comptes",
+          value: users?.length,
+          icon: <FaUsers />,
+        },
+        {
+          label: "Boutiques",
+          value: users?.filter(
+            (item) => item.userGroupMember_id?.usergroup_id.name === "Boutiks",
+          ).length,
+          icon: <FaStore />,
+        },
+        {
+          label: "Clients",
+          value: users?.filter(
+            (item) => item.userGroupMember_id?.usergroup_id.name === "Client",
+          ).length,
+          icon: <FaUsers />,
+        },
+      ]
+    : [
+        {
+          label: "Produits",
+          value: products?.length,
+          icon: <FaBox />,
+        },
+        {
+          label: "Commandes à traiter",
+          value: commandes?.filter((item) => item.status === "Pending").length,
+          icon: <FaShoppingCart />,
+        },
+        {
+          label: "Commandes reçues",
+          value: commandes?.length,
+          icon: <FaShoppingCart />,
+        },
+        {
+          label: "Produits à réapprovisionner",
+          value: products?.filter(
+            (item) => typeof item.stock === "number" && item.stock <= 5,
+          ).length,
+          icon: <FaExclamationTriangle />,
+        },
+      ];
+
+  const pendingCommands =
+    commandes?.filter((item) => item.status === "Pending") ?? [];
+  const orderColumns: AdminDataColumn<ICommande>[] = [
+    {
+      id: "reference",
+      header: "Référence",
+      render: (item) => (
+        <span className="font-mono text-xs">
+          #{item._id.slice(-7).toUpperCase()}
+        </span>
+      ),
+      sortValue: (item) => item._id,
+    },
+    {
+      id: "client",
+      header: "Client",
+      render: (item) =>
+        item.owner_id?.username || item.owner_id?.email || "Client",
+      sortValue: (item) =>
+        item.owner_id?.username || item.owner_id?.email || "Client",
+    },
+    {
+      id: "product",
+      header: "Produit",
+      render: (item) => (
+        <strong>{item.product_id?.name || "Produit supprimé"}</strong>
+      ),
+      sortValue: (item) => item.product_id?.name || "Produit supprimé",
+    },
+    {
+      id: "quantity",
+      header: "Qté",
+      render: (item) => item.quantity,
+      sortValue: (item) => item.quantity,
+    },
+    {
+      id: "total",
+      header: "Total",
+      render: (item) => (
+        <strong className="tabular-nums">{formatAriary(item.total)}</strong>
+      ),
+      sortValue: (item) => item.total,
+    },
+    {
+      id: "status",
+      header: "Statut",
+      render: (item) => (
+        <StatusBadge status={item.status} label={formatStatus(item.status)} />
+      ),
+      sortValue: (item) => item.status,
+    },
+    {
+      id: "action",
+      header: "Action",
+      render: (item) => (
+        <Link
+          className="admin-button admin-button--ghost admin-button--sm"
+          to={`/espace_vendeur/commande/${item._id}`}
+        >
+          Ouvrir
+        </Link>
+      ),
+    },
+  ];
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData();
@@ -162,133 +280,72 @@ function Dash() {
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="admin-dashboard space-y-6">
-      <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-sm font-semibold text-emerald-800">
-            {isSuperAdmin
-              ? "Administration de la marketplace"
-              : "Pilotage de la boutique"}
-          </p>
-          <h2 className="mt-1 text-2xl font-bold tracking-tight text-gray-950">
-            Bonjour {user?.username || ""}
-          </h2>
-          <p className="mt-1 text-sm text-gray-600">
-            {isSuperAdmin
-              ? "Suivez les comptes et les demandes de la plateforme."
-              : "Suivez votre activité et traitez les commandes en attente."}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {isSeller ? (
-            <>
-              <Link
-                to="/espace_vendeur/admin/addProduct"
-                className="admin-action-primary"
-              >
-                <FaPlus aria-hidden="true" /> Ajouter un produit
-              </Link>
-              <Link
-                to="/espace_vendeur/commandes"
-                className="admin-action-secondary"
-              >
-                Voir les commandes <FaArrowRight aria-hidden="true" />
-              </Link>
-            </>
-          ) : isSuperAdmin ? (
-            <>
-              <Link
-                to="/espace_vendeur/shopaccounts"
-                className="admin-action-primary"
-              >
-                <FaUsers aria-hidden="true" /> Gérer les comptes
-              </Link>
-              <Link
-                to="/espace_vendeur/abonnements"
-                className="admin-action-secondary"
-              >
-                Demandes d’abonnement <FaArrowRight aria-hidden="true" />
-              </Link>
-            </>
-          ) : null}
-        </div>
-      </section>
+    <div className="admin-dashboard space-y-5">
+      <PageHeader
+        eyebrow={
+          isSuperAdmin
+            ? "Administration de la marketplace"
+            : "Pilotage de la boutique"
+        }
+        title={`Bonjour ${user?.username || ""}`}
+        description={
+          isSuperAdmin
+            ? "Suivez les comptes et les demandes de la plateforme."
+            : "Suivez votre activité et traitez les commandes en attente."
+        }
+        action={
+          <div className="flex flex-wrap gap-2">
+            {isSeller ? (
+              <>
+                <Link
+                  to="/espace_vendeur/admin/addProduct"
+                  className="admin-button admin-button--primary admin-button--md"
+                >
+                  <FaPlus aria-hidden="true" /> Ajouter un produit
+                </Link>
+                <Link
+                  to="/espace_vendeur/commandes"
+                  className="admin-button admin-button--secondary admin-button--md"
+                >
+                  Voir les commandes <FaArrowRight aria-hidden="true" />
+                </Link>
+              </>
+            ) : isSuperAdmin ? (
+              <>
+                <Link
+                  to="/espace_vendeur/shopaccounts"
+                  className="admin-button admin-button--primary admin-button--md"
+                >
+                  <FaUsers aria-hidden="true" /> Gérer les comptes
+                </Link>
+                <Link
+                  to="/espace_vendeur/abonnements"
+                  className="admin-button admin-button--secondary admin-button--md"
+                >
+                  Demandes d’abonnement <FaArrowRight aria-hidden="true" />
+                </Link>
+              </>
+            ) : null}
+          </div>
+        }
+      />
 
       <section
         aria-label="Indicateurs de l’activité"
-        className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        className="admin-dashboard-metrics grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
       >
-        {(isSuperAdmin
-          ? [
-              {
-                label: "Comptes",
-                value: users?.length,
-                icon: <FaUsers />,
-                tone: "text-sky-700 bg-sky-50",
-              },
-              {
-                label: "Boutiques",
-                value: users?.filter(
-                  (item) =>
-                    item.userGroupMember_id?.usergroup_id.name === "Boutiks",
-                ).length,
-                icon: <FaStore />,
-                tone: "text-emerald-800 bg-emerald-50",
-              },
-              {
-                label: "Clients",
-                value: users?.filter(
-                  (item) =>
-                    item.userGroupMember_id?.usergroup_id.name === "Client",
-                ).length,
-                icon: <FaUsers />,
-                tone: "text-indigo-700 bg-indigo-50",
-              },
-            ]
-          : [
-              {
-                label: "Produits",
-                value: products?.length,
-                icon: <FaBox />,
-                tone: "text-emerald-800 bg-emerald-50",
-              },
-              {
-                label: "Commandes à traiter",
-                value: commandes?.filter((item) => item.status === "Pending")
-                  .length,
-                icon: <FaShoppingCart />,
-                tone: "text-amber-700 bg-amber-50",
-              },
-              {
-                label: "Commandes reçues",
-                value: commandes?.length,
-                icon: <FaShoppingCart />,
-                tone: "text-sky-700 bg-sky-50",
-              },
-              {
-                label: "Produits à réapprovisionner",
-                value: products?.filter(
-                  (item) => typeof item.stock === "number" && item.stock <= 5,
-                ).length,
-                icon: <FaExclamationTriangle />,
-                tone: "text-rose-700 bg-rose-50",
-              },
-            ]
-        ).map((metric) => (
-          <article key={metric.label} className="admin-metric-card">
-            <span className={`admin-metric-icon ${metric.tone}`}>
-              {metric.icon}
-            </span>
-            <span className="mt-4 text-2xl font-bold tabular-nums text-gray-950">
-              {metric.value ?? "—"}
-            </span>
-            <span className="mt-1 text-sm text-gray-600">{metric.label}</span>
-          </article>
+        {dashboardMetrics.map((metric) => (
+          <StatCard
+            key={metric.label}
+            label={metric.label}
+            value={metric.value ?? "—"}
+            icon={metric.icon}
+          />
         ))}
       </section>
 
       {isSeller ? (
-        <section className="admin-panel min-w-0">
+        <section className="admin-dashboard-orders admin-panel min-w-0">
           <div className="admin-panel-heading">
             <div>
               <h3>Commandes à traiter</h3>
@@ -298,76 +355,18 @@ function Dash() {
               Toutes les commandes <FaArrowRight aria-hidden="true" />
             </Link>
           </div>
-          <div className="overflow-x-auto">
-            <table>
-              <thead>
-                <tr>
-                  <th>Référence</th>
-                  <th>Client</th>
-                  <th>Produit</th>
-                  <th>Qté</th>
-                  <th>Total</th>
-                  <th>Statut</th>
-                  <th>
-                    <span className="sr-only">Action</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {commandes
-                  ?.filter((item) => item.status === "Pending")
-                  .map((item) => (
-                    <tr key={item._id}>
-                      <td className="font-mono text-xs">
-                        #{item._id.slice(-7).toUpperCase()}
-                      </td>
-                      <td>
-                        {item.owner_id?.username ||
-                          item.owner_id?.email ||
-                          "Client"}
-                      </td>
-                      <td className="font-semibold text-gray-900">
-                        {item.product_id?.name || "Produit supprimé"}
-                      </td>
-                      <td>{item.quantity}</td>
-                      <td className="font-semibold tabular-nums">
-                        {formatAriary(item.total)}
-                      </td>
-                      <td>
-                        <span className="admin-status-pending">
-                          {formatStatus(item.status)}
-                        </span>
-                      </td>
-                      <td>
-                        <Link
-                          className="admin-panel-link"
-                          to={`/espace_vendeur/commande/${item._id}`}
-                        >
-                          Ouvrir
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                {commandes &&
-                  commandes.filter((item) => item.status === "Pending")
-                    .length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        className="py-10 text-center text-gray-500"
-                      >
-                        Aucune commande en attente.
-                      </td>
-                    </tr>
-                  )}
-              </tbody>
-            </table>
+          <div className="p-3 sm:p-4">
+            <DataTable
+              columns={orderColumns}
+              rows={pendingCommands}
+              getRowKey={(item) => item._id}
+              emptyTitle="Aucune commande en attente"
+              emptyDescription="Les prochaines demandes client apparaîtront dans ce tableau."
+            />
           </div>
         </section>
       ) : isSuperAdmin ? (
-        <section className="admin-panel min-w-0">
-          <ListAbonnement />
-        </section>
+        <ListAbonnement />
       ) : null}
 
       <UserInfo isOpen={isModalOpen} onClose={closeModal}>

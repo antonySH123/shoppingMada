@@ -22,6 +22,13 @@ import "swiper/css/navigation";
 import useFormatter from "../../../../helper/useFormatter";
 import Comment from "../../../comment/Comment";
 import Preloader from "../../../loading/Preloader";
+import {
+  AdminButton,
+  AdminInput,
+  DataTable,
+  PageHeader,
+  type AdminDataColumn,
+} from "../../ui";
 
 interface IProductVariant {
   _id?: string;
@@ -36,7 +43,7 @@ interface IVariantValue {
 }
 
 interface IProduct {
-  _id:string
+  _id: string;
   name: string;
   description: string;
   price: number;
@@ -65,6 +72,54 @@ function Show() {
   const csrf = useCSRF();
   const { priceInArriary } = useFormatter();
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const variantRows =
+    product?.variant.flatMap((productVariant) =>
+      productVariant.values.map((value) => ({
+        id: `${productVariant._id}-${value.value}`,
+        variantId: productVariant._id as string,
+        name: productVariant.name,
+        value: value.value,
+        additionalPrice: value.additionalPrice ?? 0,
+      })),
+    ) ?? [];
+  const variantColumns: AdminDataColumn<(typeof variantRows)[number]>[] = [
+    {
+      id: "name",
+      header: "Groupe",
+      render: (row) => <strong>{row.name}</strong>,
+      sortValue: (row) => row.name,
+    },
+    {
+      id: "value",
+      header: "Valeur",
+      render: (row) => row.value,
+      sortValue: (row) => row.value,
+    },
+    {
+      id: "price",
+      header: "Supplément",
+      render: (row) => priceInArriary(row.additionalPrice),
+      sortValue: (row) => row.additionalPrice,
+    },
+    {
+      id: "action",
+      header: "Action",
+      className: "text-right",
+      render: (row) => (
+        <button
+          type="button"
+          className="admin-button admin-button--danger admin-button--icon"
+          aria-label={`Supprimer la valeur ${row.value}`}
+          title={`Supprimer ${row.value}`}
+          onClick={() =>
+            void removeVariant(product?._id ?? "", row.variantId, row.value)
+          }
+        >
+          <LiaTrashAltSolid />
+        </button>
+      ),
+    },
+  ];
 
   const handleIsOpen = () => {
     setIsOpen(!isOpen);
@@ -81,12 +136,12 @@ function Show() {
             "Content-Type": "application/json",
           },
           credentials: "include",
-        }
+        },
       );
 
       if (!response.ok) {
         throw new Error(
-          "Erreur lors de la récupération des données du produit"
+          "Erreur lors de la récupération des données du produit",
         );
       }
 
@@ -132,7 +187,7 @@ function Show() {
             },
             credentials: "include",
             body: JSON.stringify(variant),
-          }
+          },
         );
 
         if (!response.ok) {
@@ -151,42 +206,49 @@ function Show() {
     }
   };
 
-  const removeVariant = async(productID:string, variant_id:string, value:string)=>{
-   if(csrf){
-    const response = await fetch(
-      `${import.meta.env.REACT_API_URL}product/${productID}/variant/${variant_id}/${value}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "xsrf-token":csrf
+  const removeVariant = async (
+    productID: string,
+    variant_id: string,
+    value: string,
+  ) => {
+    if (csrf) {
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}product/${productID}/variant/${variant_id}/${value}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "xsrf-token": csrf,
+          },
+          credentials: "include",
         },
-        credentials: "include",
+      );
+
+      if (!response.ok) {
+        toast.error("Erreur lors de la récupération des données du produit");
       }
-    );
 
-    if (!response.ok) {
-     toast.error("Erreur lors de la récupération des données du produit")
+      const { message } = await response.json();
+      toast.success(message);
+      getProduct();
     }
-
-    const { message } = await response.json();
-    toast.success(message)
-    getProduct();
-   }
-  }
+  };
 
   if (loading) return <p>Chargement des informations...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
-  return (
-    !csrf ? <Preloader/> :
-    <div className="px-10 py-10 border-0 bg-white rounded-lg">
-      <h1 className="text-center text-black text-3xl uppercase">
-        Information du produit
-      </h1>
+  return !csrf ? (
+    <Preloader />
+  ) : (
+    <div className="space-y-4">
+      <PageHeader
+        eyebrow="Catalogue boutique"
+        title={product?.name ?? "Détail du produit"}
+        description="Consultez les informations du produit et gérez ses variantes."
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div className="flex  justify-center items-center mt-5 relative">
+      <section className="admin-panel grid min-w-0 gap-5 p-4 sm:p-6 xl:grid-cols-2">
+        <div className="admin-product-gallery relative flex min-w-0 items-center justify-center">
           <Swiper
             modules={[Navigation]}
             spaceBetween={10}
@@ -202,166 +264,135 @@ function Show() {
                 <img
                   src={`${import.meta.env.REACT_API_URL}uploads/${photo}`}
                   alt={`Produit ${index + 1}`}
-                  className="w-full h-auto max-h-80 object-contain rounded-md"
+                  className="admin-product-gallery-image"
                 />
               </SwiperSlide>
             ))}
           </Swiper>
 
-          <button className="custom-prev absolute left-5 top-1/2 transform -translate-y-1/2 bg-slate-100/10  p-2 rounded-full z-10">
+          <button
+            type="button"
+            aria-label="Photo précédente"
+            className="custom-prev admin-button admin-button--secondary admin-button--icon absolute left-3 top-1/2 z-10 -translate-y-1/2"
+          >
             <LiaAngleLeftSolid size={30} />
           </button>
-          <button className="custom-next absolute right-5 top-1/2 transform -translate-y-1/2 bg-slate-100/10  p-2 rounded-full z-10">
+          <button
+            type="button"
+            aria-label="Photo suivante"
+            className="custom-next admin-button admin-button--secondary admin-button--icon absolute right-3 top-1/2 z-10 -translate-y-1/2"
+          >
             <LiaAngleRightSolid size={30} />
           </button>
         </div>
 
-        <div>
-          <div className="grid grid-cols-2">
-            <div className="mt-5">
-              <div className="mb-3">
-                <p className="font-semibold">Nom : {product?.name}</p>
-              </div>
-              <div className="mb-3">
-                <p className="font-semibold">
-                  Prix : {priceInArriary(product?.price as number)}{" "}
-                </p>
-              </div>
+        <div className="min-w-0 space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="admin-product-detail">
+              <span>Prix</span>
+              <strong>{priceInArriary(product?.price as number)}</strong>
             </div>
-            <div className="mt-5">
-              <div className="mb-3">
-                <p className="font-semibold">Stock : {product?.stock}</p>
-              </div>
-              <div className="mb-3">
-                <p className="font-semibold">Catégorie : {product?.category}</p>
-              </div>
+            <div className="admin-product-detail">
+              <span>Stock</span>
+              <strong className="tabular-nums">{product?.stock}</strong>
+            </div>
+            <div className="admin-product-detail col-span-2">
+              <span>Catégorie</span>
+              <strong>{product?.category}</strong>
             </div>
           </div>
-          <h1 className="font-semibold uppercase">{product?.description}</h1>
-          <hr />
-          <div className="text-justify mt-2">
+
+          <section>
+            <h2 className="admin-subsection-title">Description</h2>
+            <p className="admin-product-description">{product?.description}</p>
+          </section>
+
+          <section className="admin-product-description-content">
             {parse(product?.details as string)}
-          </div>
+          </section>
         </div>
-      </div>
+      </section>
 
-      <div className="mb-3">
-        <h1 className="font-semibold mt-5 mb-3">Variantes :</h1>
-        <form onSubmit={handleSubmitNewVariant}>
-          <div className="flex items-center gap-3 ">
-            <strong>Ajouter une variante :</strong>
-            <div
-              className="flex items-center border relative"
-              onMouseLeave={() => setIsOpen(false)}
+      <section className="admin-panel space-y-4 p-4 sm:p-5">
+        <div>
+          <h2 className="admin-subsection-title">Variantes du produit</h2>
+          <p className="admin-helper-text">
+            Ajoutez une valeur et son éventuel supplément de prix.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmitNewVariant} className="admin-variant-form">
+          <AdminInput
+            label="Nom de la variante"
+            value={variant.name}
+            onChange={(event) =>
+              setVariant((prev) => ({ ...prev, name: event.target.value }))
+            }
+          />
+
+          <div className="relative" onMouseLeave={() => setIsOpen(false)}>
+            <AdminButton
+              type="button"
+              variant="outline"
+              aria-expanded={isOpen}
+              aria-controls="existing-variants"
+              onClick={handleIsOpen}
             >
-              <input
-                type="text"
-                name="name"
-                placeholder="Nom"
-                value={variant.name}
-                className="px-4 py-2"
-                onChange={(e)=>{
-                  setVariant((prev)=>({...prev,name:e.target.value}))
-                }}
-              />
-              <div className="px-2 py-3 cursor-pointer" onClick={handleIsOpen}>
-                <LiaAngleRightSolid
-                  size={19}
-                  className={`${
-                    isOpen ? "rotate-90" : "rotate-0"
-                  } transition-all ease-in-out`}
-                />
-              </div>
+              Choisir un groupe existant
+              <span aria-hidden="true" className={isOpen ? "rotate-90" : ""}>
+                <LiaAngleRightSolid size={16} />
+              </span>
+            </AdminButton>
 
-              <ul
-                className={`${
-                  isOpen
-                    ? "w-full py-3 absolute top-full left-0 bg-white border "
-                    : "hidden"
-                } transition-all ease-in-out`}
-              >
-                {Array.isArray(product?.variant) &&
-                  product.variant.map((variant) => (
-                    <li
-                      className="py-3 px-3 cursor-pointer hover:bg-gray-400"
-                      key={variant._id}
-                      onClick={() => {
+            <ul
+              id="existing-variants"
+              className={`admin-variant-picker ${isOpen ? "is-open" : ""}`}
+            >
+              {Array.isArray(product?.variant) &&
+                product.variant.map((productVariant) => (
+                  <li key={productVariant._id}>
+                    <button
+                      type="button"
+                      onClick={() =>
                         setVariant((prev) => ({
                           ...prev,
-                          name: variant.name,
-                        }));
-                      }}
+                          name: productVariant.name,
+                        }))
+                      }
                     >
-                      {variant.name}
-                    </li>
-                  ))}
-              </ul>
-            </div>
-            <input
-              type="text"
-              name="value"
-              placeholder="Valeur"
-              className="border px-4 py-2"
-              onChange={handleVariantChange}
-            />
-            <input
-              type="number"
-              name="additionalPrice"
-              placeholder="Prix"
-              className="border px-4 py-2"
-              onChange={handleVariantChange}
-            />
-            <button
-              className="bg-green-500 px-3 py-3 rounded text-white cursor-pointer"
-              type="submit"
-            >
-              <LiaPlusSolid size={20} />
-            </button>
+                      {productVariant.name}
+                    </button>
+                  </li>
+                ))}
+            </ul>
           </div>
+
+          <AdminInput
+            label="Valeur"
+            name="value"
+            onChange={handleVariantChange}
+          />
+          <AdminInput
+            label="Supplément (Ar)"
+            type="number"
+            name="additionalPrice"
+            onChange={handleVariantChange}
+          />
+          <AdminButton type="submit" variant="primary" size="md">
+            <LiaPlusSolid /> Ajouter
+          </AdminButton>
         </form>
 
-        <div className="overflow-auto mt-5">
-          <table className="w-full border-2">
-            <thead>
-              <tr>
-                <th className="py-3 px-3">Nom</th>
-                <th className="py-3 px-3">Valeur</th>
-                <th className="py-3 px-3">Prix</th>
-                <th className="py-3 px-3">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.isArray(product?.variant) &&
-                product.variant.map((variant) =>
-                  variant.values.map((v, index) => (
-                    <tr key={variant._id}>
-                      {index === 0 && (
-                        <td
-                          className="py-2 px-3 text-center"
-                          rowSpan={variant.values.length}
-                        >
-                          {variant.name}
-                        </td>
-                      )}
-                      <td className="py-2 px-3 text-center">{v.value}</td>
-                      <td className="py-2 px-3 text-center">
-                        {v.additionalPrice}
-                      </td>
+        <DataTable
+          columns={variantColumns}
+          rows={variantRows}
+          getRowKey={(row) => row.id}
+          emptyTitle="Aucune variante"
+          emptyDescription="Les options de ce produit apparaîtront ici."
+        />
+      </section>
 
-                      <td className="py-2 px-3 text-center">
-                        <button className="text-red-500" onClick={()=> removeVariant(product._id,variant._id as string,v.value as string)}>
-                          <LiaTrashAltSolid />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <Comment product_id={id as string} csrf={csrf as string}/>
+      <Comment product_id={id as string} csrf={csrf as string} />
     </div>
   );
 }

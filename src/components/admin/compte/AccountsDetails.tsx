@@ -4,37 +4,22 @@ import { useCallback, useEffect, useReducer } from "react";
 import { toast } from "react-toastify";
 import { LiaAtSolid, LiaPhoneAltSolid, LiaUser } from "react-icons/lia";
 import useCSRF from "../../../helper/useCSRF";
-import Dialog from "../../modals/Dialog";
 import { useAuth } from "../../../helper/useAuth";
 import Preloader from "../../loading/Preloader";
+import { AdminButton, PageHeader } from "../ui";
 
 interface IState {
   user: Iuser | null;
   isActive: boolean | null;
-  isOpen: boolean;
-  title: string | null;
-  message: string | null;
-  action: (() => void) | null;
 }
 
 type Action =
   | { type: "FETCH_START"; payload: Iuser }
-  | { type: "CHECK_ACCOUNT"; payload: boolean }
-  | {
-      type: "TOGGLE_DIALOG";
-      payload: boolean;
-      title: string;
-      message: string;
-      action: (() => void) | null;
-    };
+  | { type: "CHECK_ACCOUNT"; payload: boolean };
 
 const initialState: IState = {
   user: null,
   isActive: null,
-  isOpen: false,
-  title: null,
-  message: null,
-  action: null,
 };
 
 const reducer = (state: IState, action: Action): IState => {
@@ -43,14 +28,6 @@ const reducer = (state: IState, action: Action): IState => {
       return { ...state, user: action.payload };
     case "CHECK_ACCOUNT":
       return { ...state, isActive: action.payload };
-    case "TOGGLE_DIALOG":
-      return {
-        ...state,
-        isOpen: action.payload,
-        title: action.title,
-        message: action.message,
-        action: action.action,
-      };
     default:
       throw new Error();
   }
@@ -61,21 +38,14 @@ function AccountsDetails() {
   const { id } = useParams();
   const [state, dispatch] = useReducer(reducer, initialState);
   const csrf = useCSRF();
-  const close = () =>
-    dispatch({
-      type: "TOGGLE_DIALOG",
-      payload: false,
-      title: "",
-      message: "",
-      action: null,
-    });
+
   const checkAccount = useCallback(async () => {
     try {
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}account/status/${id}`,
         {
           credentials: "include",
-        }
+        },
       );
 
       if (response.status === 400) {
@@ -91,13 +61,14 @@ function AccountsDetails() {
       }
     }
   }, [id]);
+
   const fetchData = useCallback(async () => {
     try {
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}user/${id}`,
         {
           credentials: "include",
-        }
+        },
       );
       const result = await response.json();
       if ((result.status as string).toLocaleLowerCase() === "success") {
@@ -109,43 +80,11 @@ function AccountsDetails() {
       }
     }
   }, [id]);
+
   useEffect(() => {
     checkAccount();
     fetchData();
   }, [checkAccount, fetchData, id]);
-
-  const handleSubmit = useCallback(async () => {
-    let url = null;
-    if (state.isActive === true)
-      url = `${import.meta.env.REACT_API_URL}account/${id}/block`;
-    if (state.isActive === false)
-      url = `${import.meta.env.REACT_API_URL}account/${id}/active `;
-
-    if (csrf) {
-      const response = await fetch(url as string, {
-        method: "PUT",
-        credentials: "include",
-        headers: {
-          "xsrf-token": csrf,
-        },
-      });
-
-      const resultat = await response.json();
-
-      if ((resultat.status as string).toLocaleLowerCase() === "success") {
-        toast.success(resultat.message);
-        dispatch({
-          type: "TOGGLE_DIALOG",
-          payload: false,
-          title: "",
-          message: "",
-          action: null,
-        });
-        checkAccount();
-        fetchData();
-      }
-    }
-  }, [checkAccount, csrf, fetchData, id, state.isActive]);
 
   const handleRoleChange = useCallback(async () => {
     try {
@@ -158,11 +97,11 @@ function AccountsDetails() {
             headers: {
               "xsrf-token": csrf,
             },
-          }
+          },
         );
 
         if (!response.ok) {
-          toast.error("Une erreur est survenu!");
+          toast.error("Une erreur est survenue!");
         }
 
         if (response.status === 201) {
@@ -174,13 +113,6 @@ function AccountsDetails() {
           const result = await response.json();
           toast.warning(result.message);
         }
-        dispatch({
-          type: "TOGGLE_DIALOG",
-          payload: false,
-          title: "",
-          message: "",
-          action: null,
-        });
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -188,170 +120,109 @@ function AccountsDetails() {
       }
     }
   }, [csrf, id]);
-  if (user?.userGroupMember_id.usergroup_id.name != "Super Admin") {
-    return <Navigate to={"/espace_vendeur/dash"} />;
+
+  if (user?.userGroupMember_id.usergroup_id.name !== "Super Admin") {
+    return <Navigate to="/espace_vendeur/dash" />;
   }
-  return (
-    !csrf ? <Preloader/> :
-    <div>
-      <h1 className="text-2xl mb-3">Informations du compte</h1>
-      <div className="border border-gray-300 py-5 px-5 flex justify-between gap-5 mb-7">
-        <div className="flex gap-5">
-          <img
-            src="/src/assets/image/product/pharm.jpg"
-            alt=""
-            className="w-20 h-20 rounded-full"
-          />
-          <div>
-            <strong className="flex items-center gap-3">
-              {" "}
-              <LiaUser /> {state.user?.username}
+
+  return !csrf ? (
+    <Preloader />
+  ) : (
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Comptes"
+        title="Informations du compte"
+        description="Consultez le profil, le rôle et les informations de contact de l’utilisateur."
+      />
+
+      <section className="admin-panel p-5">
+        <div className="flex flex-col gap-4 border-b border-[var(--admin-border)] pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="grid h-16 w-16 place-items-center rounded-full bg-[var(--admin-surface-raised)] text-2xl text-[var(--admin-accent-solid)]">
+              <LiaUser />
+            </div>
+            <div>
+              <strong className="flex items-center gap-2 text-lg text-[var(--admin-text)]">
+                {state.user?.username}
+              </strong>
+              <p className="mt-1 flex items-center gap-2 text-sm text-[var(--admin-muted)]">
+                <LiaAtSolid /> {state.user?.email}
+              </p>
+              <p className="mt-1 flex items-center gap-2 text-sm text-[var(--admin-muted)]">
+                <LiaPhoneAltSolid /> {state.user?.phonenumber}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <strong className="text-sm uppercase tracking-[0.08em] text-[var(--admin-muted)]">
+              {state.user?.userGroupMember_id?.usergroup_id?.name}
             </strong>
-            <p className="flex items-center gap-3">
-              {" "}
-              <LiaAtSolid /> {state.user?.email}
-            </p>
-            <p className="flex items-center gap-3">
-              {" "}
-              <LiaPhoneAltSolid /> {state.user?.phonenumber}
-            </p>
+            {state.user?.userGroupMember_id?.usergroup_id?.name !==
+              "Super Admin" && (
+              <AdminButton
+                variant="primary"
+                size="sm"
+                onClick={handleRoleChange}
+              >
+                Définir comme admin
+              </AdminButton>
+            )}
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 items-end">
-          <strong>{state.user?.userGroupMember_id && state.user?.userGroupMember_id.usergroup_id.name}</strong>
-          {state.user?.userGroupMember_id && state.user?.userGroupMember_id.usergroup_id.name !==
-            "Super Admin" && (
-            <button
-              className="px-3 py-1 bg-green-500 text-white text-sm rounded "
-              onClick={() =>
-                dispatch({
-                  type: "TOGGLE_DIALOG",
-                  payload: true,
-                  action: handleRoleChange,
-                  title: "Attribution de rôle administrateur",
-                  message: `Êtes-vous sûr de definir ${state.user?.username} comme adminitrateur?`,
-                })
-              }
-            >
-              Définir commme admin
-            </button>
-          )}
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div className="admin-field">
+            <label>Nom</label>
+            <input
+              type="text"
+              className="admin-field__control cursor-not-allowed"
+              value={state.user?.personnalInfo_id?.firstName ?? ""}
+              readOnly
+            />
+          </div>
+
+          <div className="admin-field">
+            <label>Prénoms</label>
+            <input
+              type="text"
+              className="admin-field__control cursor-not-allowed"
+              value={state.user?.personnalInfo_id?.lastName ?? ""}
+              readOnly
+            />
+          </div>
+
+          <div className="admin-field md:col-span-2">
+            <label>Adresse</label>
+            <input
+              type="text"
+              className="admin-field__control cursor-not-allowed"
+              value={state.user?.personnalInfo_id?.adresse ?? ""}
+              readOnly
+            />
+          </div>
+
+          <div className="admin-field">
+            <label>Téléphone</label>
+            <input
+              type="text"
+              className="admin-field__control cursor-not-allowed"
+              value={state.user?.personnalInfo_id?.phoneNumber ?? ""}
+              readOnly
+            />
+          </div>
+
+          <div className="admin-field">
+            <label>Statut du compte</label>
+            <input
+              type="text"
+              className="admin-field__control cursor-not-allowed"
+              value={state.isActive ? "Actif" : "Inactif"}
+              readOnly
+            />
+          </div>
         </div>
-      </div>
-      <div className="border border-gray-300 flex flex-col py-5 px-5">
-        <h3>Informations générales</h3>
-        <form
-          action=""
-          method="post"
-          className="w-full flex justify-center mt-5 gap-10"
-          aria-readonly="true"
-        >
-          <div className="w-full">
-            <div className="mb-3">
-              <label>Nom : </label>
-              <input
-                type="text"
-                className="w-full px-2 py-2 border border-gray-300 cursor-not-allowed"
-                value={
-                  state.user?.personnalInfo_id &&
-                  state.user?.personnalInfo_id.firstName
-                }
-              />
-            </div>
-            <div className="mb-3">
-              <label>Prenom : </label>
-              <input
-                type="text"
-                className="w-full px-2 py-2 border border-gray-300 cursor-not-allowed"
-                value={
-                  state.user?.personnalInfo_id &&
-                  state.user?.personnalInfo_id.lastName
-                }
-              />
-            </div>
-            <div className="mb-3">
-              <label>Telephone : </label>
-              <input
-                type="email"
-                className="w-full px-2 py-2 border border-gray-300 cursor-not-allowed"
-                value={
-                  state.user?.personnalInfo_id &&
-                  state.user?.personnalInfo_id.phoneNumber
-                }
-              />
-            </div>
-          </div>
-          <div className="w-full">
-            <div className="mb-3">
-              <label>Genre : </label>
-              <input
-                type="text"
-                className="w-full px-2 py-2 border border-gray-300 cursor-not-allowed"
-                value={
-                  state.user?.personnalInfo_id &&
-                  state.user?.personnalInfo_id.gender
-                }
-              />
-            </div>
-            <div className="mb-3">
-              <label>CIN : </label>
-              <input
-                type="text"
-                className="w-full px-2 py-2 border border-gray-300 cursor-not-allowed"
-                value={
-                  state.user?.personnalInfo_id &&
-                  state.user?.personnalInfo_id.cin
-                }
-                readOnly
-              />
-            </div>
-            <div className="mb-3 w-full">
-              <label>Adresse : </label>
-              <input
-                type="text"
-                className="w-full px-2 py-2 border border-gray-300 cursor-not-allowed"
-                value={
-                  state.user?.personnalInfo_id &&
-                  state.user?.personnalInfo_id.adresse
-                }
-              />
-            </div>
-          </div>
-        </form>
-      </div>
-      <div className="border border-gray-300 py-5 px- mt-7 flex justify-end gap-5 mb-7">
-        <form className="px-6">
-          <button
-            type="button"
-            onClick={() =>
-              dispatch({
-                type: "TOGGLE_DIALOG",
-                payload: true,
-                title: "Confirmation",
-                action: handleSubmit,
-                message: `Vous êtes sur de ${
-                  state.isActive === true ? "Desactiver" : "réactiver"
-                } cette compte?`,
-              })
-            }
-            className={`border ${
-              state.isActive
-                ? "border-red-500 bg-red-500"
-                : "border-green-500 bg-green-500"
-            } px-2 py-3 text-white font-semibold rounded`}
-          >
-            {state.isActive === true ? "Desactiver" : "Activer"}
-          </button>
-        </form>
-      </div>
-      <Dialog
-        title={state.title as string}
-        message={state.message as string}
-        ok={state.action as () => void}
-        onClose={close}
-        isOpen={state.isOpen}
-      />
+      </section>
     </div>
   );
 }

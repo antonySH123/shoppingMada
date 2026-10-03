@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import UserInfo from "../../../modals/UserInfo";
 import Preloader from "../../../loading/Preloader";
 import { formatFrenchDateTime, formatStatus } from "../../../../helper/locale";
+import { DataTable, PageHeader, StatusBadge } from "../../ui";
 
 interface ICommande {
   _id: string;
@@ -30,12 +31,14 @@ interface IState {
   isOpen: boolean;
   motif: string | null;
 }
+
 const initialState: IState = {
   commandes: null,
   status: null,
   isOpen: false,
   motif: null,
 };
+
 const reducer = (state: IState, action: Action): IState => {
   switch (action.type) {
     case "FETCH_START":
@@ -52,30 +55,40 @@ const reducer = (state: IState, action: Action): IState => {
       throw new Error("Action inconnue");
   }
 };
+
 function CommandeDetails() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { id } = useParams();
   const csrf = useCSRF();
   const close = () => dispatch({ type: "TOGGLE_MODAL", payload: false });
 
-  const handleStatusChange = useCallback(async (status: string, motif?: string | null) => {
-    if (!csrf || !id) return;
-    const response = await fetch(`${import.meta.env.REACT_API_URL}command/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", "xsrf-token": csrf },
-      body: JSON.stringify({ status, motif }),
-      credentials: "include",
-    });
-    const result = await response.json();
-    if (!response.ok) {
-      toast.error(result.message || "Impossible de mettre à jour la commande.");
-      return;
-    }
-    toast.success(result.message);
-    dispatch({ type: "HANDLE_MOTIF", payload: null });
-    dispatch({ type: "TOGGLE_MODAL", payload: false });
-    dispatch({ type: "FETCH_START", payload: result.data });
-  }, [csrf, id]);
+  const handleStatusChange = useCallback(
+    async (status: string, motif?: string | null) => {
+      if (!csrf || !id) return;
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}command/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "xsrf-token": csrf },
+          body: JSON.stringify({ status, motif }),
+          credentials: "include",
+        },
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        toast.error(
+          result.message || "Impossible de mettre à jour la commande.",
+        );
+        return;
+      }
+      toast.success(result.message);
+      dispatch({ type: "HANDLE_MOTIF", payload: null });
+      dispatch({ type: "TOGGLE_MODAL", payload: false });
+      dispatch({ type: "FETCH_START", payload: result.data });
+    },
+    [csrf, id],
+  );
+
   useEffect(() => {
     const getCommand = async () => {
       const response = await fetch(
@@ -83,7 +96,7 @@ function CommandeDetails() {
         {
           method: "GET",
           credentials: "include",
-        }
+        },
       );
 
       const result = await response.json();
@@ -92,108 +105,159 @@ function CommandeDetails() {
         dispatch({ type: "FETCH_START", payload: data });
       }
     };
+
     getCommand();
   }, [id]);
+
+  const columns = [
+    {
+      id: "product",
+      header: "Produit",
+      render: (row: ICommande) => row.product_id?.name ?? "—",
+      sortValue: (row: ICommande) => row.product_id?.name ?? "",
+    },
+    {
+      id: "price",
+      header: "Prix",
+      render: (row: ICommande) => row.product_id?.price ?? 0,
+      sortValue: (row: ICommande) => Number(row.product_id?.price ?? 0),
+    },
+    {
+      id: "quantity",
+      header: "Quantité",
+      render: (row: ICommande) => row.quantity,
+      sortValue: (row: ICommande) => row.quantity,
+    },
+    {
+      id: "variants",
+      header: "Variantes",
+      render: (row: ICommande) => (
+        <ul className="space-y-1">
+          {Object.entries(row.variants ?? {}).map(([key, value]) => (
+            <li key={key} className="text-xs text-[var(--admin-muted)]">
+              {key} : {value}
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+  ];
 
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="container mx-auto p-4">
-      <div className="bg-white shadow-lg rounded-lg p-6 flex flex-col gap-3">
-        <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-          Détails de la commande
-        </h2>
-        <p className="text-gray-600">
-          <strong>Client :</strong> {state.commandes?.owner_id.username}
-        </p>
-        <p className="text-gray-600">
-          <strong>Date :</strong>{" "}
-          {formatFrenchDateTime(state.commandes?.createdAt)}
-        </p>
-        <p className="text-gray-600">
-          <strong>Total :</strong> {state.commandes?.total}
-        </p>
-        <p className="text-gray-600">
-          <strong>Statut :</strong> {formatStatus(state.commandes?.status)}
-        </p>
-        <h3 className="text-xl font-semibold text-gray-700 mt-4">Articles</h3>
-        <table className="w-full border-collapse text-sm lg:text-base">
-          <thead className="bg-gray-100 text-gray-700">
-            <tr>
-              <th className="py-3 border">Produits</th>
-              <th className="py-3 border">Prix</th>
-              <th className="py-3 border">Quantité</th>
-              <th className="py-3 border">Variantes</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="hover:bg-gray-50">
-              <td className="py-3 px-3 border text-center">
-                {state.commandes?.product_id.name}
-              </td>
-              <td className="py-3 px-3 border text-center">
-                {state.commandes?.product_id.price}
-              </td>
-              <td className="py-3 px-3 border text-center">
-                {state.commandes?.quantity}
-              </td>
-              <td className="py-3 px-3 border text-center">
-                <ul>
-                  {state.commandes &&
-                    Object.entries(state.commandes.variants).map(
-                      ([key, value]) => (
-                        <li key={key + 1}>
-                          {key} : {value}
-                        </li>
-                      )
-                    )}
-                </ul>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div className="flex justify-end gap-3">
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Commandes"
+        title="Détails de la commande"
+        description="Suivez le client, la date, le montant et l’état de la commande."
+      />
+
+      <section className="admin-panel p-5">
+        <div className="grid gap-4 border-b border-[var(--admin-border)] pb-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="admin-field">
+            <label>Client</label>
+            <input
+              type="text"
+              className="admin-field__control cursor-not-allowed"
+              value={state.commandes?.owner_id.username ?? ""}
+              readOnly
+            />
+          </div>
+          <div className="admin-field">
+            <label>Date</label>
+            <input
+              type="text"
+              className="admin-field__control cursor-not-allowed"
+              value={formatFrenchDateTime(state.commandes?.createdAt) ?? ""}
+              readOnly
+            />
+          </div>
+          <div className="admin-field">
+            <label>Total</label>
+            <input
+              type="text"
+              className="admin-field__control cursor-not-allowed"
+              value={state.commandes?.total ?? ""}
+              readOnly
+            />
+          </div>
+          <div className="admin-field">
+            <label>Statut</label>
+            <div className="pt-1">
+              <StatusBadge
+                status={state.commandes?.status ?? ""}
+                label={formatStatus(state.commandes?.status)}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <DataTable
+            columns={columns}
+            rows={state.commandes ? [state.commandes] : []}
+            getRowKey={(row) => row._id}
+            pageSize={10}
+            emptyTitle="Commande introuvable"
+            emptyDescription="Cette commande n’existe plus ou est inaccessible."
+          />
+        </div>
+
+        <div className="mt-5 flex justify-end gap-3">
           {state.commandes && state.commandes.status === "Pending" && (
             <>
               <button
-                className="border  px-3 text-sm py-2 bg-green-500 uppercase font-semibold text-white rounded"
+                type="button"
+                className="admin-button admin-button--primary admin-button--md"
                 onClick={() => handleStatusChange("Accepted")}
               >
                 Valider
               </button>
               <button
+                type="button"
+                className="admin-button admin-button--danger admin-button--md"
                 onClick={() =>
                   dispatch({ type: "TOGGLE_MODAL", payload: true })
                 }
-                className="border  px-3 text-sm py-2 border-red-500  uppercase font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-all ease-in-out rounded"
               >
                 Rejeter
               </button>
             </>
           )}
         </div>
-      </div>
+      </section>
+
       <UserInfo isOpen={state.isOpen} onClose={close}>
         <div className="flex flex-col gap-3">
-          <h1 className="text-2xl font-semibold">Confirmation</h1>
-          <p>Vous êtes sûr de vouloir rejeter cette commande?</p>
+          <h1 className="text-2xl font-semibold text-[var(--admin-text)]">
+            Confirmation
+          </h1>
+          <p className="text-[var(--admin-muted)]">
+            Vous êtes sûr de vouloir rejeter cette commande ?
+          </p>
           <input
             type="text"
             name="motif"
-            placeholder="veuillez entrer le motif*"
-            className="px-3 py-2 border w-full"
+            placeholder="Veuillez entrer le motif*"
+            className="admin-field__control w-full"
             onChange={(e) =>
               dispatch({ type: "HANDLE_MOTIF", payload: e.target.value })
             }
           />
-          <div className="flex items-center gap-3 justify-end">
+          <div className="flex items-center justify-end gap-3">
             <button
-              className="px-3 py-2 rounded bg-green-500 text-white"
+              type="button"
+              className="admin-button admin-button--primary admin-button--sm"
               onClick={() => handleStatusChange("Rejected", state.motif)}
             >
               OUI
             </button>
-            <button type="button" onClick={close} className="px-3 py-2 rounded bg-red-500 text-white">
+            <button
+              type="button"
+              className="admin-button admin-button--secondary admin-button--sm"
+              onClick={close}
+            >
               NON
             </button>
           </div>

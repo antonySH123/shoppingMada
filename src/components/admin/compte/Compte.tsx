@@ -258,7 +258,7 @@ function Compte() {
                   filteredUsers.map((account, index) => (
                     <tr key={account._id || index}>
                       <td className="font-mono text-xs">{index + 1}</td>
-                      <td className="font-semibold text-gray-900">
+                      <td className="font-semibold text-[var(--admin-text)]">
                         {account.username}
                       </td>
                       <td>
