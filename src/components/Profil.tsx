@@ -10,9 +10,10 @@ import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
 import Preloader from "./loading/Preloader";
 function Profil() {
-  const { user } = useAuth();
+  const { user, setUserInfo } = useAuth();
   const csrf = useCSRF();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState(false);
   const closeModal = () => setIsModalOpen(false);
   const [userProfil, setUserProfil] = useState({
     firstName: "",
@@ -39,7 +40,10 @@ function Profil() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (csrf) {
+    if (!csrf || isSaving) return;
+
+    setIsSaving(true);
+    try {
       const response = await fetch(
         import.meta.env.REACT_API_URL + "personnal/store",
         {
@@ -52,14 +56,28 @@ function Profil() {
           body: JSON.stringify(userProfil),
         },
       );
+      const result = await response.json();
       if (!response.ok) {
-        toast.error("Impossible de mettre � jour le profil.");
+        toast.error(result.message || "Impossible de mettre à jour le profil.");
+        return;
       }
-      if (response.status === 201) {
-        const result = await response.json();
-        toast.success(result.message);
-        setIsModalOpen(false);
+
+      if (!result.userInfo) {
+        toast.error(
+          "Le profil a été enregistré, mais les informations actualisées sont indisponibles.",
+        );
+        return;
       }
+
+      setUserInfo(result.userInfo);
+      toast.success(result.message);
+      setIsModalOpen(false);
+    } catch {
+      toast.error(
+        "Une erreur est survenue lors de l’enregistrement du profil.",
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -228,8 +246,12 @@ function Profil() {
               </label>
             </div>
             <div className="personal-info-actions">
-              <button type="submit" className="market-button-primary">
-                Enregistrer
+              <button
+                type="submit"
+                className="market-button-primary"
+                disabled={isSaving}
+              >
+                {isSaving ? "Enregistrement…" : "Enregistrer"}
               </button>
               <button
                 type="button"
