@@ -24,7 +24,7 @@ function Content() {
             "Content-Type": "application/json",
           },
           credentials: "include",
-        }
+        },
       );
 
       if (!response.ok) {
@@ -40,7 +40,7 @@ function Content() {
   }, []);
 
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
-    null
+    null,
   );
 
   const handleDeleteProduct = async () => {
@@ -55,7 +55,7 @@ function Content() {
               "xsrf-token": csrf,
             },
             credentials: "include",
-          }
+          },
         );
 
         if (response.ok) {
@@ -74,9 +74,10 @@ function Content() {
 
   useEffect(() => {
     fetchData();
-  },[fetchData]);
-  return (
-    !csrf ? <Preloader/> :
+  }, [fetchData]);
+  return !csrf ? (
+    <Preloader />
+  ) : (
     <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 py-5">
       <div className="py-5">
         <h1 className="text-3xl">Nos produits</h1>
@@ -106,15 +107,16 @@ function Content() {
               products.length > 0 &&
               products?.map((element, index) => {
                 return (
-                  <tr key={index}>
-                    <td className="py-3 pr-6 whitespace-nowrap font-semibold px-3 text-center">
+                  <tr key={element._id}>
+                    <td className="py-3 pr-6 whitespace-nowrap font-semibold tabular-nums px-3 text-center">
                       {index + 1}
                     </td>
                     <td className="py-3 pr-6 whitespace-nowrap text-center">
                       {element.name}
                     </td>
                     <td className="py-3 pr-6 whitespace-nowrap text-center">
-                      {element.description.slice(0,50)} { element.description.length > 50 && "..."}
+                      {element.description.slice(0, 50)}{" "}
+                      {element.description.length > 50 && "..."}
                     </td>
                     <td className="py-3 pr-6 whitespace-nowrap text-center">
                       {element.price}

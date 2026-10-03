@@ -51,7 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
 
       <div
         id="admin-sidebar"
-        className={`admin-sidebar fixed inset-y-0 left-0 z-40 h-screen w-72 overflow-x-hidden overflow-y-auto bg-[#10271b] px-5 transition-transform duration-300 md:relative md:z-auto md:h-full md:w-64 md:translate-x-0 ${isCollapsed ? "-translate-x-full md:hidden" : "translate-x-0"}`}
+        className={`admin-sidebar admin-sidebar-scroll fixed inset-y-0 left-0 z-40 h-screen w-72 overflow-x-hidden overflow-y-auto bg-[#10271b] px-5 transition-transform duration-300 md:relative md:z-auto md:h-full md:w-64 md:translate-x-0 ${isCollapsed ? "-translate-x-full md:hidden" : "translate-x-0"}`}
       >
         <div
           className={`flex items-center justify-between border-b border-white/15 py-5 ${
@@ -102,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
               Menu
             </p>
             <div
-              className={`flex flex-col gap-4 py-5 ${
+              className={`flex flex-col gap-2.5 py-3 ${
                 isCollapsed ? "items-center" : "items-start"
               }`}
             >
@@ -194,7 +194,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
             Paramètres
           </p>
           <div
-            className={`flex flex-col gap-4 py-5 ${
+            className={`flex flex-col gap-2.5 py-3 ${
               isCollapsed ? "items-center" : "items-start"
             }`}
           >

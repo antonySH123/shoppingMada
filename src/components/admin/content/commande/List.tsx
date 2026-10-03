@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { IProduct } from "../product/Add";
 import Iuser from "../../../../Interface/UserInterface";
-import { useEffect, useReducer } from "react";
+import { Fragment, useEffect, useReducer } from "react";
 import { formatStatus } from "../../../../helper/locale";
 
 interface ICommande {
@@ -75,9 +75,9 @@ function List() {
             <tbody>
               {state.commandes.length > 0 &&
                 state.commandes.map((element, index) => (
-                  <>
+                  <Fragment key={element._id}>
                     {element.product_id && (
-                      <tr className="hover:bg-gray-50" key={element._id + 1}>
+                      <tr className="hover:bg-gray-50">
                         <td className="py-3 px-3 border text-center">
                           {index + 1}
                         </td>
@@ -94,10 +94,10 @@ function List() {
                           <ul>
                             {Object.entries(element.variants).map(
                               ([key, value]) => (
-                                <li key={key + 1}>
+                                <li key={key}>
                                   {key} : {value}
                                 </li>
-                              )
+                              ),
                             )}
                           </ul>
                         </td>
@@ -115,14 +115,12 @@ function List() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
             </tbody>
           </table>
         </div>
       </div>
-
-      
     </div>
   );
 }

@@ -1,9 +1,8 @@
-import { LiaAtSolid, LiaUserCircle, LiaUserCogSolid } from "react-icons/lia";
+import { LiaAtSolid, LiaEditSolid, LiaUserCircle, LiaUserCogSolid } from "react-icons/lia";
 import { Link } from "react-router-dom";
 import UserInfo from "./modals/UserInfo";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { FaHandshake } from "react-icons/fa";
-import Skeleton from "react-loading-skeleton";
 import { useAuth } from "../helper/useAuth";
 import Commande from "./commande/Commande";
 import MarketplaceOrderHistory from "./commande/MarketplaceOrderHistory";
@@ -23,6 +22,18 @@ function Profil() {
     adresse: "",
     phoneNumber: "",
   });
+  const profileInfo = user?.personnalInfo_id;
+  const roleName = user?.userGroupMember_id?.usergroup_id?.name ?? "Compte";
+  const displayName =
+    [profileInfo?.firstName, profileInfo?.lastName].filter(Boolean).join(" ") ||
+    user?.username ||
+    "Votre profil";
+  const completedProfileFields = [
+    profileInfo?.firstName,
+    profileInfo?.lastName,
+    profileInfo?.phoneNumber || user?.phonenumber,
+    profileInfo?.adresse,
+  ].filter(Boolean).length;
 
   const form = useRef(null);
 
@@ -83,86 +94,78 @@ function Profil() {
   };
 
   useEffect(() => {
-    if (user && !user.personnalInfo_id) {
-      setIsModalOpen(true);
-    }
+    if (!user) return;
+    const info = user.personnalInfo_id;
+    setUserProfil({
+      firstName: info?.firstName ?? "",
+      lastName: info?.lastName ?? "",
+      gender: info?.gender ?? "",
+      adresse: info?.adresse ?? "",
+      phoneNumber: info?.phoneNumber ?? user.phonenumber ?? "",
+    });
+    if (!info) setIsModalOpen(true);
   }, [user]);
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="profile-page-root w-full py-8 md:py-12">
-      <div className="profile-card page-container mt-2 flex flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_20px_60px_rgba(24,53,36,0.09)] md:mt-0 md:flex-row">
-        {/* Colonne Profil */}
-        <div className="profile-summary flex w-full flex-col items-center p-6 md:w-1/3 md:p-8">
-          <div className="profile-avatar my-6">
-            <LiaUserCircle size={94} />
+    <main className="profile-page-root w-full py-7 sm:py-10">
+      <div className="profile-layout page-container">
+        <header className="profile-page-heading">
+          <div>
+            <p className="profile-eyebrow">ShopInMada · Mon compte</p>
+            <h1>Profil et coordonnées</h1>
+            <p>Gérez votre identité et retrouvez votre activité sur la marketplace.</p>
           </div>
-          <div className="flex flex-col gap-4 text-center  w-full">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-              {user?.personnalInfo_id?.firstName || <Skeleton />}
-            </h1>
-            <p className="-mt-3 text-sm text-gray-500">{user?.email}</p>
-            <div className="profile-role-badge mx-auto flex items-center gap-2">
-              <LiaUserCogSolid size={17} />
-              <span>
-                {user?.userGroupMember_id.usergroup_id.name || <Skeleton />}
-              </span>
-            </div>
-            {user?.personnalInfo_id?.phoneNumber && (
-              <p className="flex items-center justify-center gap-2 text-sm text-gray-600">
-                <LiaAtSolid size={17} />
-                {user.personnalInfo_id.phoneNumber}
-              </p>
-            )}
-            {user?.userGroupMember_id.usergroup_id.name === "Client" && (
-              <Link to="/vendeur" className="market-button-primary mt-2 w-full">
-                <FaHandshake size={20} />
-                Devenir vendeur
-              </Link>
-            )}
-          </div>
-        </div>
+          <button type="button" onClick={() => setIsModalOpen(true)} className="profile-edit-button">
+            <LiaEditSolid size={18} /> Modifier mes informations
+          </button>
+        </header>
 
-        {/* Colonne Détails */}
-        <div className="w-full p-6 md:w-2/3 md:p-9">
-          <div className="mb-7">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
-              Mon espace
-            </p>
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-              Informations personnelles
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Vos coordonn�es et votre activit� sur ShopInMada.
-            </p>
-          </div>
-          <div className="profile-information-grid grid gap-3 sm:grid-cols-2">
-            <div className="profile-information-item">
-              <span className="font-semibold">Nom :</span>
-              <span>{user?.personnalInfo_id?.firstName || <Skeleton />}</span>
+        <div className="profile-overview-grid">
+          <aside className="profile-summary">
+            <div className="profile-identity">
+              <div className="profile-avatar"><LiaUserCircle size={72} /></div>
+              <span className="profile-role-badge"><LiaUserCogSolid size={16} />{roleName}</span>
+              <h2>{displayName}</h2>
+              <p className="profile-username">@{user?.username || "compte"}</p>
+              <a className="profile-email" href={user?.email ? `mailto:${user.email}` : undefined}>
+                <LiaAtSolid size={16} />{user?.email || "Adresse e-mail non renseignée"}
+              </a>
             </div>
-            <div className="profile-information-item">
-              <span className="font-semibold">Prénom :</span>
-              <span>{user?.personnalInfo_id?.lastName || <Skeleton />}</span>
+            <div className="profile-completion">
+              <div className="profile-completion-heading">
+                <span>Profil complété</span>
+                <strong>{completedProfileFields}/4</strong>
+              </div>
+              <div className="profile-completion-track" role="progressbar" aria-label="Complétude du profil" aria-valuemin={0} aria-valuemax={4} aria-valuenow={completedProfileFields}>
+                <span style={{ width: `${completedProfileFields * 25}%` }} />
+              </div>
+              <p>{completedProfileFields === 4 ? "Vos coordonnées sont à jour." : "Complétez vos coordonnées pour faciliter vos achats et livraisons."}</p>
             </div>
-            <div className="profile-information-item">
-              <span className="font-semibold">Adresse :</span>
-              <span>{user?.personnalInfo_id?.adresse || <Skeleton />}</span>
-            </div>
-            <div className="profile-information-item">
-              <span className="font-semibold">Contact :</span>
-              <span>{user?.personnalInfo_id?.phoneNumber || <Skeleton />}</span>
-            </div>
-          </div>
+            {roleName === "Client" && (
+              <Link to="/vendeur" className="profile-seller-link"><FaHandshake size={18} /> Ouvrir une boutique <span aria-hidden="true">→</span></Link>
+            )}
+          </aside>
 
-          {user?.userGroupMember_id.usergroup_id.name !== "Super Admin" && (
-            <div className="mt-10">
-              <Commande csrf={csrf as string} />
-              {user?.userGroupMember_id.usergroup_id.name === "Client" && (
-                <MarketplaceOrderHistory />
-              )}
+          <section className="profile-details-panel">
+            <div className="profile-section-heading">
+              <div><p className="profile-eyebrow">Informations du compte</p><h2>Coordonnées personnelles</h2></div>
+              <button type="button" onClick={() => setIsModalOpen(true)} className="profile-inline-edit"><LiaEditSolid size={17} /><span>Modifier</span></button>
             </div>
-          )}
+            <div className="profile-information-grid">
+              <div className="profile-information-item"><span className="profile-field-label">Nom</span><strong>{profileInfo?.firstName || "À compléter"}</strong></div>
+              <div className="profile-information-item"><span className="profile-field-label">Prénom</span><strong>{profileInfo?.lastName || "À compléter"}</strong></div>
+              <div className="profile-information-item"><span className="profile-field-label">Téléphone</span><strong>{profileInfo?.phoneNumber || user?.phonenumber || "À compléter"}</strong></div>
+              <div className="profile-information-item"><span className="profile-field-label">Adresse de livraison</span><strong>{profileInfo?.adresse || "À compléter"}</strong></div>
+            </div>
+
+            {roleName !== "Super Admin" && (
+              <div className="profile-orders-content">
+                <Commande csrf={csrf as string} />
+                {roleName === "Client" && <MarketplaceOrderHistory />}
+              </div>
+            )}
+          </section>
         </div>
       </div>
 
@@ -268,7 +271,7 @@ function Profil() {
           </form>
         </div>
       </UserInfo>
-    </div>
+    </main>
   );
 }
 
