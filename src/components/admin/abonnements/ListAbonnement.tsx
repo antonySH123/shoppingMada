@@ -1,6 +1,6 @@
 import Isubscription from "../../../Interface/subscription.interface";
 import IAction from "../../../Interface/action.interface";
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import { toast } from "react-toastify";
 import { LiaEye } from "react-icons/lia";
 import UserInfo from "../../modals/UserInfo";
@@ -14,7 +14,7 @@ interface IState {
   selectedId: string | null;
   subscribeinfo: Isubscription | null;
   rejected: boolean;
-  motif:string | null
+  motif: string | null;
 }
 
 const initialState: IState = {
@@ -23,7 +23,7 @@ const initialState: IState = {
   selectedId: null,
   subscribeinfo: null,
   rejected: false,
-  motif: null
+  motif: null,
 };
 
 const reducer = (state: IState, action: IAction): IState => {
@@ -53,13 +53,15 @@ function ListAbonnement() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { user } = useAuth();
   const csrf = useCSRF();
+  const [searchTerm, setSearchTerm] = useState("");
+
   const fetchData = useCallback(async () => {
     try {
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}subscription`,
         {
           credentials: "include",
-        }
+        },
       );
       if (response.ok) {
         const result = await response.json();
@@ -75,7 +77,7 @@ function ListAbonnement() {
       `${import.meta.env.REACT_API_URL}subscription/${state.selectedId}`,
       {
         credentials: "include",
-      }
+      },
     );
 
     if (response.ok) {
@@ -84,52 +86,96 @@ function ListAbonnement() {
     }
   }, [state.selectedId]);
 
-  const updateData =useCallback( async (status: string) => {
-    let data;
-    if (user && user.userGroupMember_id.usergroup_id.name === "Boutiks") {
-      data = {
-        payementStatus: "Canceled",
-      };
-    } else {
-      if (status === "Completed") {
-        data = {
-          payementStatus: "Completed",
-          startDate: Date.now(),
-          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        };
-      } else if (status === "Rejected") {
-        data = {
-          payementStatus: "Rejected",
-          motif:state.motif
-        };
-      }
-    }
+  const filteredSubscriptions = state.subscription.filter((item) => {
+    const boutique = item.owner_id?.boutiks_id?.name ?? "";
+    const ref = item.refTransaction ?? "";
+    const plan = item.plan ?? "";
+    const searchValue = `${boutique} ${ref} ${plan}`.toLowerCase();
+    return searchValue.includes(searchTerm.trim().toLowerCase());
+  });
 
-    if (data && csrf) {
-      const response = await fetch(
-        `${import.meta.env.REACT_API_URL}subscribe/${state.selectedId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "xsrf-token": csrf,
-          },
-          credentials: "include",
-          body: JSON.stringify(data),
-        }
-      );
-      if (response.ok) {
-        const result = await response.json();
-        toast.success(result.message);
-        dispatch({ type: "TOGGLE_MODAL", payload: false });
-        fetchData();
+  const metrics = [
+    {
+      label: "À valider",
+      value: state.subscription.filter(
+        (item) => item.payementStatus === "Pending",
+      ).length,
+      tone: "text-amber-700 bg-amber-50",
+    },
+    {
+      label: "Acceptées",
+      value: state.subscription.filter(
+        (item) => item.payementStatus === "Completed",
+      ).length,
+      tone: "text-emerald-700 bg-emerald-50",
+    },
+    {
+      label: "Rejetées",
+      value: state.subscription.filter(
+        (item) => item.payementStatus === "Rejected",
+      ).length,
+      tone: "text-rose-700 bg-rose-50",
+    },
+    {
+      label: "Annulées",
+      value: state.subscription.filter(
+        (item) => item.payementStatus === "Canceled",
+      ).length,
+      tone: "text-slate-700 bg-slate-100",
+    },
+  ];
+
+  const updateData = useCallback(
+    async (status: string) => {
+      let data;
+      if (user && user.userGroupMember_id.usergroup_id.name === "Boutiks") {
+        data = {
+          payementStatus: "Canceled",
+        };
       } else {
-        const result = await response.json().catch(() => null);
-        toast.error(result?.message || "Impossible de mettre à jour l'abonnement.");
+        if (status === "Completed") {
+          data = {
+            payementStatus: "Completed",
+            startDate: Date.now(),
+            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          };
+        } else if (status === "Rejected") {
+          data = {
+            payementStatus: "Rejected",
+            motif: state.motif,
+          };
+        }
       }
-      dispatch({type:"HANDLE_MOTIF",payload:null});
-    }
-  },[csrf, fetchData, state.motif, state.selectedId, user]);
+
+      if (data && csrf) {
+        const response = await fetch(
+          `${import.meta.env.REACT_API_URL}subscribe/${state.selectedId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "xsrf-token": csrf,
+            },
+            credentials: "include",
+            body: JSON.stringify(data),
+          },
+        );
+        if (response.ok) {
+          const result = await response.json();
+          toast.success(result.message);
+          dispatch({ type: "TOGGLE_MODAL", payload: false });
+          fetchData();
+        } else {
+          const result = await response.json().catch(() => null);
+          toast.error(
+            result?.message || "Impossible de mettre à jour l'abonnement.",
+          );
+        }
+        dispatch({ type: "HANDLE_MOTIF", payload: null });
+      }
+    },
+    [csrf, fetchData, state.motif, state.selectedId, user],
+  );
 
   useEffect(() => {
     fetchData();
@@ -138,132 +184,188 @@ function ListAbonnement() {
   useEffect(() => {
     if (state.selectedId) getData();
   }, [getData, state.selectedId]);
+
   return (
-    <div className="flex flex-col gap-5 p-4">
-      <h1 className="text-center text-3xl font-bold mb-6">
-        Listes des abonnements
-      </h1>
-      <div className="shadow-md border rounded-lg overflow-auto">
-        <table className="w-full border-collapse text-sm lg:text-base">
-          <thead className="bg-gray-100 text-gray-700">
-            <tr>
-              <th className="py-3 px-3 border">Nom</th>
-              <th className="py-3 border">Plan</th>
-              <th className="py-3 border">Références</th>
-              <th className="py-3 border">Statut</th>
-              <th className="py-3 border">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {state.subscription &&
-              state.subscription.length > 0 &&
-              state.subscription.map((item, index) => (
-                <tr className="hover:bg-gray-50" key={index + 1}>
-                  <td className="py-3 px-3 border text-center">
-                    {item.owner_id.boutiks_id && item.owner_id.boutiks_id.name}
-                  </td>
-                  <td className="py-3 px-3 border text-center">{item.plan}</td>
-                  <td className="py-3 px-3 border text-center">
-                    {item.refTransaction}
-                  </td>
-                  <td className="py-3 px-3 border text-center">
-                    {formatStatus(item.payementStatus)}
-                  </td>
-                  <td className="py-3 px-3 border text-center">
-                    <button
-                      onClick={() => {
-                        dispatch({ type: "SELECT_ID", payload: item._id });
-                        dispatch({ type: "TOGGLE_MODAL", payload: true });
-                      }}
-                    >
-                      <LiaEye />
-                    </button>
+    <div className="flex flex-col gap-5">
+      <header className="admin-toolbar">
+        <div>
+          <p className="admin-kicker">Paiements & abonnements</p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-950">
+            Abonnements marketplace
+          </h1>
+        </div>
+        <div className="admin-toolbar-actions">
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Rechercher une boutique"
+            className="admin-search-input"
+          />
+        </div>
+      </header>
+
+      <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {metrics.map((metric) => (
+          <article key={metric.label} className="admin-metric-card">
+            <span className={`admin-metric-icon ${metric.tone}`}>
+              {metric.value ?? 0}
+            </span>
+            <span className="mt-4 text-2xl font-bold tabular-nums text-gray-950">
+              {metric.value ?? 0}
+            </span>
+            <span className="mt-1 text-sm text-gray-600">{metric.label}</span>
+          </article>
+        ))}
+      </section>
+
+      <div className="admin-panel">
+        <div className="admin-panel-heading">
+          <div>
+            <h2>Demandes d’abonnement</h2>
+            <p>Validation des plans, paiements et références de transaction.</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Boutique</th>
+                <th>Plan</th>
+                <th>Référence</th>
+                <th>Statut</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSubscriptions.length > 0 ? (
+                filteredSubscriptions.map((item, index) => (
+                  <tr key={item._id || index}>
+                    <td className="font-semibold text-gray-900">
+                      {item.owner_id?.boutiks_id?.name || "Boutique inconnue"}
+                    </td>
+                    <td>{item.plan}</td>
+                    <td className="font-mono text-xs">{item.refTransaction}</td>
+                    <td>
+                      <span
+                        className={`admin-status-badge ${item.payementStatus === "Completed" ? "admin-status-success" : item.payementStatus === "Rejected" ? "admin-status-danger" : item.payementStatus === "Canceled" ? "admin-status-neutral" : "admin-status-info"}`}
+                      >
+                        {formatStatus(item.payementStatus)}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="admin-link-button"
+                        onClick={() => {
+                          dispatch({ type: "SELECT_ID", payload: item._id });
+                          dispatch({ type: "TOGGLE_MODAL", payload: true });
+                        }}
+                      >
+                        <LiaEye />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="admin-empty-state">
+                    Aucune demande d’abonnement ne correspond à la recherche.
                   </td>
                 </tr>
-              ))}
-          </tbody>
-        </table>
-        <UserInfo
-          isOpen={state.isOpen}
-          onClose={() => dispatch({ type: "TOGGLE_MODAL", payload: false })}
-        >
-          <h1 className="text-xl font-bold mb-4">D�tails de l’abonnement</h1>
-          <hr />
-          <div className="px-2 py-2 rounded w-full  border-green-500 border-2">
-            {!state.rejected ? (
-              <>
-                <h2>{state.subscribeinfo?.owner_id.boutiks_id.name}</h2>
-                <div className="flex flex-col gap-2">
-                  <strong>{state.subscribeinfo?.plan}</strong>
-                  <strong>{formatStatus(state.subscribeinfo?.payementStatus)}</strong>
-                  <strong>{state.subscribeinfo?.refTransaction}</strong>
-                  <strong>{state.subscribeinfo?.transactionPhoneNumber}</strong>
-                </div>
-              </>
-            ) : (
-              <>
-                <div>
-                  <h1>Vous êtes sur de bien vouloir rejeter cette demande?</h1>
-                  <input
-                    type="text"
-                    name="motif"
-                    className="w-full px-2 py-2 rounded border"
-                    placeholder="Motif"
-                    value={state.motif as string}
-                    onChange={(e)=>dispatch({type:"HANDLE_MOTIF",payload:e.target.value})}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          <hr />
-          <div className="flex gap-3 py-3 justify-end">
-            {user && user.userGroupMember_id.usergroup_id.name != "Boutiks" && (
-              <>
-                {!state.rejected ? (
-                  <>
-                    {" "}
-                    <button
-                      className="px-3 py-2 rounded bg-green-500 text-white"
-                      onClick={() => updateData("Completed")}
-                    >
-                      Accepter
-                    </button>
-                    <button
-                      className="px-3 py-2 rounded bg-red-500 text-white"
-                      onClick={() =>
-                        dispatch({ type: "REJECTED", payload: true })
-                      }
-                    >
-                      Rejeter
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      className="px-3 py-2 rounded bg-green-500 text-white"
-                      onClick={() => updateData("Rejected")}
-                    >
-                      Envoyer
-                    </button>
-                  </>
-                )}
-              </>
-            )}
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-            {user &&
-              user.userGroupMember_id.usergroup_id.name === "Boutiks" &&
-              state.subscribeinfo?.payementStatus === "Pending" && (
+      <UserInfo
+        isOpen={state.isOpen}
+        onClose={() => dispatch({ type: "TOGGLE_MODAL", payload: false })}
+      >
+        <h1 className="text-xl font-bold mb-4">Détails de l’abonnement</h1>
+        <hr />
+        <div className="px-2 py-3 rounded w-full border border-emerald-200 bg-emerald-50/70">
+          {!state.rejected ? (
+            <>
+              <h2 className="text-lg font-bold text-gray-900 mb-3">
+                {state.subscribeinfo?.owner_id?.boutiks_id?.name || "Boutique"}
+              </h2>
+              <div className="flex flex-col gap-2 text-sm text-gray-700">
+                <strong>Plan : {state.subscribeinfo?.plan}</strong>
+                <strong>
+                  Statut : {formatStatus(state.subscribeinfo?.payementStatus)}
+                </strong>
+                <strong>
+                  Référence : {state.subscribeinfo?.refTransaction}
+                </strong>
+                <strong>
+                  Téléphone : {state.subscribeinfo?.transactionPhoneNumber}
+                </strong>
+              </div>
+            </>
+          ) : (
+            <div>
+              <h2 className="mb-2 text-base font-semibold text-gray-900">
+                Confirmez-vous le rejet de cette demande ?
+              </h2>
+              <input
+                type="text"
+                name="motif"
+                className="w-full px-2 py-2 rounded border border-gray-200 bg-white"
+                placeholder="Motif du rejet"
+                value={state.motif ?? ""}
+                onChange={(e) =>
+                  dispatch({ type: "HANDLE_MOTIF", payload: e.target.value })
+                }
+              />
+            </div>
+          )}
+        </div>
+        <hr />
+        <div className="flex gap-3 py-3 justify-end">
+          {user && user.userGroupMember_id.usergroup_id.name != "Boutiks" && (
+            <>
+              {!state.rejected ? (
+                <>
+                  <button
+                    className="admin-button-primary"
+                    onClick={() => updateData("Completed")}
+                  >
+                    Accepter
+                  </button>
+                  <button
+                    className="admin-button-danger"
+                    onClick={() =>
+                      dispatch({ type: "REJECTED", payload: true })
+                    }
+                  >
+                    Rejeter
+                  </button>
+                </>
+              ) : (
                 <button
-                  className="px-3 py-2 rounded bg-red-500 text-white"
-                  onClick={() => updateData("Canceled")}
+                  className="admin-button-primary"
+                  onClick={() => updateData("Rejected")}
                 >
-                  Annuler
+                  Envoyer
                 </button>
               )}
-          </div>
-        </UserInfo>
-      </div>
+            </>
+          )}
+
+          {user &&
+            user.userGroupMember_id.usergroup_id.name === "Boutiks" &&
+            state.subscribeinfo?.payementStatus === "Pending" && (
+              <button
+                className="admin-button-danger"
+                onClick={() => updateData("Canceled")}
+              >
+                Annuler
+              </button>
+            )}
+        </div>
+      </UserInfo>
     </div>
   );
 }

@@ -1,5 +1,14 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { FaShoppingCart, FaSun, FaUsers } from "react-icons/fa";
+import {
+  FaArrowRight,
+  FaBox,
+  FaExclamationTriangle,
+  FaPlus,
+  FaShoppingCart,
+  FaStore,
+  FaUsers,
+} from "react-icons/fa";
+import { Link } from "react-router-dom";
 import UserInfo from "../../modals/UserInfo";
 import { LiaUploadSolid } from "react-icons/lia";
 import { toast } from "react-toastify";
@@ -12,8 +21,18 @@ import Iuser from "../../../Interface/UserInterface";
 import Preloader from "../../loading/Preloader";
 import { formatStatus } from "../../../helper/locale";
 
+const formatAriary = (amount: number) =>
+  new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "MGA",
+    maximumFractionDigits: 0,
+  }).format(amount);
+
 function Dash() {
   const { user } = useAuth();
+  const role = user?.userGroupMember_id?.usergroup_id?.name;
+  const isSeller = role === "Boutiks";
+  const isSuperAdmin = role === "Super Admin";
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const closeModal = () => setIsModalOpen(false);
   const [cin, setCIN] = useState("");
@@ -64,11 +83,12 @@ function Dash() {
         credentials: "include",
       },
     );
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} ${response.statusText}`);
-    }
+    if (!response.ok)
+      throw new Error(
+        "Impossible de récupérer les informations de la boutique.",
+      );
     const result = await response.json();
-    if (!result.data.cin) setIsModalOpen(true);
+    if (!result.data?.cin) setIsModalOpen(true);
   }, []);
 
   const getProduct = useCallback(async () => {
@@ -119,7 +139,9 @@ function Dash() {
 
       const result = await response.json();
 
-      if (response.status === 200) setUsers(result.data);
+      if (response.ok) setUsers(result.data ?? []);
+      else
+        toast.error(result.message || "Impossible de récupérer les comptes.");
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -128,157 +150,225 @@ function Dash() {
   }, []);
 
   useEffect(() => {
-    fetchUsers();
-    getPersonnalInfo();
-    getProduct();
-    fetchCommand();
-  }, [fetchCommand, fetchUsers, getPersonnalInfo, getProduct, user]);
+    if (role === "Boutiks") {
+      getPersonnalInfo();
+      getProduct();
+      fetchCommand();
+    } else if (role === "Super Admin") {
+      fetchUsers();
+    }
+  }, [fetchCommand, fetchUsers, getPersonnalInfo, getProduct, role]);
 
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="admin-dashboard">
-      <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="market-card flex min-h-40 w-full flex-col items-start justify-center gap-2 p-6">
-          <div>
-            {users ? (
-              <FaShoppingCart className="text-3xl text-emerald-700" />
-            ) : (
-              <FaUsers className="text-3xl text-emerald-700" />
-            )}
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              {user &&
-              user.userGroupMember_id.usergroup_id.name === "Super Admin"
-                ? users?.length
-                : products?.length}
-            </h1>
-          </div>
-          <div>
-            <h1 className="text-sm font-medium text-gray-500">
-              {user &&
-              user.userGroupMember_id.usergroup_id.name === "Super Admin"
-                ? "Utilisateurs"
-                : "Product"}
-            </h1>
-          </div>
+    <div className="admin-dashboard space-y-6">
+      <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-sm font-semibold text-emerald-800">
+            {isSuperAdmin
+              ? "Administration de la marketplace"
+              : "Pilotage de la boutique"}
+          </p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-gray-950">
+            Bonjour {user?.username || ""}
+          </h2>
+          <p className="mt-1 text-sm text-gray-600">
+            {isSuperAdmin
+              ? "Suivez les comptes et les demandes de la plateforme."
+              : "Suivez votre activité et traitez les commandes en attente."}
+          </p>
         </div>
-        <div className="market-card flex min-h-40 w-full flex-col items-start justify-center gap-2 p-6">
-          <div>
-            <FaSun className="text-3xl text-amber-500" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              {user &&
-              user.userGroupMember_id.usergroup_id.name === "Super Admin"
-                ? users?.filter(
-                    (item) =>
-                      item.userGroupMember_id?.usergroup_id.name === "Boutiks",
-                  ).length
-                : commandes?.filter((item) => item.status === "Pending").length}
-            </h1>
-          </div>
-          <div>
-            <h1 className="text-sm font-medium text-gray-500">
-              {user &&
-              user.userGroupMember_id.usergroup_id.name === "Super Admin"
-                ? "Nombres des boutiques"
-                : "Commande en Attente"}
-            </h1>
-          </div>
-        </div>
-        <div className="market-card flex min-h-40 w-full flex-col items-start justify-center gap-2 p-6">
-          <div>
-            <FaUsers className="text-3xl text-sky-700" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              {user &&
-              user.userGroupMember_id.usergroup_id.name === "Super Admin"
-                ? users?.filter(
-                    (item) =>
-                      item.userGroupMember_id?.usergroup_id.name === "Client",
-                  ).length
-                : commandes?.length}
-            </h1>
-          </div>
-          <div>
-            <h1 className="text-sm font-medium text-gray-500">
-              {user &&
-              user.userGroupMember_id.usergroup_id.name === "Super Admin"
-                ? "Nombres des Abonné"
-                : "Tous les commandes"}
-            </h1>
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-6 py-3">
-        <div className="market-card min-w-0 p-4 sm:p-6">
-          {user && user.userGroupMember_id.usergroup_id.name === "Boutiks" ? (
+        <div className="flex flex-wrap gap-2">
+          {isSeller ? (
             <>
-              <div className="py-5">
-                <h2 className="text-lg font-bold text-gray-900">
-                  Commandes en attente
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Suivez les commandes à traiter par votre boutique.
-                </p>
-              </div>
-              <div className="overflow-auto">
-                <table className="w-full border-2">
-                  <thead className="bg-gray-100 text-gray-700">
-                    <tr>
-                      <th className="py-3 px-3 border">#</th>
-                      <th className="py-3 border">Produits</th>
-                      <th className="py-3 border">Prix</th>
-                      <th className="py-3 border">Quantité</th>
-                      <th className="py-3 border">Variantes</th>
-                      <th className="py-3 border">Statut</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-500">
-                    {commandes
-                      ?.filter((element) => element.status === "Pending")
-                      .map((element, index) => (
-                        <tr className="hover:bg-gray-50" key={index + 1}>
-                          <td className="py-3 px-3 border text-center">
-                            {index + 1}
-                          </td>
-                          <td className="py-3 px-3 border text-center">
-                            {element.product_id && element.product_id.name}
-                          </td>
-                          <td className="py-3 px-3 border text-center">
-                            {element.product_id && element.product_id.price}
-                          </td>
-                          <td className="py-3 px-3 border text-center">
-                            {element.quantity}
-                          </td>
-                          <td className="py-3 px-3 border text-center">
-                            <ul>
-                              {Object.entries(element.variants).map(
-                                ([key, value]) => (
-                                  <li key={key + 1}>
-                                    {key} : {value}
-                                  </li>
-                                ),
-                              )}
-                            </ul>
-                          </td>
-                          <td className="py-3 px-3 border text-center text-yellow-500">
-                            {formatStatus(element.status)}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
+              <Link
+                to="/espace_vendeur/admin/addProduct"
+                className="admin-action-primary"
+              >
+                <FaPlus aria-hidden="true" /> Ajouter un produit
+              </Link>
+              <Link
+                to="/espace_vendeur/commandes"
+                className="admin-action-secondary"
+              >
+                Voir les commandes <FaArrowRight aria-hidden="true" />
+              </Link>
             </>
-          ) : (
-            <ListAbonnement />
-          )}
+          ) : isSuperAdmin ? (
+            <>
+              <Link
+                to="/espace_vendeur/shopaccounts"
+                className="admin-action-primary"
+              >
+                <FaUsers aria-hidden="true" /> Gérer les comptes
+              </Link>
+              <Link
+                to="/espace_vendeur/abonnements"
+                className="admin-action-secondary"
+              >
+                Demandes d’abonnement <FaArrowRight aria-hidden="true" />
+              </Link>
+            </>
+          ) : null}
         </div>
-      </div>
+      </section>
+
+      <section
+        aria-label="Indicateurs de l’activité"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        {(isSuperAdmin
+          ? [
+              {
+                label: "Comptes",
+                value: users?.length,
+                icon: <FaUsers />,
+                tone: "text-sky-700 bg-sky-50",
+              },
+              {
+                label: "Boutiques",
+                value: users?.filter(
+                  (item) =>
+                    item.userGroupMember_id?.usergroup_id.name === "Boutiks",
+                ).length,
+                icon: <FaStore />,
+                tone: "text-emerald-800 bg-emerald-50",
+              },
+              {
+                label: "Clients",
+                value: users?.filter(
+                  (item) =>
+                    item.userGroupMember_id?.usergroup_id.name === "Client",
+                ).length,
+                icon: <FaUsers />,
+                tone: "text-indigo-700 bg-indigo-50",
+              },
+            ]
+          : [
+              {
+                label: "Produits",
+                value: products?.length,
+                icon: <FaBox />,
+                tone: "text-emerald-800 bg-emerald-50",
+              },
+              {
+                label: "Commandes à traiter",
+                value: commandes?.filter((item) => item.status === "Pending")
+                  .length,
+                icon: <FaShoppingCart />,
+                tone: "text-amber-700 bg-amber-50",
+              },
+              {
+                label: "Commandes reçues",
+                value: commandes?.length,
+                icon: <FaShoppingCart />,
+                tone: "text-sky-700 bg-sky-50",
+              },
+              {
+                label: "Produits à réapprovisionner",
+                value: products?.filter(
+                  (item) => typeof item.stock === "number" && item.stock <= 5,
+                ).length,
+                icon: <FaExclamationTriangle />,
+                tone: "text-rose-700 bg-rose-50",
+              },
+            ]
+        ).map((metric) => (
+          <article key={metric.label} className="admin-metric-card">
+            <span className={`admin-metric-icon ${metric.tone}`}>
+              {metric.icon}
+            </span>
+            <span className="mt-4 text-2xl font-bold tabular-nums text-gray-950">
+              {metric.value ?? "—"}
+            </span>
+            <span className="mt-1 text-sm text-gray-600">{metric.label}</span>
+          </article>
+        ))}
+      </section>
+
+      {isSeller ? (
+        <section className="admin-panel min-w-0">
+          <div className="admin-panel-heading">
+            <div>
+              <h3>Commandes à traiter</h3>
+              <p>Les commandes clients en attente de confirmation.</p>
+            </div>
+            <Link to="/espace_vendeur/commandes" className="admin-panel-link">
+              Toutes les commandes <FaArrowRight aria-hidden="true" />
+            </Link>
+          </div>
+          <div className="overflow-x-auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Référence</th>
+                  <th>Client</th>
+                  <th>Produit</th>
+                  <th>Qté</th>
+                  <th>Total</th>
+                  <th>Statut</th>
+                  <th>
+                    <span className="sr-only">Action</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {commandes
+                  ?.filter((item) => item.status === "Pending")
+                  .map((item) => (
+                    <tr key={item._id}>
+                      <td className="font-mono text-xs">
+                        #{item._id.slice(-7).toUpperCase()}
+                      </td>
+                      <td>
+                        {item.owner_id?.username ||
+                          item.owner_id?.email ||
+                          "Client"}
+                      </td>
+                      <td className="font-semibold text-gray-900">
+                        {item.product_id?.name || "Produit supprimé"}
+                      </td>
+                      <td>{item.quantity}</td>
+                      <td className="font-semibold tabular-nums">
+                        {formatAriary(item.total)}
+                      </td>
+                      <td>
+                        <span className="admin-status-pending">
+                          {formatStatus(item.status)}
+                        </span>
+                      </td>
+                      <td>
+                        <Link
+                          className="admin-panel-link"
+                          to={`/espace_vendeur/commande/${item._id}`}
+                        >
+                          Ouvrir
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                {commandes &&
+                  commandes.filter((item) => item.status === "Pending")
+                    .length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-10 text-center text-gray-500"
+                      >
+                        Aucune commande en attente.
+                      </td>
+                    </tr>
+                  )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : isSuperAdmin ? (
+        <section className="admin-panel min-w-0">
+          <ListAbonnement />
+        </section>
+      ) : null}
 
       <UserInfo isOpen={isModalOpen} onClose={closeModal}>
         <div className="cin-info-modal">

@@ -63,7 +63,7 @@ const Navbar = () => {
           <Link
             to="/espace_vendeur/dash"
             onClick={closeMenu}
-            className="hidden items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 xl:flex"
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
             aria-label="Espace vendeur"
           >
             <LiaUserLockSolid size={18} /> Mon espace

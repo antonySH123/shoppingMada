@@ -98,7 +98,7 @@ function Shop() {
           </div>
         )}
         {state.error && <p role="status" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{state.error}</p>}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="shop-product-grid grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {state.loading
             ? Array.from({ length: 5 }).map((_, index) => <SkeletonCard key={index} />)
             : displayedProducts.map((product, index) => (
