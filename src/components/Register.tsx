@@ -2,7 +2,7 @@ import { useReducer, ChangeEvent, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Iuser from "../Interface/UserInterface";
 import validator from "../helper/Reg";
-import { LiaUser } from "react-icons/lia";
+import { LiaArrowLeftSolid, LiaUser } from "react-icons/lia";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
 import Preloader from "./loading/Preloader";
@@ -51,60 +51,84 @@ function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const csrf = useCSRF();
+  const handleBack = () => {
+    if (
+      typeof window.history.state?.idx === "number" &&
+      window.history.state.idx > 0
+    ) {
+      navigate(-1);
+    } else {
+      navigate("/", { replace: true });
+    }
+  };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     dispatch({ type: "SET_FIELD", field: name as keyof Iuser, value });
   };
 
-  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const errors = validator(state.user);
-    if (Object.keys(errors).length > 0) {
-      dispatch({ type: "SET_ERRORS", errors });
-      return;
-    }
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const errors = validator(state.user);
+      if (Object.keys(errors).length > 0) {
+        dispatch({ type: "SET_ERRORS", errors });
+        return;
+      }
 
-    setIsSubmitting(true); // Start loading animation
-    try {
-      if (!csrf) return;
-      const response = await fetch(
-        `${import.meta.env.REACT_API_URL}auth/register`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "xsrf-token": csrf,
+      setIsSubmitting(true); // Start loading animation
+      try {
+        if (!csrf) return;
+        const response = await fetch(
+          `${import.meta.env.REACT_API_URL}auth/register`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "xsrf-token": csrf,
+            },
+            credentials: "include",
+            body: JSON.stringify(state.user),
           },
-          credentials: "include",
-          body: JSON.stringify(state.user),
+        );
+        if (response.status === 401) {
+          const result = await response.json();
+          toast.warning(result.message);
         }
-      );
-      if (response.status === 401) {
-        const result = await response.json();
-        toast.warning(result.message);
-      }
-      if (response.status === 201) {
-        const result = await response.json();
-        toast.success(result.message);
-        navigate("/login");
-      }
+        if (response.status === 201) {
+          const result = await response.json();
+          toast.success(result.message);
+          navigate("/login");
+        }
 
-      if (response.status === 400) {
-        const result = await response.json();
-        toast.error(result.message || "Veuillez v�rifier les informations saisies.");
+        if (response.status === 400) {
+          const result = await response.json();
+          toast.error(
+            result.message || "Veuillez v�rifier les informations saisies.",
+          );
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Une erreur est survenue !");
+      } finally {
+        setIsSubmitting(false);
       }
-    } catch (error) {
-      console.error(error);
-      toast.error("Une erreur est survenue !");
-    } finally {
-      setIsSubmitting(false);
-    }
-  },[csrf, navigate, state.user])
+    },
+    [csrf, navigate, state.user],
+  );
 
-  return (
-    !csrf ? <Preloader/> :  <div className="auth-page auth-register-page flex items-center justify-center">
-      <div>
+  return !csrf ? (
+    <Preloader />
+  ) : (
+    <div className="auth-page auth-register-page flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-lg">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="auth-back-button mb-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/20"
+        >
+          <LiaArrowLeftSolid size={18} /> Retour
+        </button>
         <div className="auth-panel auth-card w-full max-w-lg">
           <h1 className="text-white flex flex-col justify-center items-center font-bold text-center mb-6 gap-3">
             <LiaUser size={60} />
@@ -123,10 +147,10 @@ function Register() {
                     field === "username"
                       ? "Votre nom"
                       : field === "email"
-                      ? "Votre email"
-                      : field === "phonenumber"
-                      ? "Numéro de téléphone"
-                      : "Votre mot de passe"
+                        ? "Votre email"
+                        : field === "phonenumber"
+                          ? "Numéro de téléphone"
+                          : "Votre mot de passe"
                   }
                 />
                 {state.error[field as keyof Iuser] && (
@@ -159,8 +183,7 @@ function Register() {
           </form>
         </div>
       </div>
-    </div> 
-   
+    </div>
   );
 }
 

@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import React, { useState } from "react";
-import { LiaUserSolid } from "react-icons/lia";
+import { LiaArrowLeftSolid, LiaUserSolid } from "react-icons/lia";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
 import { useAuth } from "../helper/useAuth";
@@ -14,6 +14,17 @@ function Login() {
   const location = useLocation();
 
   const from = location.state?.from || "/profil";
+  const handleBack = () => {
+    if (
+      typeof window.history.state?.idx === "number" &&
+      window.history.state.idx > 0
+    ) {
+      navigate(-1);
+    } else {
+      navigate("/", { replace: true });
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmited(true);
@@ -29,7 +40,7 @@ function Login() {
             },
             credentials: "include",
             body: JSON.stringify(userAuth),
-          }
+          },
         );
         const response = await postdata.json();
         if (postdata.status === 403) {
@@ -63,7 +74,9 @@ function Login() {
         toast.error("Une erreur est survenu!");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Une erreur est survenue.");
+      toast.error(
+        error instanceof Error ? error.message : "Une erreur est survenue.",
+      );
     } finally {
       setIsSubmited(false);
     }
@@ -73,23 +86,47 @@ function Login() {
     setUserAuth((prevAuthUser) => ({ ...prevAuthUser, [name]: value }));
   };
 
-  return (
-    !csrf ? <Preloader/> :
+  return !csrf ? (
+    <Preloader />
+  ) : (
     <div className="auth-page auth-login-page relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 text-gray-900">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(22,131,75,0.12),transparent_35%),radial-gradient(circle_at_90%_90%,rgba(15,89,54,0.12),transparent_35%)]" aria-hidden="true" />
-      <Link to={"/"} aria-label="Retour à l'accueil" className="absolute left-5 top-4 h-16 w-32 sm:left-10 sm:top-7">
+      <div
+        className="absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(22,131,75,0.12),transparent_35%),radial-gradient(circle_at_90%_90%,rgba(15,89,54,0.12),transparent_35%)]"
+        aria-hidden="true"
+      />
+      <Link
+        to={"/"}
+        aria-label="Retour à l'accueil"
+        className="absolute left-5 top-4 h-16 w-32 sm:left-10 sm:top-7"
+      >
         <img src="/src/assets/logo.png" alt="" className="object-contain" />
       </Link>
       <div className="relative w-full max-w-md">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="auth-back-button mb-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white/90 px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-emerald-200 hover:text-emerald-800"
+        >
+          <LiaArrowLeftSolid size={18} /> Retour
+        </button>
         <div className="auth-panel auth-card rounded-3xl border border-gray-100 bg-white p-7 sm:p-10">
           <h1 className="mb-2 flex flex-col items-center text-center font-bold text-gray-900">
-            <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800"><LiaUserSolid size={28} /></span>
+            <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
+              <LiaUserSolid size={28} />
+            </span>
             <strong className="text-2xl">Bon retour</strong>
           </h1>
-          <p className="mb-7 text-center text-sm text-gray-500">Connectez-vous à votre espace ShopInMada.</p>
+          <p className="mb-7 text-center text-sm text-gray-500">
+            Connectez-vous à votre espace ShopInMada.
+          </p>
           <form action="" method="post" onSubmit={handleSubmit}>
             <div className="my-4">
-              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-gray-700">Adresse e-mail ou téléphone</label>
+              <label
+                htmlFor="email"
+                className="mb-2 block text-sm font-semibold text-gray-700"
+              >
+                Adresse e-mail ou téléphone
+              </label>
               <input
                 type="text"
                 name="emailOrPhone"
@@ -102,7 +139,12 @@ function Login() {
               />
             </div>
             <div className="my-4">
-              <label htmlFor="password" className="mb-2 block text-sm font-semibold text-gray-700">Mot de passe</label>
+              <label
+                htmlFor="password"
+                className="mb-2 block text-sm font-semibold text-gray-700"
+              >
+                Mot de passe
+              </label>
               <input
                 type="password"
                 name="password"
@@ -115,7 +157,10 @@ function Login() {
               />
             </div>
             <div className="flex items-center justify-end">
-              <Link to="/forgotPass" className="text-sm font-semibold text-emerald-800 hover:text-emerald-950">
+              <Link
+                to="/forgotPass"
+                className="text-sm font-semibold text-emerald-800 hover:text-emerald-950"
+              >
                 Mot de passe oublié
               </Link>
             </div>

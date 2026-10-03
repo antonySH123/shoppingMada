@@ -15,6 +15,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { useAuth } from "../helper/useAuth";
+import CartHeaderLink from "./CartHeaderLink";
 
 const menu = [
   { href: "/shop", label: "Découvrir" },
@@ -111,24 +112,7 @@ const Navbar = () => {
     >
       <LiaSignOutAltSolid size={19} /> Déconnexion
     </Link>
-  ) : (
-    <div className="flex flex-wrap items-center gap-2">
-      <Link
-        to="/login"
-        onClick={closeMenu}
-        className="rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
-      >
-        Connexion
-      </Link>
-      <Link
-        to="/register"
-        onClick={closeMenu}
-        className="market-button-primary !rounded-xl !px-4 !py-2.5 text-sm"
-      >
-        <LiaUserPlusSolid size={17} /> Inscription
-      </Link>
-    </div>
-  );
+  ) : null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200/80 bg-white/95 shadow-[0_4px_18px_rgba(20,40,28,0.05)] backdrop-blur-xl">
@@ -175,6 +159,7 @@ const Navbar = () => {
         </form>
 
         <div className="ml-auto hidden shrink-0 items-center gap-1 md:flex">
+          <CartHeaderLink />
           {accountLinks}
         </div>
         <button
@@ -249,21 +234,24 @@ const Navbar = () => {
             aria-label="Navigation mobile"
             className="market-container flex flex-col gap-1"
           >
-            {[...secondaryMobileMenu, { href: "/#contact", label: "Contact" }].map(
-              (item) => (
-                <Link
-                  key={item.label}
-                  to={item.href}
-                  onClick={closeMenu}
-                  className="rounded-xl px-3 py-3 text-sm font-semibold text-gray-700 transition hover:bg-emerald-50 hover:text-emerald-800"
-                >
-                  {item.label}
-                </Link>
-              ),
+            {[
+              ...secondaryMobileMenu,
+              { href: "/#contact", label: "Contact" },
+            ].map((item) => (
+              <Link
+                key={item.label}
+                to={item.href}
+                onClick={closeMenu}
+                className="rounded-xl px-3 py-3 text-sm font-semibold text-gray-700 transition hover:bg-emerald-50 hover:text-emerald-800"
+              >
+                {item.label}
+              </Link>
+            ))}
+            {mobileSessionActions && (
+              <div className="mt-2 border-t border-gray-100 pt-4">
+                {mobileSessionActions}
+              </div>
             )}
-            <div className="mt-2 border-t border-gray-100 pt-4">
-              {mobileSessionActions}
-            </div>
           </nav>
         </div>
       )}

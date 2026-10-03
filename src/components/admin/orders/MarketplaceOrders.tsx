@@ -1,0 +1,528 @@
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import useCSRF from "../../../helper/useCSRF";
+import useFormatter from "../../../helper/useFormatter";
+import { useAuth } from "../../../helper/useAuth";
+import Preloader from "../../loading/Preloader";
+
+type SubOrder = {
+  _id: string;
+  boutiks_id: { _id: string; name?: string } | string;
+  items: Array<{ name: string; quantity: number; unitPrice: number }>;
+  subtotal: number;
+  deliveryFee: number;
+  payableTotal: number;
+  paymentMethod: string;
+  paymentStatus: string;
+  status: string;
+  paymentDeclaration?: { reference: string; evidencePath?: string };
+  shipping: {
+    recipientName: string;
+    phone: string;
+    address: string;
+    city?: string;
+    carrier?: string;
+    trackingNumber?: string;
+  };
+};
+type MarketplaceOrder = {
+  _id: string;
+  status: string;
+  customer: {
+    name: string;
+    phone: string;
+    email?: string;
+    address: string;
+    city?: string;
+  };
+  subOrders: SubOrder[];
+  createdAt: string;
+};
+
+const statusLabels: Record<string, string> = {
+  en_attente_vendeur: "À traiter",
+  en_attente_paiement: "En attente de paiement client",
+  paiement_declare: "Paiement déclaré",
+  paiement_confirme: "Paiement confirmé",
+  en_preparation: "En préparation",
+  expediee: "Expédiée",
+  livree: "Livrée",
+  terminee: "Terminée",
+  annulee: "Annulée",
+  refusee: "Refusée",
+  expiree: "Expirée",
+  litige: "En litige",
+  partiellement_terminee: "Partiellement terminée",
+};
+const methodLabels: Record<string, string> = {
+  mvola: "MVola",
+  orange_money: "Orange Money",
+  airtel_money: "Airtel Money",
+  virement: "Virement bancaire",
+  paiement_livraison: "Paiement à la livraison",
+};
+
+function MarketplaceOrders() {
+  const csrf = useCSRF();
+  const { user } = useAuth();
+  const { priceInArriary } = useFormatter();
+  const role = user?.userGroupMember_id?.usergroup_id?.name;
+  const isSeller = role === "Boutiks";
+  const [orders, setOrders] = useState<MarketplaceOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [refusalDraft, setRefusalDraft] = useState<Record<string, string>>({});
+  const [shippingDraft, setShippingDraft] = useState<
+    Record<string, { carrier: string; trackingNumber: string }>
+  >({});
+  const [shippingFormId, setShippingFormId] = useState("");
+
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}marketplace/orders`,
+        { credentials: "include" },
+      );
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(
+          result.message || "Impossible de charger les commandes.",
+        );
+      setOrders(result.data);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Erreur de chargement des commandes.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadOrders();
+  }, [loadOrders]);
+
+  const performAction = async (
+    orderId: string,
+    subOrder: SubOrder,
+    action: "status" | "confirm-payment",
+    status?: string,
+    payload: Record<string, unknown> = {},
+  ) => {
+    if (!csrf || busyId) return;
+    setBusyId(subOrder._id);
+    try {
+      const suffix =
+        action === "confirm-payment" ? "confirm-payment" : "status";
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}marketplace/orders/${orderId}/suborders/${subOrder._id}/${suffix}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json", "xsrf-token": csrf },
+          body: JSON.stringify(
+            action === "confirm-payment" ? payload : { ...payload, status },
+          ),
+        },
+      );
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(
+          result.message || "Impossible de mettre à jour la sous-commande.",
+        );
+      toast.success(result.message || "Sous-commande mise à jour.");
+      setShippingFormId("");
+      await loadOrders();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Une erreur est survenue.",
+      );
+    } finally {
+      setBusyId("");
+    }
+  };
+
+  if (!csrf) return <Preloader />;
+
+  const visibleOrders =
+    statusFilter === "all"
+      ? orders
+      : orders.filter((order) =>
+          order.subOrders.some((subOrder) => subOrder.status === statusFilter),
+        );
+  const statuses = [
+    ...new Set(
+      orders.flatMap((order) =>
+        order.subOrders.map((subOrder) => subOrder.status),
+      ),
+    ),
+  ].sort();
+
+  return (
+    <section className="space-y-5">
+      <header className="admin-toolbar">
+        <div>
+          <p className="admin-kicker">Opérations marketplace</p>
+          <h1 className="text-2xl font-extrabold text-gray-900">
+            {isSeller ? "Commandes de la boutique" : "Commandes multi-vendeurs"}
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Chaque boutique traite sa sous-commande, son paiement et sa
+            livraison.
+          </p>
+        </div>
+        <div className="admin-toolbar-actions">
+          <label className="grid gap-1 text-xs font-bold text-gray-600">
+            Statut
+            <select
+              className="admin-input min-h-11"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <option value="all">Tous les statuts</option>
+              {statuses.map((status) => (
+                <option key={status} value={status}>
+                  {statusLabels[status] ?? status}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={() => void loadOrders()}
+            className="admin-button-secondary min-h-11"
+          >
+            Actualiser
+          </button>
+        </div>
+      </header>
+
+      {loading ? (
+        <div className="admin-panel p-8 text-center text-sm text-gray-500">
+          Chargement des commandes…
+        </div>
+      ) : visibleOrders.length === 0 ? (
+        <div className="admin-panel p-10 text-center">
+          <h2 className="font-bold text-gray-900">Aucune sous-commande</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Les nouvelles commandes apparaîtront ici.
+          </p>
+        </div>
+      ) : (
+        visibleOrders.map((order) => (
+          <article key={order._id} className="admin-panel">
+            <header className="admin-panel-heading">
+              <div>
+                <p className="admin-panel-kicker">
+                  Commande groupée ·{" "}
+                  {new Date(order.createdAt).toLocaleString("fr-FR")}
+                </p>
+                <h2 className="admin-panel-title">{order.customer.name}</h2>
+                <p className="admin-panel-subtitle">
+                  {order.customer.phone}
+                  {order.customer.city
+                    ? ` · ${order.customer.city}`
+                    : ""} · {order.customer.address}
+                </p>
+              </div>
+              <span className="admin-status-badge admin-status-info">
+                {statusLabels[order.status] ?? order.status}
+              </span>
+            </header>
+            <div className="space-y-4 p-4 sm:p-5">
+              {order.subOrders.map((subOrder) => {
+                const shopName =
+                  typeof subOrder.boutiks_id === "string"
+                    ? "Boutique"
+                    : (subOrder.boutiks_id.name ?? "Boutique");
+                const draft = shippingDraft[subOrder._id] ?? {
+                  carrier: "",
+                  trackingNumber: "",
+                };
+                const canSellerAct = isSeller;
+                return (
+                  <section
+                    key={subOrder._id}
+                    className="rounded-xl border border-gray-200 bg-white"
+                  >
+                    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 bg-gray-50 px-4 py-3">
+                      <div>
+                        <p className="text-xs font-bold text-gray-900">
+                          {shopName}
+                        </p>
+                        <p className="mt-0.5 text-xs text-gray-500">
+                          {statusLabels[subOrder.status] ?? subOrder.status}
+                        </p>
+                      </div>
+                      <strong className="text-sm text-gray-900">
+                        {priceInArriary(subOrder.payableTotal)}
+                      </strong>
+                    </header>
+                    <div className="space-y-3 p-4">
+                      <div className="space-y-1">
+                        {subOrder.items.map((item, index) => (
+                          <div
+                            key={`${item.name}-${index}`}
+                            className="flex justify-between gap-3 text-xs"
+                          >
+                            <span className="text-gray-600">
+                              {item.quantity} × {item.name}
+                            </span>
+                            <strong>
+                              {priceInArriary(item.quantity * item.unitPrice)}
+                            </strong>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-x-5 gap-y-1 border-t border-gray-100 pt-3 text-xs text-gray-500">
+                        <span>
+                          Sous-total : {priceInArriary(subOrder.subtotal)}
+                        </span>
+                        <span>
+                          Livraison : {priceInArriary(subOrder.deliveryFee)}
+                        </span>
+                        <span>
+                          Paiement :{" "}
+                          {methodLabels[subOrder.paymentMethod] ??
+                            subOrder.paymentMethod}
+                        </span>
+                        <span>Statut paiement : {subOrder.paymentStatus}</span>
+                      </div>
+                      {subOrder.paymentDeclaration && (
+                        <div className="rounded-lg bg-sky-50 p-3 text-xs text-sky-900">
+                          <p>
+                            Référence communiquée :{" "}
+                            <strong>
+                              {subOrder.paymentDeclaration.reference}
+                            </strong>
+                          </p>
+                          {subOrder.paymentDeclaration.evidencePath && (
+                            <a
+                              href={`${import.meta.env.REACT_API_URL}marketplace/orders/${order._id}/suborders/${subOrder._id}/evidence`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-2 inline-flex font-bold underline"
+                            >
+                              Voir la capture fournie
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {subOrder.shipping.trackingNumber && (
+                        <p className="text-xs text-gray-600">
+                          Expédition :{" "}
+                          {subOrder.shipping.carrier || "Transporteur"} ·{" "}
+                          {subOrder.shipping.trackingNumber}
+                        </p>
+                      )}
+                      {canSellerAct && (
+                        <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
+                          {subOrder.status === "en_attente_vendeur" && (
+                            <>
+                              {subOrder.paymentMethod ===
+                              "paiement_livraison" ? (
+                                <button
+                                  disabled={!!busyId}
+                                  onClick={() =>
+                                    void performAction(
+                                      order._id,
+                                      subOrder,
+                                      "status",
+                                      "en_preparation",
+                                    )
+                                  }
+                                  className="admin-button-primary min-h-10 px-3 text-xs"
+                                >
+                                  Accepter et préparer
+                                </button>
+                              ) : (
+                                <button
+                                  disabled={!!busyId}
+                                  onClick={() =>
+                                    void performAction(
+                                      order._id,
+                                      subOrder,
+                                      "status",
+                                      "en_attente_paiement",
+                                    )
+                                  }
+                                  className="admin-button-primary min-h-10 px-3 text-xs"
+                                >
+                                  Accepter, demander le paiement
+                                </button>
+                              )}
+                              <input
+                                aria-label="Motif de refus"
+                                placeholder="Motif du refus"
+                                value={refusalDraft[subOrder._id] ?? ""}
+                                onChange={(event) =>
+                                  setRefusalDraft((current) => ({
+                                    ...current,
+                                    [subOrder._id]: event.target.value,
+                                  }))
+                                }
+                                className="admin-input min-h-10 max-w-56 text-xs"
+                              />
+                              <button
+                                disabled={
+                                  !!busyId ||
+                                  !refusalDraft[subOrder._id]?.trim()
+                                }
+                                onClick={() =>
+                                  void performAction(
+                                    order._id,
+                                    subOrder,
+                                    "status",
+                                    "refusee",
+                                    { reason: refusalDraft[subOrder._id] },
+                                  )
+                                }
+                                className="admin-button-danger min-h-10 px-3 text-xs"
+                              >
+                                Refuser
+                              </button>
+                            </>
+                          )}
+                          {subOrder.status === "paiement_declare" && (
+                            <button
+                              disabled={!!busyId}
+                              onClick={() =>
+                                void performAction(
+                                  order._id,
+                                  subOrder,
+                                  "confirm-payment",
+                                )
+                              }
+                              className="admin-button-primary min-h-10 px-3 text-xs"
+                            >
+                              Confirmer la réception du paiement
+                            </button>
+                          )}
+                          {subOrder.status === "paiement_confirme" && (
+                            <button
+                              disabled={!!busyId}
+                              onClick={() =>
+                                void performAction(
+                                  order._id,
+                                  subOrder,
+                                  "status",
+                                  "en_preparation",
+                                )
+                              }
+                              className="admin-button-primary min-h-10 px-3 text-xs"
+                            >
+                              Mettre en préparation
+                            </button>
+                          )}
+                          {subOrder.status === "en_preparation" &&
+                            (shippingFormId === subOrder._id ? (
+                              <form
+                                className="flex w-full flex-wrap items-end gap-2"
+                                onSubmit={(event) => {
+                                  event.preventDefault();
+                                  void performAction(
+                                    order._id,
+                                    subOrder,
+                                    "status",
+                                    "expediee",
+                                    draft,
+                                  );
+                                }}
+                              >
+                                <label className="grid gap-1 text-[10px] font-bold text-gray-500">
+                                  Transporteur
+                                  <input
+                                    className="admin-input min-h-10"
+                                    value={draft.carrier}
+                                    onChange={(event) =>
+                                      setShippingDraft((current) => ({
+                                        ...current,
+                                        [subOrder._id]: {
+                                          ...draft,
+                                          carrier: event.target.value,
+                                        },
+                                      }))
+                                    }
+                                  />
+                                </label>
+                                <label className="grid gap-1 text-[10px] font-bold text-gray-500">
+                                  N° de suivi
+                                  <input
+                                    className="admin-input min-h-10"
+                                    value={draft.trackingNumber}
+                                    onChange={(event) =>
+                                      setShippingDraft((current) => ({
+                                        ...current,
+                                        [subOrder._id]: {
+                                          ...draft,
+                                          trackingNumber: event.target.value,
+                                        },
+                                      }))
+                                    }
+                                  />
+                                </label>
+                                <button className="admin-button-primary min-h-10 px-3 text-xs">
+                                  Confirmer l’expédition
+                                </button>
+                              </form>
+                            ) : (
+                              <button
+                                disabled={!!busyId}
+                                onClick={() => setShippingFormId(subOrder._id)}
+                                className="admin-button-primary min-h-10 px-3 text-xs"
+                              >
+                                Préparer l’expédition
+                              </button>
+                            ))}
+                          {subOrder.status === "expediee" && (
+                            <button
+                              disabled={!!busyId}
+                              onClick={() =>
+                                void performAction(
+                                  order._id,
+                                  subOrder,
+                                  "status",
+                                  "livree",
+                                )
+                              }
+                              className="admin-button-primary min-h-10 px-3 text-xs"
+                            >
+                              Marquer livrée
+                            </button>
+                          )}
+                          {subOrder.status === "livree" &&
+                            subOrder.paymentMethod === "paiement_livraison" &&
+                            subOrder.paymentStatus !== "confirme" && (
+                              <button
+                                disabled={!!busyId}
+                                onClick={() =>
+                                  void performAction(
+                                    order._id,
+                                    subOrder,
+                                    "confirm-payment",
+                                  )
+                                }
+                                className="admin-button-secondary min-h-10 px-3 text-xs"
+                              >
+                                Confirmer l’encaissement à la livraison
+                              </button>
+                            )}
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          </article>
+        ))
+      )}
+    </section>
+  );
+}
+
+export default MarketplaceOrders;

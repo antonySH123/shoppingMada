@@ -6,6 +6,7 @@ import { FaHandshake } from "react-icons/fa";
 import Skeleton from "react-loading-skeleton";
 import { useAuth } from "../helper/useAuth";
 import Commande from "./commande/Commande";
+import MarketplaceOrderHistory from "./commande/MarketplaceOrderHistory";
 import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
 import Preloader from "./loading/Preloader";
@@ -157,6 +158,9 @@ function Profil() {
           {user?.userGroupMember_id.usergroup_id.name !== "Super Admin" && (
             <div className="mt-10">
               <Commande csrf={csrf as string} />
+              {user?.userGroupMember_id.usergroup_id.name === "Client" && (
+                <MarketplaceOrderHistory />
+              )}
             </div>
           )}
         </div>

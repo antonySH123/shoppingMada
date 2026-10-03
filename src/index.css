@@ -109,7 +109,7 @@ select:focus-visible {
     left: 0;
     display: grid;
     min-height: calc(4.15rem + env(safe-area-inset-bottom));
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     padding: 0.4rem 0.35rem calc(0.4rem + env(safe-area-inset-bottom));
     border-top: 1px solid rgb(226 232 228 / 90%);
     background: rgb(255 255 255 / 96%);
@@ -126,7 +126,7 @@ select:focus-visible {
     gap: 0.18rem;
     border-radius: 0.85rem;
     color: #748178;
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     font-weight: 700;
     line-height: 1;
     text-decoration: none;

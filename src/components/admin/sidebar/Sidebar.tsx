@@ -4,6 +4,9 @@ import {
   FaRegCreditCard,
   FaShoppingBag,
   FaShoppingBasket,
+  FaClipboardList,
+  FaMoneyBillWave,
+  FaExclamationTriangle,
   FaSignOutAlt,
   FaTachometerAlt,
   FaUserCog,
@@ -139,6 +142,43 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                       </span>
                     )}
                   </Link>
+                  <Link
+                    to="/espace_vendeur/marketplace-orders"
+                    className={navClass("/espace_vendeur/marketplace-orders")}
+                  >
+                    <FaClipboardList />
+                    {!isCollapsed && (
+                      <span className="text-[14px] leading-[20px]">
+                        Commandes marketplace
+                      </span>
+                    )}
+                  </Link>
+                </>
+              )}
+              {isSuperAdmin && (
+                <>
+                  <Link
+                    to="/espace_vendeur/marketplace-orders"
+                    className={navClass("/espace_vendeur/marketplace-orders")}
+                  >
+                    <FaClipboardList />
+                    {!isCollapsed && (
+                      <span className="text-[14px] leading-[20px]">
+                        Commandes marketplace
+                      </span>
+                    )}
+                  </Link>
+                  <Link
+                    to="/espace_vendeur/litiges"
+                    className={navClass("/espace_vendeur/litiges")}
+                  >
+                    <FaExclamationTriangle />
+                    {!isCollapsed && (
+                      <span className="text-[14px] leading-[20px]">
+                        Litiges marketplace
+                      </span>
+                    )}
+                  </Link>
                 </>
               )}
             </div>
@@ -167,6 +207,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                 {!isCollapsed && (
                   <span className="text-[14px] leading-[20px]">
                     Informations boutique
+                  </span>
+                )}
+              </Link>
+            )}
+            {isSeller && (
+              <Link
+                to="/espace_vendeur/paiement-livraison"
+                className={navClass("/espace_vendeur/paiement-livraison")}
+              >
+                <FaMoneyBillWave />
+                {!isCollapsed && (
+                  <span className="text-[14px] leading-[20px]">
+                    Paiement et livraison
                   </span>
                 )}
               </Link>

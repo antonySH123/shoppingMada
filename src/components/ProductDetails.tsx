@@ -1,6 +1,6 @@
 import IProduct from "../Interface/IProduct";
 import { FormEvent, useEffect, useReducer, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import useFormatter from "../helper/useFormatter";
 import parse from "html-react-parser";
 import {
@@ -12,6 +12,7 @@ import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
 import Comment from "./comment/Comment";
 import Preloader from "./loading/Preloader";
+import { useCart } from "../context/CartContext";
 
 interface IState {
   product: IProduct | null;
@@ -55,7 +56,7 @@ const reducer = (state: IState, action: Action): IState => {
         product: action.payload,
         loading: false,
         error: null,
-        totalPrice: state.product?.price as number,
+        totalPrice: action.payload.price * state.counter,
       };
     case "FETCH_ERROR":
       return { ...state, loading: false, error: action.payload };
@@ -79,23 +80,45 @@ const reducer = (state: IState, action: Action): IState => {
       const totalVariantPrice = Object.keys(updatedVariants).reduce(
         (sum, key) => {
           const variantGroup = state.product?.variant.find(
-            (v) => v.name === key
+            (v) => v.name === key,
           );
           const selectedValue = variantGroup?.values.find(
-            (v) => v.value === updatedVariants[key]
+            (v) => v.value === updatedVariants[key],
           );
           return sum + (selectedValue?.additionalPrice || 0);
         },
-        0
+        0,
       );
       return {
         ...state,
         selectedVariant: updatedVariants,
-        totalPrice: (state.product?.price || 0) + totalVariantPrice,
+        totalPrice:
+          ((state.product?.price || 0) + totalVariantPrice) * state.counter,
       };
     }
-    case "INITIAL_VARIANT":
-      return { ...state, selectedVariant: action.payload };
+    case "INITIAL_VARIANT": {
+      const totalVariantPrice = Object.entries(action.payload).reduce(
+        (sum, [name, selected]) => {
+          const variant = state.product?.variant.find(
+            (item) => item.name === name,
+          );
+          return (
+            sum +
+            Number(
+              variant?.values.find((value) => value.value === selected)
+                ?.additionalPrice ?? 0,
+            )
+          );
+        },
+        0,
+      );
+      return {
+        ...state,
+        selectedVariant: action.payload,
+        totalPrice:
+          ((state.product?.price ?? 0) + totalVariantPrice) * state.counter,
+      };
+    }
     default:
       throw new Error("Action inconnue");
   }
@@ -107,43 +130,39 @@ function ProductDetails() {
   const { id } = useParams();
   const { priceInArriary } = useFormatter();
   const csrf = useCSRF();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { addItem } = useCart();
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    dispatch({ type: "FETCH_START" });
-    try {
-      if (csrf) {
-        const response = await fetch(
-          `${import.meta.env.REACT_API_URL}command`,
-          {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-              "xsrf-token": csrf,
-            },
-            body: JSON.stringify({
-              quantity: state.counter || 1,
-              product_id: id,
-              variants: state.selectedVariant,
-              total: state.totalPrice,
-            }),
-          }
-        );
-
-        const result = await response.json();
-        if (response.status == 401) {
-          toast.error("Vous devez vous connecté tout d'abord");
-          navigate("/login", { state: { from: location.pathname } });
-        } else {
-          toast.success(result.message);
-        }
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        dispatch({ type: "FETCH_ERROR", payload: error.message });
-      }
+    if (!state.product || !id || !state.product.boutiks_id?._id) return;
+    const unitPrice =
+      state.product.price +
+      Object.entries(state.selectedVariant ?? {}).reduce(
+        (total, [name, selected]) => {
+          const variant = state.product?.variant.find(
+            (item) => item.name === name,
+          );
+          const option = variant?.values.find(
+            (value) => value.value === selected,
+          );
+          return total + Number(option?.additionalPrice ?? 0);
+        },
+        0,
+      );
+    const added = addItem({
+      productId: id,
+      name: state.product.name,
+      unitPrice,
+      quantity: state.counter,
+      image: state.product.photos?.[0],
+      shopId: state.product.boutiks_id._id,
+      shopName: state.product.boutiks_id.name,
+      variants: state.selectedVariant ?? {},
+      stock: state.product.stock,
+    });
+    if (added) {
+      toast.success("Article ajouté au panier.");
+    } else {
+      toast.error("La quantité dépasse le stock disponible.");
     }
   };
 
@@ -152,7 +171,7 @@ function ProductDetails() {
     const fetchProduct = async () => {
       try {
         const response = await fetch(
-          `${import.meta.env.REACT_API_URL}shop/product/${id}`
+          `${import.meta.env.REACT_API_URL}shop/product/${id}`,
         );
         if (!response.ok) {
           dispatch({ type: "FETCH_ERROR", payload: "Une erreur est survenue" });
@@ -166,7 +185,7 @@ function ProductDetails() {
               if (variant.values.length > 0) {
                 initialSelectedVariant[variant.name] = variant.values[0].value;
               }
-            }
+            },
           );
         }
         dispatch({ type: "FETCH_SUCCESS", payload: data.data });
@@ -200,7 +219,10 @@ function ProductDetails() {
               )}
             </div>
             {(state.product?.photos?.length || 0) > 1 && (
-              <div className="product-gallery-thumbnails" aria-label="Galerie photos du produit">
+              <div
+                className="product-gallery-thumbnails"
+                aria-label="Galerie photos du produit"
+              >
                 {state.product?.photos?.map((photo, index) => (
                   <button
                     type="button"
@@ -210,14 +232,19 @@ function ProductDetails() {
                     aria-label={`Afficher la photo ${index + 1}`}
                     aria-pressed={activePhoto === index}
                   >
-                    <img src={`${import.meta.env.REACT_API_URL}uploads/${photo}`} alt="" />
+                    <img
+                      src={`${import.meta.env.REACT_API_URL}uploads/${photo}`}
+                      alt=""
+                    />
                   </button>
                 ))}
               </div>
             )}
           </div>
           <div className="product-details-copy flex min-w-0 flex-col gap-5 p-5 sm:p-7">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Détails du produit</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
+              Détails du produit
+            </p>
             <div className="product-price-row flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
               <p>
                 <strong>
@@ -244,44 +271,49 @@ function ProductDetails() {
                 state.product.details &&
                 parse(state.product.details)}
             </div>
-            {(state.product?.variant?.some((variant) => variant.values.length > 0) ?? false) && (
-            <div className="border-t border-gray-100 pt-4">
-              <p className="mb-3 text-sm font-bold text-gray-900">Choisir une option</p>
-              <div>
-                {state.product &&
-                  state.product.variant &&
-                  state.product.variant.map((variant) => (
-                    <div key={variant._id}>
-                      <p className="font-bold">{variant.name}</p>
-                      <div className="flex gap-2">
-                        {variant.values.map((v, idx) => (
-                          <button
-                            type="button"
-                            key={idx + 1}
-                            className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
-                              state.selectedVariant &&
-                              state.selectedVariant[variant.name] === v.value
-                                ? "border-emerald-700 bg-emerald-700 text-white"
-                                : "border-gray-200 bg-white text-gray-700 hover:border-emerald-300"
-                            }`}
-                            onClick={() => {
-                              dispatch({
-                                type: "SELECT_VARIANT",
-                                payload: {
-                                  name: variant.name,
-                                  value: v.value,
-                                },
-                              });
-                            }}
-                          >
-                            {v.value}
-                          </button>
-                        ))}
+            {(state.product?.variant?.some(
+              (variant) => variant.values.length > 0,
+            ) ??
+              false) && (
+              <div className="border-t border-gray-100 pt-4">
+                <p className="mb-3 text-sm font-bold text-gray-900">
+                  Choisir une option
+                </p>
+                <div>
+                  {state.product &&
+                    state.product.variant &&
+                    state.product.variant.map((variant) => (
+                      <div key={variant._id}>
+                        <p className="font-bold">{variant.name}</p>
+                        <div className="flex gap-2">
+                          {variant.values.map((v, idx) => (
+                            <button
+                              type="button"
+                              key={idx + 1}
+                              className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                                state.selectedVariant &&
+                                state.selectedVariant[variant.name] === v.value
+                                  ? "border-emerald-700 bg-emerald-700 text-white"
+                                  : "border-gray-200 bg-white text-gray-700 hover:border-emerald-300"
+                              }`}
+                              onClick={() => {
+                                dispatch({
+                                  type: "SELECT_VARIANT",
+                                  payload: {
+                                    name: variant.name,
+                                    value: v.value,
+                                  },
+                                });
+                              }}
+                            >
+                              {v.value}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
-            </div>
             )}
           </div>
         </article>
@@ -348,14 +380,19 @@ function ProductDetails() {
               </div>
             </div>
             <div className="px-5">
-              <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-sm"><span className="text-gray-500">Total estimé</span><strong className="text-lg text-gray-900">{priceInArriary(state.totalPrice)}</strong></div>
+              <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-sm">
+                <span className="text-gray-500">Total estimé</span>
+                <strong className="text-lg text-gray-900">
+                  {priceInArriary(state.totalPrice)}
+                </strong>
+              </div>
             </div>
             <div className="w-full px-5">
               <button
                 type="submit"
                 className="market-button-primary w-full uppercase"
               >
-                commander
+                Ajouter au panier
               </button>
             </div>
           </div>
