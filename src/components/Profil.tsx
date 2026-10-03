@@ -1,4 +1,9 @@
-import { LiaAtSolid, LiaEditSolid, LiaUserCircle, LiaUserCogSolid } from "react-icons/lia";
+import {
+  LiaAtSolid,
+  LiaEditSolid,
+  LiaUserCircle,
+  LiaUserCogSolid,
+} from "react-icons/lia";
 import { Link } from "react-router-dom";
 import UserInfo from "./modals/UserInfo";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
@@ -114,9 +119,16 @@ function Profil() {
           <div>
             <p className="profile-eyebrow">ShopInMada · Mon compte</p>
             <h1>Profil et coordonnées</h1>
-            <p>Gérez votre identité et retrouvez votre activité sur la marketplace.</p>
+            <p>
+              Gérez votre identité et retrouvez votre activité sur la
+              marketplace.
+            </p>
           </div>
-          <button type="button" onClick={() => setIsModalOpen(true)} className="profile-edit-button">
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="profile-edit-button"
+          >
             <LiaEditSolid size={18} /> Modifier mes informations
           </button>
         </header>
@@ -124,12 +136,21 @@ function Profil() {
         <div className="profile-overview-grid">
           <aside className="profile-summary">
             <div className="profile-identity">
-              <div className="profile-avatar"><LiaUserCircle size={72} /></div>
-              <span className="profile-role-badge"><LiaUserCogSolid size={16} />{roleName}</span>
+              <div className="profile-avatar">
+                <LiaUserCircle size={72} />
+              </div>
+              <span className="profile-role-badge">
+                <LiaUserCogSolid size={16} />
+                {roleName}
+              </span>
               <h2>{displayName}</h2>
               <p className="profile-username">@{user?.username || "compte"}</p>
-              <a className="profile-email" href={user?.email ? `mailto:${user.email}` : undefined}>
-                <LiaAtSolid size={16} />{user?.email || "Adresse e-mail non renseignée"}
+              <a
+                className="profile-email"
+                href={user?.email ? `mailto:${user.email}` : undefined}
+              >
+                <LiaAtSolid size={16} />
+                {user?.email || "Adresse e-mail non renseignée"}
               </a>
             </div>
             <div className="profile-completion">
@@ -137,26 +158,68 @@ function Profil() {
                 <span>Profil complété</span>
                 <strong>{completedProfileFields}/4</strong>
               </div>
-              <div className="profile-completion-track" role="progressbar" aria-label="Complétude du profil" aria-valuemin={0} aria-valuemax={4} aria-valuenow={completedProfileFields}>
+              <div
+                className="profile-completion-track"
+                role="progressbar"
+                aria-label="Complétude du profil"
+                aria-valuemin={0}
+                aria-valuemax={4}
+                aria-valuenow={completedProfileFields}
+              >
                 <span style={{ width: `${completedProfileFields * 25}%` }} />
               </div>
-              <p>{completedProfileFields === 4 ? "Vos coordonnées sont à jour." : "Complétez vos coordonnées pour faciliter vos achats et livraisons."}</p>
+              <p>
+                {completedProfileFields === 4
+                  ? "Vos coordonnées sont à jour."
+                  : "Complétez vos coordonnées pour faciliter vos achats et livraisons."}
+              </p>
             </div>
             {roleName === "Client" && (
-              <Link to="/vendeur" className="profile-seller-link"><FaHandshake size={18} /> Ouvrir une boutique <span aria-hidden="true">→</span></Link>
+              <Link to="/vendeur" className="profile-seller-link">
+                <FaHandshake size={18} /> Ouvrir une boutique{" "}
+                <span aria-hidden="true">→</span>
+              </Link>
             )}
           </aside>
 
           <section className="profile-details-panel">
             <div className="profile-section-heading">
-              <div><p className="profile-eyebrow">Informations du compte</p><h2>Coordonnées personnelles</h2></div>
-              <button type="button" onClick={() => setIsModalOpen(true)} className="profile-inline-edit"><LiaEditSolid size={17} /><span>Modifier</span></button>
+              <div>
+                <p className="profile-eyebrow">Informations du compte</p>
+                <h2>Coordonnées personnelles</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="profile-inline-edit"
+              >
+                <LiaEditSolid size={17} />
+                <span>Modifier</span>
+              </button>
             </div>
             <div className="profile-information-grid">
-              <div className="profile-information-item"><span className="profile-field-label">Nom</span><strong>{profileInfo?.firstName || "À compléter"}</strong></div>
-              <div className="profile-information-item"><span className="profile-field-label">Prénom</span><strong>{profileInfo?.lastName || "À compléter"}</strong></div>
-              <div className="profile-information-item"><span className="profile-field-label">Téléphone</span><strong>{profileInfo?.phoneNumber || user?.phonenumber || "À compléter"}</strong></div>
-              <div className="profile-information-item"><span className="profile-field-label">Adresse de livraison</span><strong>{profileInfo?.adresse || "À compléter"}</strong></div>
+              <div className="profile-information-item">
+                <span className="profile-field-label">Nom</span>
+                <strong>{profileInfo?.firstName || "À compléter"}</strong>
+              </div>
+              <div className="profile-information-item">
+                <span className="profile-field-label">Prénom</span>
+                <strong>{profileInfo?.lastName || "À compléter"}</strong>
+              </div>
+              <div className="profile-information-item">
+                <span className="profile-field-label">Téléphone</span>
+                <strong>
+                  {profileInfo?.phoneNumber ||
+                    user?.phonenumber ||
+                    "À compléter"}
+                </strong>
+              </div>
+              <div className="profile-information-item">
+                <span className="profile-field-label">
+                  Adresse de livraison
+                </span>
+                <strong>{profileInfo?.adresse || "À compléter"}</strong>
+              </div>
             </div>
 
             {roleName !== "Super Admin" && (
