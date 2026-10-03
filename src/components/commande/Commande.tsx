@@ -56,12 +56,15 @@ function Commande({ csrf }: { csrf: string }) {
             },
             body: JSON.stringify({ status: "Canceled" }),
             credentials: "include",
-          }
+          },
         );
 
         const result = await response.json();
         const { message, status } = result;
-        if (response.ok && (status as string).toLocaleLowerCase() === "success") {
+        if (
+          response.ok &&
+          (status as string).toLocaleLowerCase() === "success"
+        ) {
           toast.success(message);
           fetchCommand();
         } else {
@@ -69,89 +72,90 @@ function Commande({ csrf }: { csrf: string }) {
         }
       }
     },
-    [csrf, fetchCommand]
+    [csrf, fetchCommand],
   );
 
   useEffect(() => {
     fetchCommand();
   }, [fetchCommand]);
   return (
-    <section className="profile-orders mt-10">
-      <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-      <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Historique</p>
-      <h2 className="font-bold text-2xl tracking-tight text-gray-900">
-        {user?.userGroupMember_id.usergroup_id.name === "Client"
-          ? "Listes de vos achats"
-          : "Liste de vos commandes en attentes"}
-      </h2>
-      </div></div>
-      <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
-      <table className="w-full border-collapse text-sm lg:text-base">
-        <thead className="bg-gray-100 text-gray-700">
-          <tr>
-            <th className="py-3 px-3 border">#</th>
-            <th className="py-3 border">Produits</th>
-            <th className="py-3 border">Prix</th>
-            <th className="py-3 border">Quantité</th>
-            <th className="py-3 border">Variantes</th>
-            <th className="py-3 border">Statut</th>
-            <th className="py-3 border">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {state.commandes.length > 0 &&
-            state.commandes.map((element, index) => (
-              <React.Fragment key={element._id + (index + 1)}>
-                {element.product_id && (
-                  <tr className="hover:bg-gray-50" key={index + 1}>
-                    <td className="py-3 px-3 border text-center">
-                      {index + 1}
-                    </td>
-                    <td className="py-3 px-3 border text-center">
-                      {element.product_id && element.product_id.name}
-                    </td>
-                    <td className="py-3 px-3 border text-center">
-                      {element.product_id && element.product_id.price}
-                    </td>
-                    <td className="py-3 px-3 border text-center">
-                      {element.quantity}
-                    </td>
-                    <td className="py-3 px-3 border text-center">
-                      <ul>
-                        {Object.entries(element.variants).map(
-                          ([key, value]) => (
-                            <li key={key + 1}>
-                              {key} : {value}
-                            </li>
-                          )
+    <section className="profile-orders">
+      <header className="profile-orders-heading">
+        <p className="profile-orders-eyebrow">Historique</p>
+        <h2>
+          {user?.userGroupMember_id.usergroup_id.name === "Client"
+            ? "Listes de vos achats"
+            : "Liste de vos commandes en attentes"}
+        </h2>
+      </header>
+      <div className="profile-orders-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th className="py-3 px-3 border">#</th>
+              <th className="py-3 border">Produits</th>
+              <th className="py-3 border">Prix</th>
+              <th className="py-3 border">Quantité</th>
+              <th className="py-3 border">Variantes</th>
+              <th className="py-3 border">Statut</th>
+              <th className="py-3 border">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {state.commandes.length > 0 &&
+              state.commandes.map((element, index) => (
+                <React.Fragment key={element._id + (index + 1)}>
+                  {element.product_id && (
+                    <tr className="hover:bg-gray-50" key={index + 1}>
+                      <td className="py-3 px-3 border text-center">
+                        {index + 1}
+                      </td>
+                      <td className="py-3 px-3 border text-center">
+                        {element.product_id && element.product_id.name}
+                      </td>
+                      <td className="py-3 px-3 border text-center">
+                        {element.product_id && element.product_id.price}
+                      </td>
+                      <td className="py-3 px-3 border text-center">
+                        {element.quantity}
+                      </td>
+                      <td className="py-3 px-3 border text-center">
+                        <ul>
+                          {Object.entries(element.variants).map(
+                            ([key, value]) => (
+                              <li key={key + 1}>
+                                {key} : {value}
+                              </li>
+                            ),
+                          )}
+                        </ul>
+                      </td>
+                      <td className="py-3 px-3 border text-center">
+                        <span className="profile-order-status">
+                          {formatStatus(element.status)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 border text-center">
+                        {element.status === "Pending" ? (
+                          <>
+                            {" "}
+                            <button
+                              className="profile-order-cancel"
+                              onClick={() => handleClick(element._id)}
+                            >
+                              Annuler
+                            </button>
+                          </>
+                        ) : (
+                          "none"
                         )}
-                      </ul>
-                    </td>
-                    <td className="py-3 px-3 border text-center text-yellow-500">
-                      {formatStatus(element.status)}
-                    </td>
-                    <td className="py-3 px-3 border text-center">
-                      {element.status === "Pending" ? (
-                        <>
-                          {" "}
-                          <button
-                            className="border hover:bg-red-500 hover:text-white border-red-500 text-red-500 px-3 py-2 rounded"
-                            onClick={() => handleClick(element._id)}
-                          >
-                            Annuler
-                          </button>
-                        </>
-                      ) : (
-                        "none"
-                      )}
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            ))}
-        </tbody>
-      </table>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+          </tbody>
+        </table>
       </div>
     </section>
   );

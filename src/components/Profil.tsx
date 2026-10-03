@@ -209,7 +209,7 @@ function Profil() {
           <aside className="profile-summary">
             <div className="profile-identity">
               <div className="profile-avatar">
-                <LiaUserCircle size={72} />
+                <LiaUserCircle size={42} />
               </div>
               <span className="profile-role-badge">
                 <LiaUserCogSolid size={16} />

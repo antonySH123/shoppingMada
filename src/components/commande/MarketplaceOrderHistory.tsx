@@ -69,53 +69,47 @@ function MarketplaceOrderHistory() {
   }, []);
 
   return (
-    <section className="mt-8">
-      <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
-        Nouveau parcours
-      </p>
-      <h2 className="mb-4 text-xl font-bold tracking-tight text-gray-900">
-        Commandes par boutique
-      </h2>
+    <section className="profile-orders profile-marketplace-orders">
+      <header className="profile-orders-heading">
+        <p className="profile-orders-eyebrow">Marketplace</p>
+        <h2>Commandes par boutique</h2>
+      </header>
       {loading ? (
-        <p className="text-sm text-gray-500">Chargement des commandes…</p>
+        <p className="profile-orders-empty" role="status">
+          Chargement des commandes…
+        </p>
       ) : orders.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+        <p className="profile-orders-empty">
           Aucune commande multi-vendeur pour le moment.
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="profile-orders-list">
           {orders.map((order) => (
-            <article
-              key={order._id}
-              className="rounded-xl border border-gray-200 bg-white p-4"
-            >
+            <article key={order._id} className="profile-order-card">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs text-gray-500">
+                  <p className="profile-order-date">
                     Commande du{" "}
                     {new Date(order.createdAt).toLocaleDateString("fr-FR")}
                   </p>
-                  <p className="mt-1 text-sm font-bold text-gray-900">
+                  <p className="profile-order-shop-count">
                     {order.subOrders.length} boutique
                     {order.subOrders.length > 1 ? "s" : ""}
                   </p>
                 </div>
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-900">
+                <span className="profile-order-status">
                   {statusLabels[order.status] ?? order.status}
                 </span>
               </div>
-              <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
+              <div className="profile-suborders">
                 {order.subOrders.map((subOrder) => {
                   const shop =
                     typeof subOrder.boutiks_id === "string"
                       ? "Boutique"
                       : (subOrder.boutiks_id.name ?? "Boutique");
                   return (
-                    <div
-                      key={subOrder._id}
-                      className="flex flex-wrap justify-between gap-2 text-xs"
-                    >
-                      <span className="text-gray-600">
+                    <div key={subOrder._id} className="profile-suborder-row">
+                      <span>
                         {shop} ·{" "}
                         {statusLabels[subOrder.status] ?? subOrder.status}
                       </span>
@@ -126,7 +120,7 @@ function MarketplaceOrderHistory() {
               </div>
               <Link
                 to={`/suivi-commande/${order._id}`}
-                className="mt-4 inline-flex text-sm font-bold text-emerald-800 hover:text-emerald-950"
+                className="profile-order-link"
               >
                 Suivre cette commande
               </Link>

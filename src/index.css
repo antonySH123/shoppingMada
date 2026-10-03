@@ -1528,6 +1528,9 @@ select:focus-visible {
 }
 
 .profile-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   width: fit-content;
   border: 1px solid #d6e7d9;
   border-radius: 999px;
@@ -1536,6 +1539,11 @@ select:focus-visible {
   color: #236b3e;
   font-size: 0.8rem;
   font-weight: 700;
+  line-height: 1.2;
+}
+
+.profile-role-badge svg {
+  flex: 0 0 auto;
 }
 
 .profile-information-item {
@@ -1813,13 +1821,35 @@ select:focus-visible {
 }
 
 .profile-orders table th,
-.profile-orders table td { white-space: nowrap; }
+.profile-orders table td { white-space: nowrap; border-color: #edf2ee; padding: 0.7rem 0.75rem; }
+.profile-orders table th { background: #f4f7f4; color: #526157; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.profile-orders table td { color: #31443b; }
 .profile-orders table th:last-child,
 .profile-orders table td:last-child { text-align: center; }
-.profile-orders table button {
-  border-radius: 0.7rem;
-  font-size: 0.8rem;
-  font-weight: 700;
+.profile-orders { min-width: 0; margin-top: 1.25rem; border: 1px solid #e7efe8; border-radius: 1rem; background: #fafcfb; padding: 1rem; }
+.profile-orders-heading { margin-bottom: 0.85rem; }
+.profile-orders-eyebrow { color: #16834b; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.profile-orders-heading h2 { margin-top: 0.25rem; color: #1d3328; font-size: 0.98rem; font-weight: 800; line-height: 1.35; }
+.profile-orders-table-wrap { width: 100%; overflow-x: auto; border: 1px solid #e7efe8; border-radius: 0.75rem; background: white; }
+.profile-orders table { min-width: 42rem; width: 100%; border: 0; border-radius: 0.75rem; font-size: 0.78rem; }
+.profile-orders table .profile-order-status { white-space: normal; }
+.profile-order-status { display: inline-flex; max-width: 100%; align-items: center; border: 1px solid #f2dfb2; border-radius: 999px; background: #fff8e8; padding: 0.28rem 0.55rem; color: #8b6417; font-size: 0.65rem; font-weight: 800; line-height: 1.25; }
+.profile-orders table .profile-order-cancel { min-height: 2rem; border: 1px solid #f1c6c6; border-radius: 0.65rem; background: #fff7f7; padding: 0.4rem 0.65rem; color: #b63c3c; font-size: 0.7rem; font-weight: 750; transition: background 150ms ease, color 150ms ease; }
+.profile-orders table .profile-order-cancel:hover { background: #b63c3c; color: white; }
+.profile-orders-list { display: grid; gap: 0.7rem; }
+.profile-order-card { min-width: 0; border: 1px solid #e7efe8; border-radius: 0.8rem; background: white; padding: 0.9rem; }
+.profile-order-date { color: #718078; font-size: 0.68rem; }
+.profile-order-shop-count { margin-top: 0.2rem; color: #1d3328; font-size: 0.82rem; font-weight: 800; }
+.profile-suborders { display: grid; gap: 0.55rem; margin-top: 0.75rem; border-top: 1px solid #edf2ee; padding-top: 0.7rem; }
+.profile-suborder-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.45rem 0.75rem; color: #53645a; font-size: 0.7rem; }
+.profile-suborder-row strong { color: #263b2e; font-size: 0.72rem; }
+.profile-order-link { display: inline-flex; min-height: 2rem; align-items: center; margin-top: 0.7rem; color: #1a6f4d; font-size: 0.72rem; font-weight: 750; }
+.profile-order-link:hover { color: #10492b; }
+.profile-orders-empty { border: 1px dashed #dce8de; border-radius: 0.75rem; background: white; padding: 0.9rem; color: #718078; font-size: 0.75rem; }
+
+@media (max-width: 560px) {
+  .profile-orders { padding: 0.75rem; }
+  .profile-orders table { min-width: 38rem; }
 }
 
 .contact-section {
