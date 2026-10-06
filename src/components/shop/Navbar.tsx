@@ -1,11 +1,14 @@
-import { FormEvent, useEffect, useState } from "react";
+﻿import { FormEvent, useEffect, useState } from "react";
 import { LiaSearchSolid, LiaStoreSolid, LiaUser } from "react-icons/lia";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../helper/useAuth";
 import { useSidebar } from "../../context/useSidebar";
 import CartHeaderLink from "../CartHeaderLink";
+import LanguageSelector from "../LanguageSelector";
+import { useLanguage } from "../../context/useLanguage";
 
 function Navbar() {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -76,6 +79,7 @@ function Navbar() {
           </button>
         </form>
         <div className="hidden shrink-0 items-center gap-2 md:flex">
+          <LanguageSelector compact />
           <CartHeaderLink />
           <Link
             to={user ? "/profil" : "/login"}
@@ -85,14 +89,14 @@ function Navbar() {
               <LiaUser size={19} />
             </span>
             <span className="hidden xl:block">
-              {user ? "Mon compte" : "Connexion"}
+              {user ? t("nav.account") : t("nav.login")}
             </span>
           </Link>
           <Link
             to="/vendeur"
             className="hidden items-center gap-2 rounded-xl border border-emerald-800 px-3 py-2 text-xs font-bold text-emerald-900 transition hover:bg-emerald-50 lg:flex"
           >
-            <LiaStoreSolid size={18} /> Vendre
+            <LiaStoreSolid size={18} /> {t("nav.sell")}
           </Link>
         </div>
       </div>
@@ -107,7 +111,7 @@ function Navbar() {
               to={`/shop?q=${encodeURIComponent(query)}`}
               className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition ${!location ? "bg-emerald-800 text-white" : "text-gray-600 hover:bg-gray-100"}`}
             >
-              Toutes les villes
+              {t("nav.allCities")}
             </Link>
             {locations.map((city) => (
               <Link
@@ -129,20 +133,20 @@ function Navbar() {
                 onClick={toggleMobileCategories}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-900 transition hover:bg-emerald-100 md:hidden"
               >
-                <span aria-hidden="true">☷</span> Catégories
+                <span aria-hidden="true">☷</span> {t("nav.categories")}
               </button>
               <Link
                 to="/shop"
                 className="hidden text-xs font-semibold text-gray-600 transition hover:text-emerald-800 md:inline"
               >
-                Explorer les produits
+                {t("nav.exploreProducts")}
               </Link>
             </div>
             <Link
               to="/vendeur"
               className="hidden text-xs font-semibold text-emerald-800 transition hover:text-emerald-950 md:inline-flex"
             >
-              Vous êtes vendeur ? Rejoignez-nous
+              {t("nav.joinSellers")}
             </Link>
           </div>
         )}

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+﻿import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LiaMinusSolid, LiaPlusSolid, LiaTimesSolid } from "react-icons/lia";
 import { toast } from "react-toastify";
@@ -7,6 +7,7 @@ import { useAuth } from "../helper/useAuth";
 import useCSRF from "../helper/useCSRF";
 import useFormatter from "../helper/useFormatter";
 import Preloader from "./loading/Preloader";
+import { useLanguage } from "../context/useLanguage";
 
 type PaymentMethod =
   | "mvola"
@@ -35,6 +36,7 @@ const paymentLabels: Record<PaymentMethod, string> = {
 };
 
 function CartPage() {
+  const { t } = useLanguage();
   const { items, setQuantity, removeItem, clearCart } = useCart();
   const { user } = useAuth();
   const csrf = useCSRF();
@@ -206,9 +208,9 @@ function CartPage() {
         <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
-              Votre sélection
+              {t("cart.selection")}
             </p>
-            <h1 className="market-section-title">Panier et validation</h1>
+            <h1 className="market-section-title">{t("cart.title")}</h1>
           </div>
           {items.length > 0 && (
             <button
@@ -216,7 +218,7 @@ function CartPage() {
               onClick={clearCart}
               className="text-sm font-semibold text-red-700 hover:text-red-900"
             >
-              Vider le panier
+              {t("cart.emptyButton")}
             </button>
           )}
         </header>
@@ -224,13 +226,13 @@ function CartPage() {
         {items.length === 0 ? (
           <section className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center">
             <h2 className="text-lg font-bold text-gray-900">
-              Votre panier est vide
+              {t("cart.empty")}
             </h2>
             <p className="mt-2 text-sm text-gray-500">
-              Parcourez les boutiques locales et ajoutez vos articles.
+              {t("cart.explore")}
             </p>
             <Link to="/shop" className="market-button-primary mt-5">
-              Explorer les produits
+              {t("nav.exploreProducts")}
             </Link>
           </section>
         ) : (
@@ -245,7 +247,7 @@ function CartPage() {
                   >
                     <header className="border-b border-gray-100 bg-white px-5 py-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700">
-                        Boutique
+                        {t("cart.shop")}
                       </p>
                       <h2 className="mt-1 text-base font-bold text-gray-900">
                         {group.shopName}
@@ -346,7 +348,7 @@ function CartPage() {
                         <strong>{priceInArriary(group.subtotal)}</strong>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Livraison</span>
+                        <span className="text-gray-500">{t("cart.delivery")}</span>
                         <strong>
                           {options
                             ? priceInArriary(options.deliveryFee)
@@ -378,7 +380,7 @@ function CartPage() {
                             {shopErrors[group.shopId]
                               ? "Modes de paiement indisponibles"
                               : options
-                                ? "Choisir un mode de paiement"
+                                ? t("cart.choosePayment")
                                 : "Chargement des modes de paiement…"}
                           </option>
                           {options?.paymentMethods.map((method) => (
@@ -406,21 +408,21 @@ function CartPage() {
             >
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700">
-                  Livraison
+                  {t("cart.delivery")}
                 </p>
                 <h2 className="mt-1 text-lg font-bold text-gray-900">
-                  Vos coordonnées
+                  {t("cart.customerDetails")}
                 </h2>
                 <p className="mt-1 text-xs leading-5 text-gray-500">
-                  La commande peut être passée sans compte client.
+                  {t("cart.guestCheckout")}
                 </p>
               </div>
               {(
                 [
-                  ["name", "Nom complet", "text"],
-                  ["phone", "Téléphone", "tel"],
+                  ["name", t("cart.name"), "text"],
+                  ["phone", t("cart.phone"), "tel"],
                   ["email", "E-mail (facultatif)", "email"],
-                  ["city", "Ville", "text"],
+                  ["city", t("cart.city"), "text"],
                 ] as const
               ).map(([name, label, type]) => (
                 <label
@@ -440,7 +442,7 @@ function CartPage() {
                 </label>
               ))}
               <label className="grid gap-1.5 text-xs font-bold text-gray-600">
-                Adresse de livraison
+                {t("cart.address")}
                 <textarea
                   className="min-h-20 rounded-xl border border-gray-200 px-3 py-2 text-sm font-normal text-gray-900"
                   name="address"
@@ -467,7 +469,7 @@ function CartPage() {
                 }
                 className="market-button-primary min-h-12 w-full disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isSubmitting ? "Envoi en cours…" : "Confirmer les commandes"}
+                {isSubmitting ? t("cart.submitting") : t("cart.checkout")}
               </button>
             </form>
           </div>

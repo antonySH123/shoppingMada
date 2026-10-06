@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useReducer, useState } from "react";
+﻿import { FormEvent, useEffect, useReducer, useState } from "react";
 import {
   LiaArrowRightSolid,
   LiaCheckCircle,
@@ -10,6 +10,7 @@ import Contact from "./Contact";
 import ProductCard from "./product/ProductCard";
 import IProduct from "../Interface/IProduct";
 import SkeletonCard from "./product/SkeletonCard";
+import { useLanguage } from "../context/useLanguage";
 
 interface State {
   products: IProduct[] | null;
@@ -37,6 +38,7 @@ const reducer = (state: State, action: Action): State => {
 };
 
 function Home() {
+  const { t } = useLanguage();
   const [state, dispatch] = useReducer(reducer, initialState);
   const [searchTerm, setSearchTerm] = useState("");
   const location = useLocation();
@@ -110,7 +112,7 @@ function Home() {
               <input
                 type="search"
                 className="market-input relative h-14 w-full rounded-2xl border-white bg-white pl-5 pr-16 text-sm shadow-[0_14px_38px_rgba(24,53,36,0.10)] sm:text-base"
-                placeholder="Un produit, une boutique, une idée..."
+                placeholder={t("home.search")}
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 aria-label="Rechercher un produit ou une boutique"
@@ -122,18 +124,18 @@ function Home() {
               >
                 <LiaSearchSolid size={24} />
                 <span className="hidden text-sm font-semibold sm:block">
-                  Chercher
+                  {t("nav.search")}
                 </span>
               </button>
             </form>
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-medium text-gray-500 sm:justify-start">
               <span className="flex items-center gap-1.5">
                 <LiaCheckCircle className="text-emerald-700" size={17} />{" "}
-                Boutiques locales
+                {t("home.localShops")}
               </span>
               <span className="flex items-center gap-1.5">
                 <LiaCheckCircle className="text-emerald-700" size={17} /> Des
-                produits pour tous
+                {t("home.productsForAll")}
               </span>
             </div>
           </div>
@@ -172,15 +174,15 @@ function Home() {
           <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="mb-2 text-sm font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                Sélection du moment
+                {t("home.selection")}
               </p>
-              <h2 className="market-section-title">Nos produits populaires</h2>
+              <h2 className="market-section-title">{t("home.popularProducts")}</h2>
             </div>
             <Link
               to="/shop"
               className="font-semibold text-emerald-800 transition hover:text-emerald-950"
             >
-              Voir toute la boutique <LiaArrowRightSolid className="inline" />
+              {t("home.viewAll")} <LiaArrowRightSolid className="inline" />
             </Link>
           </div>
           {state.error && (
@@ -193,7 +195,7 @@ function Home() {
           )}
           {!state.loading && !state.error && state.products?.length === 0 && (
             <p className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-gray-600">
-              Les produits arrivent bientôt.
+              {t("home.noProducts")}
             </p>
           )}
           <div className="grid grid-cols-1 gap-5 py-5 sm:grid-cols-2 lg:grid-cols-4">

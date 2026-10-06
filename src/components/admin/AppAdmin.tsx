@@ -1,12 +1,15 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import Sidebar from "./sidebar/Sidebar";
 import { Outlet } from "react-router-dom";
 import JodiProvider from "../../context/JodiProvider";
 import { LiaBarsSolid, LiaMoonSolid, LiaSunSolid } from "react-icons/lia";
 import { useLocation } from "react-router-dom";
 import "./ui/tokens.css";
+import LanguageSelector from "../LanguageSelector";
+import { useLanguage } from "../../context/useLanguage";
 
 function AppAdmin() {
+  const { t } = useLanguage();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -19,21 +22,21 @@ function AppAdmin() {
       : "dark";
   });
   const currentPageLabels: Record<string, string> = {
-    dash: "Tableau de bord",
-    products: "Produits",
-    commandes: "Commandes",
-    "marketplace-orders": "Commandes marketplace",
-    "paiement-livraison": "Paiement et livraison",
-    litiges: "Litiges marketplace",
-    commande: "Détail de la commande",
-    abonnements: "Abonnements",
-    "abonnements-paiement": "Paiements d’abonnement",
-    "upgrade-pro": "Passer à ShopInMada Pro",
-    abonnementsDetails: "Détail de l’abonnement",
-    boutiksInfo: "Informations de la boutique",
-    shopaccounts: "Gestion des comptes",
-    accountsSettings: "Paramètres du compte",
-    addProduct: "Ajouter un produit",
+    dash: t("admin.dashboard"),
+    products: t("admin.products"),
+    commandes: t("admin.orders"),
+    "marketplace-orders": t("admin.marketOrders"),
+    "paiement-livraison": t("admin.deliveryPayment"),
+    litiges: t("admin.disputes"),
+    commande: t("admin.orders"),
+    abonnements: t("admin.subscriptions"),
+    "abonnements-paiement": t("admin.subscriptionPayments"),
+    "upgrade-pro": t("admin.upgrade"),
+    abonnementsDetails: t("admin.subscriptions"),
+    boutiksInfo: t("admin.shopInfo"),
+    shopaccounts: t("admin.accounts"),
+    accountsSettings: t("admin.accountSettings"),
+    addProduct: t("admin.addProduct"),
   };
   const pageKey = location.pathname.split("/").filter(Boolean).pop() || "dash";
 
@@ -76,14 +79,15 @@ function AppAdmin() {
               ShopInMada
             </p>
             <h1 className="text-sm font-semibold sm:text-base">
-              Espace professionnel
+              {t("admin.professionalSpace")}
             </h1>
           </div>
+          <LanguageSelector compact />
           <button
             type="button"
             className="admin-theme-toggle"
-            aria-label={`Activer le thème ${adminTheme === "dark" ? "clair" : "sombre"}`}
-            title={`Thème ${adminTheme === "dark" ? "clair" : "sombre"}`}
+            aria-label={`Switch to ${adminTheme === "dark" ? t("admin.themeLight") : t("admin.themeDark")} theme`}
+            title={`${adminTheme === "dark" ? t("admin.themeLight") : t("admin.themeDark")} theme`}
             onClick={() =>
               setAdminTheme((theme) => (theme === "dark" ? "light" : "dark"))
             }
@@ -95,7 +99,7 @@ function AppAdmin() {
             )}
           </button>
           <span className="admin-mobile-page-badge ml-auto rounded-full px-3 py-1.5 text-xs font-semibold">
-            {currentPageLabels[pageKey] || "Espace professionnel"}
+            {currentPageLabels[pageKey] || t("admin.professionalSpace")}
           </span>
         </header>
         <div className="admin-content-gutter py-5 sm:py-8">

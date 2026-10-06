@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+﻿import { FormEvent, useEffect, useState } from "react";
 import {
   LiaBarsSolid,
   LiaSearchSolid,
@@ -16,15 +16,17 @@ import {
 } from "react-router-dom";
 import { useAuth } from "../helper/useAuth";
 import CartHeaderLink from "./CartHeaderLink";
-
-const menu = [
-  { href: "/shop", label: "Découvrir" },
-  { href: "/vendeur", label: "Devenir vendeur" },
-  { href: "/#about", label: "À propos" },
-  { href: "/#abonnements", label: "Offre Pro" },
-];
+import LanguageSelector from "./LanguageSelector";
+import { useLanguage } from "../context/useLanguage";
 
 const Navbar = () => {
+  const { t } = useLanguage();
+  const menu = [
+    { href: "/shop", label: t("nav.discover") },
+    { href: "/vendeur", label: t("nav.becomeSeller") },
+    { href: "/#about", label: t("nav.about") },
+    { href: "/#abonnements", label: t("nav.proOffer") },
+  ];
   const { user } = useAuth();
   const isSeller = user?.userGroupMember_id?.usergroup_id?.name === "Boutiks";
   const visibleMenu = menu.filter(
@@ -60,7 +62,7 @@ const Navbar = () => {
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-800">
           <LiaUser size={18} />
         </span>
-        <span className="hidden xl:inline">Mon compte</span>
+        <span className="hidden xl:inline">{t("nav.account")}</span>
       </Link>
       {user.userGroupMember_id &&
         user.userGroupMember_id.usergroup_id.name !== "Client" && (
@@ -68,9 +70,9 @@ const Navbar = () => {
             to="/espace_vendeur/dash"
             onClick={closeMenu}
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
-            aria-label="Espace vendeur"
+            aria-label={t("nav.sellerSpace")}
           >
-            <LiaUserLockSolid size={18} /> Mon espace
+            <LiaUserLockSolid size={18} /> {t("nav.sellerSpace")}
           </Link>
         )}
       <Link
@@ -90,7 +92,7 @@ const Navbar = () => {
         onClick={closeMenu}
         className="rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
       >
-        Connexion
+        {t("nav.login")}
       </Link>
       <Link
         to="/register"
@@ -98,8 +100,8 @@ const Navbar = () => {
         className="market-button-primary !rounded-xl !px-4 !py-2.5 text-sm"
       >
         <LiaUserPlusSolid size={17} />{" "}
-        <span className="hidden xl:inline">Créer un compte</span>
-        <span className="xl:hidden">Inscription</span>
+        <span className="hidden xl:inline">{t("nav.register")}</span>
+        <span className="xl:hidden">{t("nav.registerShort")}</span>
       </Link>
     </>
   );
@@ -110,7 +112,7 @@ const Navbar = () => {
       onClick={closeMenu}
       className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-gray-700 transition hover:bg-red-50 hover:text-red-700"
     >
-      <LiaSignOutAltSolid size={19} /> Déconnexion
+      <LiaSignOutAltSolid size={19} /> {t("nav.logout")}
     </Link>
   ) : null;
 
@@ -145,7 +147,7 @@ const Navbar = () => {
           <input
             type="search"
             aria-label="Rechercher un produit ou une boutique"
-            placeholder="Que recherchez-vous aujourd’hui ?"
+            placeholder={t("nav.searchDesktop")}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             className="h-11 w-full rounded-full border border-gray-200 bg-[#f6f8f6] pl-12 pr-24 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-700/10"
@@ -154,11 +156,12 @@ const Navbar = () => {
             type="submit"
             className="absolute right-1 top-1 flex h-9 items-center gap-1.5 rounded-full bg-emerald-800 px-4 text-xs font-bold text-white transition hover:bg-emerald-950"
           >
-            Rechercher
+            {t("nav.search")}
           </button>
         </form>
 
         <div className="ml-auto hidden shrink-0 items-center gap-1 md:flex">
+          <LanguageSelector compact />
           <CartHeaderLink />
           {accountLinks}
         </div>
@@ -195,11 +198,11 @@ const Navbar = () => {
             to="/#contact"
             className="rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-500 transition hover:bg-gray-50 hover:text-emerald-800"
           >
-            Contact
+            {t("nav.contact")}
           </Link>
         </nav>
         <span className="text-xs font-medium text-gray-400">
-          Des boutiques locales, partout à Madagascar
+          {t("nav.localMarket")}
         </span>
       </div>
 
@@ -213,7 +216,7 @@ const Navbar = () => {
           <input
             type="search"
             aria-label="Rechercher un produit ou une boutique"
-            placeholder="Rechercher un produit..."
+            placeholder={t("nav.searchMobile")}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             className="h-11 w-full rounded-full border border-gray-200 bg-[#f6f8f6] pl-11 pr-16 text-sm outline-none focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-700/10"
@@ -234,9 +237,10 @@ const Navbar = () => {
             aria-label="Navigation mobile"
             className="market-container flex flex-col gap-1"
           >
+            <div className="px-3 py-2"><LanguageSelector /></div>
             {[
               ...secondaryMobileMenu,
-              { href: "/#contact", label: "Contact" },
+              { href: "/#contact", label: t("nav.contact") },
             ].map((item) => (
               <Link
                 key={item.label}

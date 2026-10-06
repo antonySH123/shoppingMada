@@ -7,14 +7,17 @@ import { AuthProvider } from "./context/UserContext.tsx";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { SkeletonTheme } from "react-loading-skeleton";
+import { LanguageProvider } from "./context/LanguageContext";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider>
-      <SkeletonTheme>
-        <App />
-      </SkeletonTheme>
-      <ToastContainer />
+      <LanguageProvider>
+        <SkeletonTheme>
+          <App />
+        </SkeletonTheme>
+        <ToastContainer />
+      </LanguageProvider>
     </AuthProvider>
   </StrictMode>,
 );

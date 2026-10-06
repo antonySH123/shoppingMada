@@ -1,4 +1,4 @@
-import IProduct from "../Interface/IProduct";
+﻿import IProduct from "../Interface/IProduct";
 import { FormEvent, useEffect, useReducer, useState } from "react";
 import { useParams } from "react-router-dom";
 import useFormatter from "../helper/useFormatter";
@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import Comment from "./comment/Comment";
 import Preloader from "./loading/Preloader";
 import { useCart } from "../context/useCart";
+import { useLanguage } from "../context/useLanguage";
 
 interface IState {
   product: ProductDetailsData | null;
@@ -181,6 +182,7 @@ const reducer = (state: IState, action: Action): IState => {
 };
 
 function ProductDetails() {
+  const { t } = useLanguage();
   const [state, dispatch] = useReducer(reducer, initialState);
   const [activePhoto, setActivePhoto] = useState(0);
   const { id } = useParams();
@@ -277,8 +279,8 @@ function ProductDetails() {
   if (state.error || !state.product)
     return (
       <main className="market-container py-16 text-center" role="alert">
-        <h1 className="text-2xl font-bold text-gray-900">Produit indisponible</h1>
-        <p className="mt-2 text-gray-600">{state.error || "Ce produit n’existe pas ou n’est plus publié."}</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t("product.unavailable")}</h1>
+        <p className="mt-2 text-gray-600">{state.error || t("product.notFound")}</p>
       </main>
     );
   return !csrf ? (
@@ -508,7 +510,7 @@ function ProductDetails() {
                 className="market-button-primary w-full uppercase"
                 disabled={state.product.stock === 0 || !csrf}
               >
-                {state.product.stock === 0 ? "Rupture de stock" : "Ajouter au panier"}
+                {state.product.stock === 0 ? t("product.outOfStock") : t("product.addToCart")}
               </button>
             </div>
           </div>

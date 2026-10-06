@@ -1,4 +1,4 @@
-import {
+﻿import {
   LiaAtSolid,
   LiaEditSolid,
   LiaUserCircle,
@@ -19,9 +19,12 @@ import MarketplaceOrderHistory from "./commande/MarketplaceOrderHistory";
 import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
 import Preloader from "./loading/Preloader";
+import LanguageSelector from "./LanguageSelector";
+import { useLanguage } from "../context/useLanguage";
 
 function Profil() {
   const { user, setUserInfo } = useAuth();
+  const { t, language } = useLanguage();
   const csrf = useCSRF();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -377,21 +380,17 @@ function Profil() {
                     <LiaSlidersHSolid size={18} />
                   </span>
                   <div>
-                    <h3>Préférences</h3>
-                    <p>Langue et devise de votre espace</p>
+                    <h3>{t("profile.preferences")}</h3>
+                    <p>{t("profile.languageSpace")}</p>
                   </div>
                 </div>
                 <div className="profile-section-body compact-grid">
                   <label className="profile-pref-field">
-                    <span>Langue</span>
-                    <select defaultValue="fr">
-                      <option value="fr">Français</option>
-                      <option value="mg">Malagasy</option>
-                      <option value="en">English</option>
-                    </select>
+                    <span>{t("language.label")}</span>
+                    <LanguageSelector />
                   </label>
                   <label className="profile-pref-field">
-                    <span>Devise</span>
+                    <span>{language === "en" ? "Currency" : "Devise"}</span>
                     <select defaultValue="MGA">
                       <option value="MGA">Ariary (MGA)</option>
                       <option value="EUR">Euro</option>
@@ -407,13 +406,13 @@ function Profil() {
                     <LiaLockSolid size={18} />
                   </span>
                   <div>
-                    <h3>Confidentialité</h3>
+                    <h3>{language === "en" ? "Privacy" : "Confidentialité"}</h3>
                     <p>Export de vos informations personnelles</p>
                   </div>
                 </div>
                 <div className="profile-section-body">
                   <div className="profile-inline-row">
-                    <span>Exporter mes données</span>
+                    <span>{language === "en" ? "Export my data" : "Exporter mes données"}</span>
                     <button
                       type="button"
                       className="profile-text-button"
@@ -423,7 +422,7 @@ function Profil() {
                     </button>
                   </div>
                   <div className="profile-inline-row danger-row">
-                    <span>Supprimer le compte</span>
+                    <span>{language === "en" ? "Delete account" : "Supprimer le compte"}</span>
                     <button
                       type="button"
                       className="profile-text-button danger-text"
