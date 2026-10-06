@@ -1,6 +1,6 @@
 import { Navigate, useParams } from "react-router-dom";
 import Iuser from "../../../Interface/UserInterface";
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import { toast } from "react-toastify";
 import { LiaAtSolid, LiaPhoneAltSolid, LiaUser } from "react-icons/lia";
 import useCSRF from "../../../helper/useCSRF";
@@ -38,6 +38,7 @@ function AccountsDetails() {
   const { id } = useParams();
   const [state, dispatch] = useReducer(reducer, initialState);
   const csrf = useCSRF();
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const checkAccount = useCallback(async () => {
     try {
@@ -121,6 +122,46 @@ function AccountsDetails() {
     }
   }, [csrf, id]);
 
+  const handleAccountStatus = useCallback(async () => {
+    if (!csrf || !id || state.isActive === null || isUpdatingStatus) return;
+    const activate = !state.isActive;
+    if (
+      !activate &&
+      !window.confirm(
+        "Désactiver ce compte ? L’utilisateur ne pourra plus se connecter.",
+      )
+    )
+      return;
+
+    setIsUpdatingStatus(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}account/${id}/${activate ? "active" : "block"}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "xsrf-token": csrf },
+          credentials: "include",
+        },
+      );
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(
+          result.message || "Impossible de modifier le statut du compte.",
+        );
+      dispatch({ type: "CHECK_ACCOUNT", payload: activate });
+      toast.success(result.message);
+      if (activate) void fetchData();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Impossible de modifier le statut du compte.",
+      );
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  }, [csrf, fetchData, id, isUpdatingStatus, state.isActive]);
+
   if (user?.userGroupMember_id.usergroup_id.name !== "Super Admin") {
     return <Navigate to="/espace_vendeur/dash" />;
   }
@@ -156,18 +197,35 @@ function AccountsDetails() {
 
           <div className="flex flex-col items-start gap-2 sm:items-end">
             <strong className="text-sm uppercase tracking-[0.08em] text-[var(--admin-muted)]">
-              {state.user?.userGroupMember_id?.usergroup_id?.name}
+              {state.user?.userGroupMember_id?.usergroup_id?.name ??
+                "Compte désactivé"}
             </strong>
-            {state.user?.userGroupMember_id?.usergroup_id?.name !==
-              "Super Admin" && (
-              <AdminButton
-                variant="primary"
-                size="sm"
-                onClick={handleRoleChange}
-              >
-                Définir comme admin
-              </AdminButton>
-            )}
+            <div className="flex flex-wrap gap-2 sm:justify-end">
+              {state.user?.userGroupMember_id?.usergroup_id?.name !==
+                "Super Admin" && (
+                <>
+                  <AdminButton
+                    variant={state.isActive ? "danger" : "primary"}
+                    size="sm"
+                    onClick={() => void handleAccountStatus()}
+                    disabled={isUpdatingStatus || state.isActive === null}
+                  >
+                    {isUpdatingStatus
+                      ? "Mise à jour…"
+                      : state.isActive
+                        ? "Désactiver le compte"
+                        : "Activer le compte"}
+                  </AdminButton>
+                  <AdminButton
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleRoleChange}
+                  >
+                    Définir comme admin
+                  </AdminButton>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -217,12 +275,86 @@ function AccountsDetails() {
             <input
               type="text"
               className="admin-field__control cursor-not-allowed"
-              value={state.isActive ? "Actif" : "Inactif"}
+              value={
+                state.isActive === null
+                  ? "Vérification en cours…"
+                  : state.isActive
+                    ? "Actif"
+                    : "Désactivé"
+              }
               readOnly
             />
           </div>
         </div>
       </section>
+
+      {state.user?.boutiks_id && (
+        <section className="admin-panel p-5">
+          <div className="admin-panel-heading -mx-5 -mt-5 mb-5">
+            <div>
+              <p className="admin-panel-kicker">Boutique associée</p>
+              <h2 className="admin-panel-title">
+                {state.user.boutiks_id.name}
+              </h2>
+              <p className="admin-panel-subtitle">
+                Coordonnées et liens publics gérés par ce vendeur.
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <p className="text-sm text-[var(--admin-muted)]">
+              Téléphone :{" "}
+              <strong className="text-[var(--admin-text)]">
+                {state.user.boutiks_id.phoneNumber || "—"}
+              </strong>
+            </p>
+            <p className="text-sm text-[var(--admin-muted)]">
+              E-mail :{" "}
+              <strong className="text-[var(--admin-text)]">
+                {state.user.boutiks_id.email || "—"}
+              </strong>
+            </p>
+            <p className="text-sm text-[var(--admin-muted)]">
+              Adresse :{" "}
+              <strong className="text-[var(--admin-text)]">
+                {state.user.boutiks_id.adresse || "—"}
+              </strong>
+            </p>
+            <p className="text-sm text-[var(--admin-muted)]">
+              Plan :{" "}
+              <strong className="text-[var(--admin-text)]">
+                {state.user.boutiks_id.plan || "—"}
+              </strong>
+            </p>
+            {[
+              ["Site web", state.user.boutiks_id.websiteUrl],
+              ["Facebook", state.user.boutiks_id.facebookUrl],
+              ["Instagram", state.user.boutiks_id.instagramUrl],
+              ["TikTok", state.user.boutiks_id.tiktokUrl],
+              ["YouTube", state.user.boutiks_id.youtubeUrl],
+            ]
+              .filter(([, url]) => url)
+              .map(([label, url]) => (
+                <p key={label} className="text-sm text-[var(--admin-muted)]">
+                  {label} :{" "}
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-all text-[var(--admin-accent-solid)] hover:underline"
+                  >
+                    {url}
+                  </a>
+                </p>
+              ))}
+            {state.user.boutiks_id.description && (
+              <p className="text-sm leading-6 text-[var(--admin-muted)] sm:col-span-2">
+                {state.user.boutiks_id.description}
+              </p>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

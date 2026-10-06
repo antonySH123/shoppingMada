@@ -1,5 +1,5 @@
-import { Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import ReactLoading from "react-loading";
 import { useAuth } from "../helper/useAuth";
 import { toast } from "react-toastify";
@@ -9,32 +9,43 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const { user, authReady } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
-    const checkAuth = setTimeout(() => {
-      setLoading(false);
-    }, 100);
-    return () => clearTimeout(checkAuth);
-  }, [user]);
-  if (loading) {
+    if (authReady && !user) {
+      toast.warning("Vous devez vous connecter pour accéder à cet espace.");
+    }
+  }, [authReady, user]);
+
+  if (!authReady) {
     return (
-      <div>
-        <ReactLoading type="bars" height={"20%"} width={"20%"} />
+      <div
+        className="flex min-h-screen items-center justify-center"
+        role="status"
+        aria-busy="true"
+      >
+        <ReactLoading type="bars" height={48} width={48} />
       </div>
-    ); // Affichez un écran de chargement
+    );
+  }
+
+  if (!user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}` }}
+      />
+    );
   }
 
   if (
-    !user ||
     !["Boutiks", "Super Admin"].includes(
-      user?.userGroupMember_id?.usergroup_id?.name as string,
+      user.userGroupMember_id?.usergroup_id?.name ?? "",
     )
-  ) {
-    toast.warning("Vous devez vous connécté tout d'abort!");
-    return <Navigate to="/login" />;
-  }
+  )
+    return <Navigate to="/profil" replace />;
 
   return <>{children}</>;
 };

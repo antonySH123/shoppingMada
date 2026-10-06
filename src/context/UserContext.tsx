@@ -9,6 +9,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUserState] = useState<Iuser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const csrf = useCSRF();
 
   // Vérifie la session active sur le backend
@@ -18,44 +19,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         credentials: "include",
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setUserState(data.userInfo); // ← basé sur ta réponse backend
-      } else {
-        setUserState(null); // déconnecté
+      if (!response.ok) {
+        setUserState(null);
+        return;
       }
+
+      const data = await response.json();
+      const currentUser = data.userInfo as Iuser | null;
+      setUserState(
+        currentUser?.userGroupMember_id?.usergroup_id ? currentUser : null,
+      );
     } catch {
       setUserState(null);
+    } finally {
+      setAuthReady(true);
     }
   }, []);
 
-  // Charger la session avant que les routes protégées évaluent l'utilisateur.
+  // /auth/me is read-only and does not need to wait for a CSRF token.
   useEffect(() => {
-    if (csrf) fetchCurrentUser();
-  }, [csrf, fetchCurrentUser]);
+    void fetchCurrentUser();
+  }, [fetchCurrentUser]);
 
   // Rafraîchissement du token
   const regenerateToken = useCallback(async () => {
     if (!csrf) return;
     try {
-      const response = await fetch(`${import.meta.env.REACT_API_URL}auth/refresh`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "xsrf-token": csrf,
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}auth/refresh`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "xsrf-token": csrf,
+          },
         },
-      });
+      );
 
       if (response.status === 201) {
         const result = await response.json();
         setUserState(result.userInfo); // pas besoin de localStorage
-      } else {
+      } else if (response.status === 401 || response.status === 403) {
         setUserState(null); // session expirée
       }
     } catch (error) {
-      console.error("Erreur lors du refresh :", error);
-      setUserState(null);
+      console.warn("Le renouvellement de session a échoué :", error);
     }
   }, [csrf]);
 
@@ -69,9 +78,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const setUserInfo = (newUser: Iuser | null) => {
     setUserState(newUser);
+    setAuthReady(true);
   };
 
-  const value = { user, setUserInfo };
+  const value = { user, authReady, setUserInfo };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

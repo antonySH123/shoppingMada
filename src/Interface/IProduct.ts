@@ -15,7 +15,15 @@ export default interface IProduct{
         email:string;
         _id:string;
         adresse:string;
+        description?: string;
+        websiteUrl?: string;
+        facebookUrl?: string;
+        instagramUrl?: string;
+        tiktokUrl?: string;
+        youtubeUrl?: string;
     };
+    publicationStatus?: "Pending" | "Approved" | "Rejected";
+    moderationReason?: string;
     variant:Ivariant[]
 }
 
@@ -27,5 +35,5 @@ interface Ivariant{
 interface IVariantValue {
     value: string;
     additionalPrice?: number;
-    stock: number;
+    stock?: number;
   }

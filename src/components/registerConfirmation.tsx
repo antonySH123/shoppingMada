@@ -1,9 +1,16 @@
 import { MdOutlinePhonelinkRing } from "react-icons/md";
-import { useState, useRef, ChangeEvent, ClipboardEvent, KeyboardEvent, FormEvent, useCallback } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import {
+  useState,
+  useRef,
+  ChangeEvent,
+  ClipboardEvent,
+  KeyboardEvent,
+  FormEvent,
+  useCallback,
+} from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
-import { useAuth } from "../helper/useAuth";
 import Preloader from "./loading/Preloader";
 
 function RegisterConfirmation() {
@@ -12,11 +19,16 @@ function RegisterConfirmation() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const navigate = useNavigate();
   const csrf = useCSRF();
-  const { user } = useAuth();
   const location = useLocation();
-  const from = location.state?.from === "/forgotPass" ? "/resetPassword" : "/profil";
+  const isPasswordReset =
+    location.state?.from === "/forgotPass" ||
+    new URLSearchParams(location.search).get("flow") === "password-reset";
+  const from = isPasswordReset ? "/resetPassword" : "/profil";
 
-  const handleInputChange = (event: ChangeEvent<HTMLInputElement>, index: number) => {
+  const handleInputChange = (
+    event: ChangeEvent<HTMLInputElement>,
+    index: number,
+  ) => {
     const value = event.target.value.replace(/\D/g, "").slice(-1);
     const nextCode = [...code];
     nextCode[index] = value;
@@ -24,16 +36,25 @@ function RegisterConfirmation() {
     if (value && index < 5) inputRefs.current[index + 1]?.focus();
   };
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>, index: number) => {
-    if (event.key === "Backspace" && !code[index] && index > 0) inputRefs.current[index - 1]?.focus();
+  const handleKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+    index: number,
+  ) => {
+    if (event.key === "Backspace" && !code[index] && index > 0)
+      inputRefs.current[index - 1]?.focus();
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
-    const pastedCode = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pastedCode = event.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     if (!pastedCode) return;
     event.preventDefault();
     const nextCode = new Array(6).fill("");
-    pastedCode.split("").forEach((digit, index) => { nextCode[index] = digit; });
+    pastedCode.split("").forEach((digit, index) => {
+      nextCode[index] = digit;
+    });
     setCode(nextCode);
     inputRefs.current[Math.min(pastedCode.length, 6) - 1]?.focus();
   };
@@ -51,30 +72,40 @@ function RegisterConfirmation() {
         toast.error("Erreur de sécurité. Veuillez réessayer.");
         return;
       }
-      const response = await fetch(`${import.meta.env.REACT_API_URL}email/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "xsrf-token": csrf },
-        credentials: "include",
-        body: JSON.stringify({ OTP: codeEntered }),
-      });
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}email/verify`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "xsrf-token": csrf },
+          credentials: "include",
+          body: JSON.stringify({ OTP: codeEntered }),
+        },
+      );
       if (!response.ok) {
-        const error = await response.json();
-        toast.error(error.message || "Erreur de vérification. Veuillez réessayer.");
-        if (response.status === 403) setCode(new Array(6).fill(""));
+        await response.json().catch(() => null);
+        toast.error(
+          "Le code est invalide, expiré ou indisponible. Vérifiez votre e-mail et réessayez.",
+        );
+        setCode(new Array(6).fill(""));
         return;
       }
       if (response.status === 201) {
-        toast.success("Compte vérifié avec succès !");
+        toast.success(
+          isPasswordReset
+            ? "Adresse vérifiée. Choisissez un nouveau mot de passe."
+            : "Compte vérifié avec succès !",
+        );
         setTimeout(() => navigate(from, { replace: true }), 2000);
       }
     } catch {
-      toast.error("Une erreur est survenue. Veuillez vérifier votre connexion.");
+      toast.error(
+        "Une erreur est survenue. Veuillez vérifier votre connexion.",
+      );
     } finally {
       setIsSubmitting(false);
     }
-  }, [code, csrf, from, navigate]);
+  }, [code, csrf, from, isPasswordReset, navigate]);
 
-  if (!user) return <Navigate to="/login" />;
   if (!csrf) return <Preloader />;
 
   return (
@@ -83,16 +114,41 @@ function RegisterConfirmation() {
       <div className="otp-orb otp-orb-one" aria-hidden="true" />
       <div className="otp-orb otp-orb-two" aria-hidden="true" />
       <main className="otp-card">
-        <div className="otp-security-badge"><span /><span /><span /> Connexion sécurisée</div>
-        <div className="otp-icon"><MdOutlinePhonelinkRing /></div>
-        <p className="otp-eyebrow">VALIDATION DE VOTRE COMPTE</p>
+        <div className="otp-security-badge">
+          <span />
+          <span />
+          <span /> Connexion sécurisée
+        </div>
+        <div className="otp-icon">
+          <MdOutlinePhonelinkRing />
+        </div>
+        <p className="otp-eyebrow">
+          {isPasswordReset
+            ? "RÉCUPÉRATION DU MOT DE PASSE"
+            : "VALIDATION DE VOTRE COMPTE"}
+        </p>
         <h1>Entrez votre code de sécurité.</h1>
-        <p className="otp-description">Consultez votre téléphone ou votre boîte e-mail : un code à 6 chiffres vous a été envoyé.</p>
-        <div className="otp-progress" aria-label="Étape 2 sur 2"><span /><span className="is-active" /></div>
-        <form className="otp-form" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); void handleSubmit(); }}>
+        <p className="otp-description">
+          Si un compte correspond à l’adresse saisie, un code à 6 chiffres a été
+          envoyé par e-mail.
+        </p>
+        <div className="otp-progress" aria-label="Étape 2 sur 2">
+          <span />
+          <span className="is-active" />
+        </div>
+        <form
+          className="otp-form"
+          onSubmit={(event: FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            void handleSubmit();
+          }}
+        >
           <div className="otp-inputs">
             {code.map((digit, index) => (
-              <div key={index} className={`otp-input-shell ${digit ? "is-filled" : ""}`}>
+              <div
+                key={index}
+                className={`otp-input-shell ${digit ? "is-filled" : ""}`}
+              >
                 <input
                   type="tel"
                   inputMode="numeric"
@@ -104,7 +160,9 @@ function RegisterConfirmation() {
                   onChange={(event) => handleInputChange(event, index)}
                   onKeyDown={(event) => handleKeyDown(event, index)}
                   onPaste={handlePaste}
-                  ref={(element) => { inputRefs.current[index] = element; }}
+                  ref={(element) => {
+                    inputRefs.current[index] = element;
+                  }}
                   disabled={isSubmitting}
                 />
               </div>
@@ -112,12 +170,20 @@ function RegisterConfirmation() {
           </div>
           <p className="otp-paste-hint">Vous pouvez coller le code complet.</p>
           <div className="otp-submit-wrap">
-            <button type="submit" name="valider" className="otp-submit" disabled={isSubmitting}>
-              {isSubmitting ? "Validation…" : "Valider mon compte"}<span>→</span>
+            <button
+              type="submit"
+              name="valider"
+              className="otp-submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Validation…" : "Valider mon compte"}
+              <span>→</span>
             </button>
           </div>
         </form>
-        <p className="otp-footnote">Pour votre sécurité, le code expire après un court délai.</p>
+        <p className="otp-footnote">
+          Pour votre sécurité, le code expire après un court délai.
+        </p>
       </main>
     </div>
   );

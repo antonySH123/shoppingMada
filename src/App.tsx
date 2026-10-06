@@ -1,37 +1,55 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
-import Home from "./components/Home";
 import Base from "./components/layouts/Base";
-import Register from "./components/Register";
-import Login from "./components/Login";
 import BaseShop from "./components/layouts/BaseShop";
-import Vendeur from "./components/Vendeur";
-import registerConfirmation from "./components/registerConfirmation";
-import AppAdmin from "./components/admin/AppAdmin";
-import Profil from "./components/Profil";
-import Content from "./components/admin/content/Content";
-import Dash from "./components/admin/content/Dash";
-import ChangeUser from "./components/ChangeUser";
-import Logout from "./auth/Logout";
 import ProtectedRoute from "./context/ProtectedRoute";
 import ProductProvider from "./context/ProductContext";
-import Page404 from "./error/Page404";
 import TopProgressBar from "./components/progress/TopProgressBar";
 import ScrollToTop from "./components/progress/ScrollToTop";
-import List from "./components/admin/content/commande/List";
-import BoutiksInfo from "./components/admin/content/boutikInfo/BoutiksInfo";
-import ListAbonnement from "./components/admin/abonnements/ListAbonnement";
-import Compte from "./components/admin/compte/Compte";
-import CommandeDetails from "./components/admin/content/commande/CommandeDetails";
-import AccountsDetails from "./components/admin/compte/AccountsDetails";
-import CompteDesactiver from "./error/CompteDesactiver";
-import EmailForgotPass from "./components/EmailForgotPass";
-import ResetPassword from "./components/ResetPassword";
-import DetailsAbonnements from "./components/admin/abonnements/DetailsAbonnements";
-import UpgradePro from "./components/admin/abonnements/UpgradePro";
 import { CartProvider } from "./context/CartContext";
 
+const Home = lazy(() => import("./components/Home"));
+const Register = lazy(() => import("./components/Register"));
+const Login = lazy(() => import("./components/Login"));
+const Vendeur = lazy(() => import("./components/Vendeur"));
+const registerConfirmation = lazy(
+  () => import("./components/registerConfirmation"),
+);
+const AppAdmin = lazy(() => import("./components/admin/AppAdmin"));
+const Profil = lazy(() => import("./components/Profil"));
+const Content = lazy(() => import("./components/admin/content/Content"));
+const Dash = lazy(() => import("./components/admin/content/Dash"));
+const ChangeUser = lazy(() => import("./components/ChangeUser"));
+const Logout = lazy(() => import("./auth/Logout"));
+const Page404 = lazy(() => import("./error/Page404"));
+const List = lazy(() => import("./components/admin/content/commande/List"));
+const BoutiksInfo = lazy(
+  () => import("./components/admin/content/boutikInfo/BoutiksInfo"),
+);
+const ListAbonnement = lazy(
+  () => import("./components/admin/abonnements/ListAbonnement"),
+);
+const Compte = lazy(() => import("./components/admin/compte/Compte"));
+const CommandeDetails = lazy(
+  () => import("./components/admin/content/commande/CommandeDetails"),
+);
+const AccountsDetails = lazy(
+  () => import("./components/admin/compte/AccountsDetails"),
+);
+const CompteDesactiver = lazy(() => import("./error/CompteDesactiver"));
+const EmailForgotPass = lazy(() => import("./components/EmailForgotPass"));
+const ResetPassword = lazy(() => import("./components/ResetPassword"));
+const DetailsAbonnements = lazy(
+  () => import("./components/admin/abonnements/DetailsAbonnements"),
+);
+const UpgradePro = lazy(
+  () => import("./components/admin/abonnements/UpgradePro"),
+);
+const SubscriptionPaymentSettings = lazy(
+  () => import("./components/admin/abonnements/SubscriptionPaymentSettings"),
+);
+const Moderation = lazy(() => import("./components/admin/Moderation"));
 const Shop = lazy(() => import("./components/shop/Shop"));
 const Add = lazy(() => import("./components/admin/content/product/Add"));
 const Show = lazy(() => import("./components/admin/content/product/Show"));
@@ -49,9 +67,7 @@ const MarketplaceDisputes = lazy(
 );
 function App() {
   return (
-    <BrowserRouter
-      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-    >
+    <BrowserRouter>
       <CartProvider>
         <TopProgressBar />
         <ScrollToTop />
@@ -111,6 +127,11 @@ function App() {
               <Route path="commande/:id" Component={CommandeDetails}></Route>
               <Route path="boutiksInfo" Component={BoutiksInfo}></Route>
               <Route path="abonnements" Component={ListAbonnement}></Route>
+              <Route
+                path="abonnements-paiement"
+                Component={SubscriptionPaymentSettings}
+              ></Route>
+              <Route path="moderation" Component={Moderation}></Route>
               <Route path="upgrade-pro" Component={UpgradePro}></Route>
               <Route
                 path="abonnementsDetails/:id"

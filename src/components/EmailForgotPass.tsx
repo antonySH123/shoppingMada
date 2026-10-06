@@ -2,49 +2,47 @@ import React, { useState } from "react";
 import { LiaEnvelopeOpen } from "react-icons/lia";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
-import { useAuth } from "../helper/useAuth";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Preloader from "./loading/Preloader";
 
 function EmailForgotPass() {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const csrf = useCSRF();
-  const { setUserInfo } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitted(true);
 
     try {
-      // Simuler une requête
-      if (csrf) {
-        const response = await fetch(
-          `${import.meta.env.REACT_API_URL}auth/forgotpassword`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "xsrf-token": csrf,
-            },
-            credentials: "include",
-            body: JSON.stringify({ email: email }),
-          }
+      if (!csrf) throw new Error("Jeton de sécurité indisponible. Réessayez.");
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}auth/forgotpassword`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "xsrf-token": csrf,
+          },
+          credentials: "include",
+          body: JSON.stringify({ email: email.trim() }),
+        },
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          result.message || "Impossible de démarrer la récupération.",
         );
-        if (response.ok && response.status === 201) {
-          const { userInfo } = await response.json();
-          setUserInfo(userInfo);
-          toast.success("Email soumis avec succès!");
-          navigate("/confirmCompte", { state: { from: location.pathname } });
-        }
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      toast.success(result.message);
+      navigate("/confirmCompte?flow=password-reset", { replace: true });
     } catch (error) {
-      toast.error("Une erreur est survenue!");
+      toast.error(
+        error instanceof Error ? error.message : "Une erreur est survenue!",
+      );
+    } finally {
+      setIsSubmitted(false);
     }
-
-    setIsSubmitted(false);
   };
   return !csrf ? (
     <Preloader />

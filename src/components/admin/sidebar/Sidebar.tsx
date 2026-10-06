@@ -179,6 +179,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                       </span>
                     )}
                   </Link>
+                  <Link
+                    to="/espace_vendeur/moderation"
+                    className={navClass("/espace_vendeur/moderation")}
+                  >
+                    <FaClipboardList />
+                    {!isCollapsed && (
+                      <span className="text-[14px] leading-[20px]">
+                        Modération
+                      </span>
+                    )}
+                  </Link>
                 </>
               )}
             </div>
@@ -244,6 +255,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                 {!isCollapsed && (
                   <span className="text-[14px] leading-[20px]">
                     Gestion de compte
+                  </span>
+                )}
+              </Link>
+            )}
+
+            {isSuperAdmin && (
+              <Link
+                to="/espace_vendeur/abonnements-paiement"
+                className={navClass("/espace_vendeur/abonnements-paiement")}
+              >
+                <FaMoneyBillWave />
+                {!isCollapsed && (
+                  <span className="text-[14px] leading-[20px]">
+                    Paiements d’abonnement
                   </span>
                 )}
               </Link>

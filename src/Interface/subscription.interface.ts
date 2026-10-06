@@ -9,5 +9,10 @@ export default interface Isubscription{
     selectedPhoneNumber:string,
     payementStatus: "Pending" | "Completed" |"Rejected" | "Canceled"
     startDate: Date,
-    endDate : Date
+    endDate : Date,
+    paymentMethodName?: string;
+    paymentAccountName?: string;
+    paymentAccountNumber?: string;
+    paymentInstructions?: string;
+    priceMGA?: number;
 }

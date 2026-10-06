@@ -138,7 +138,15 @@ function Register() {
             {["username", "email", "phonenumber", "password"].map((field) => (
               <div className="relative my-4" key={field}>
                 <input
-                  type={field === "password" ? "password" : "text"}
+                  type={
+                    field === "password"
+                      ? "password"
+                      : field === "email"
+                        ? "email"
+                        : field === "phonenumber"
+                          ? "tel"
+                          : "text"
+                  }
                   name={field}
                   onChange={handleChange}
                   value={state.user[field as keyof Iuser] as string}

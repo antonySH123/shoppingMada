@@ -7,7 +7,13 @@ import Dialog from "../../modals/Dialog";
 import { toast } from "react-toastify";
 import useCSRF from "../../../helper/useCSRF";
 import Preloader from "../../loading/Preloader";
-import { DataTable, PageHeader, RowActions, type AdminDataColumn } from "../ui";
+import {
+  DataTable,
+  PageHeader,
+  RowActions,
+  StatusBadge,
+  type AdminDataColumn,
+} from "../ui";
 import useFormatter from "../../../helper/useFormatter";
 
 function Content() {
@@ -80,6 +86,32 @@ function Content() {
         <span className="tabular-nums">{product.stock ?? "—"}</span>
       ),
       sortValue: (product) => product.stock ?? 0,
+    },
+    {
+      id: "publicationStatus",
+      header: "Publication",
+      render: (product) => {
+        const status = product.publicationStatus ?? "Pending";
+        return (
+          <div className="grid justify-items-start gap-1">
+            <StatusBadge
+              status={status}
+              label={
+                status === "Approved"
+                  ? "Publié"
+                  : status === "Rejected"
+                    ? "Refusé"
+                    : "En attente"
+              }
+            />
+            {status === "Rejected" && product.moderationReason && (
+              <span className="max-w-xs whitespace-normal text-xs text-[var(--admin-danger)]">
+                Motif : {product.moderationReason}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       id: "actions",
@@ -158,7 +190,7 @@ function Content() {
       <PageHeader
         eyebrow="Catalogue boutique"
         title="Produits"
-        description="Gérez votre catalogue, vos tarifs et les niveaux de stock."
+        description="Gérez vos produits et suivez leur statut de publication. Chaque nouveau produit ou modification doit être approuvé avant sa mise en ligne."
         action={
           <button
             type="button"

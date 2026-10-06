@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import Categorie from "../../../categorie/Categorie";
 import {
   LiaDatabaseSolid,
@@ -9,11 +16,12 @@ import { useCategory } from "../../../../context/useCategory";
 import { toast } from "react-toastify";
 import useCSRF from "../../../../helper/useCSRF";
 import { useParams } from "react-router-dom";
-import Editor from "./Editor";
 import { useContent } from "../../../../context/JoditEditorContext";
 import Preloader from "../../../loading/Preloader";
 import { Link } from "react-router-dom";
 import { AdminButton, AdminField, AdminInput, PageHeader } from "../../ui";
+
+const Editor = lazy(() => import("./Editor"));
 
 export interface IProduct {
   name: string;
@@ -358,7 +366,15 @@ function Add() {
 
         <section className="admin-editor-panel min-w-0">
           <h2 className="admin-subsection-title">Description détaillée</h2>
-          <Editor />
+          <Suspense
+            fallback={
+              <p role="status" className="text-sm text-[var(--admin-muted)]">
+                Chargement de l’éditeur…
+              </p>
+            }
+          >
+            <Editor />
+          </Suspense>
         </section>
 
         <footer className="admin-form-footer xl:col-span-2">

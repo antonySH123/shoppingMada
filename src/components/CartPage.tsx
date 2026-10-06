@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LiaMinusSolid, LiaPlusSolid, LiaTimesSolid } from "react-icons/lia";
 import { toast } from "react-toastify";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../context/useCart";
 import { useAuth } from "../helper/useAuth";
 import useCSRF from "../helper/useCSRF";
 import useFormatter from "../helper/useFormatter";

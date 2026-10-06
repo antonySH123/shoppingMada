@@ -304,6 +304,27 @@ function ListAbonnement() {
                 <strong>
                   Téléphone : {state.subscribeinfo?.transactionPhoneNumber}
                 </strong>
+                <strong>
+                  Moyen : {state.subscribeinfo?.paymentMethodName ?? "—"}
+                </strong>
+                <strong>
+                  Compte destinataire :{" "}
+                  {state.subscribeinfo?.paymentAccountName ?? "—"} ·{" "}
+                  {state.subscribeinfo?.paymentAccountNumber ??
+                    state.subscribeinfo?.selectedPhoneNumber ??
+                    "—"}
+                </strong>
+                <strong>
+                  Montant attendu :{" "}
+                  {state.subscribeinfo?.priceMGA?.toLocaleString("fr-FR") ??
+                    "—"}{" "}
+                  MGA
+                </strong>
+                {state.subscribeinfo?.paymentInstructions && (
+                  <span>
+                    Instructions : {state.subscribeinfo.paymentInstructions}
+                  </span>
+                )}
               </div>
             </>
           ) : (

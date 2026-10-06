@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../helper/useAuth";
@@ -88,7 +88,7 @@ function OrderTracking() {
     sessionStorage.getItem(`shopinmada.order.${orderId}`) ??
     "";
 
-  const loadOrder = async () => {
+  const loadOrder = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -112,11 +112,11 @@ function OrderTracking() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId, token]);
 
   useEffect(() => {
     void loadOrder();
-  }, [orderId, token]);
+  }, [loadOrder]);
 
   const submitPayment = async (
     event: FormEvent<HTMLFormElement>,

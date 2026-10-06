@@ -12,17 +12,29 @@ type ShopInfo = {
   email: string;
   description: string;
   ville: string;
+  websiteUrl: string;
+  facebookUrl: string;
+  instagramUrl: string;
+  tiktokUrl: string;
+  youtubeUrl: string;
+};
+
+const initialShopInfo: ShopInfo = {
+  name: "",
+  adresse: "",
+  phoneNumber: "",
+  email: "",
+  description: "",
+  ville: "",
+  websiteUrl: "",
+  facebookUrl: "",
+  instagramUrl: "",
+  tiktokUrl: "",
+  youtubeUrl: "",
 };
 
 function BoutiksInfo() {
-  const [shopInfo, setShopInfo] = useState<ShopInfo>({
-    name: "",
-    adresse: "",
-    phoneNumber: "",
-    email: "",
-    description: "",
-    ville: "",
-  });
+  const [shopInfo, setShopInfo] = useState<ShopInfo>(initialShopInfo);
 
   const csrf = useCSRF();
 
@@ -36,7 +48,7 @@ function BoutiksInfo() {
       );
 
       const result = await response.json();
-      setShopInfo(result.boutiks);
+      setShopInfo({ ...initialShopInfo, ...(result.boutiks ?? {}) });
     };
     fetchData();
   }, []);
@@ -154,7 +166,55 @@ function BoutiksInfo() {
               required
             />
           </div>
+
+          <div className="admin-field sm:col-span-2">
+            <label htmlFor="shop-description">
+              Présentation de la boutique
+            </label>
+            <textarea
+              id="shop-description"
+              name="description"
+              value={shopInfo.description}
+              onChange={handleChange}
+              placeholder="Présentez votre boutique et vos produits en quelques lignes"
+              className="admin-field__control min-h-28"
+              maxLength={1000}
+              rows={4}
+            />
+          </div>
         </div>
+
+        <section className="mt-6 border-t border-[var(--admin-border)] pt-5">
+          <h2 className="mb-1 text-base font-bold text-[var(--admin-text)]">
+            Site web et réseaux sociaux
+          </h2>
+          <p className="mb-4 text-sm text-[var(--admin-muted)]">
+            Ajoutez des liens publics pour permettre aux clients de découvrir et
+            contacter votre boutique.
+          </p>
+          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+            {[
+              ["websiteUrl", "Site web"],
+              ["facebookUrl", "Facebook"],
+              ["instagramUrl", "Instagram"],
+              ["tiktokUrl", "TikTok"],
+              ["youtubeUrl", "YouTube"],
+            ].map(([field, label]) => (
+              <div className="admin-field" key={field}>
+                <label htmlFor={`shop-${field}`}>{label}</label>
+                <input
+                  id={`shop-${field}`}
+                  type="url"
+                  name={field}
+                  value={shopInfo[field as keyof ShopInfo]}
+                  onChange={handleChange}
+                  placeholder="https://..."
+                  className="admin-field__control"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
 
         <div className="mt-6 flex justify-end">
           <button

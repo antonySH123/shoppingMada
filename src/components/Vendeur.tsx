@@ -44,6 +44,7 @@ function Vendeur() {
   });
 
   const [option, setOption] = useState<CategoryOption[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const csrf = useCSRF();
   const fetchData = useCallback(async () => {
     try {
@@ -72,7 +73,7 @@ function Vendeur() {
       setOption(datas);
     } catch (error) {
       toast.error("Erreur lors du chargement des catégories");
-      throw error;
+      console.error("Category options could not be loaded", error);
     }
   }, []);
 
@@ -89,11 +90,25 @@ function Vendeur() {
       !boutik.name ||
       !boutik.adresse ||
       !boutik.phoneNumber ||
-      !boutik.email
+      !boutik.email ||
+      !boutik.logo ||
+      boutik.product_category.length === 0
     ) {
-      toast.error("Tous les champs obligatoires doivent être remplis");
+      toast.error(
+        "Renseignez les coordonnées, le logo et au moins une catégorie.",
+      );
       return;
     }
+    if (
+      !/^image\/(jpeg|png|webp)$/.test(boutik.logo.type) ||
+      boutik.logo.size > 5 * 1024 * 1024
+    ) {
+      toast.error(
+        "Le logo doit être au format JPG, PNG ou WebP et peser 5 Mo maximum.",
+      );
+      return;
+    }
+    if (!csrf || isSubmitting) return;
 
     const formData = new FormData();
     formData.append("name", boutik.name);
@@ -111,31 +126,31 @@ function Vendeur() {
       JSON.stringify(boutik.product_category.map((category) => category.value)),
     );
 
+    setIsSubmitting(true);
     try {
-      if (csrf) {
-        const response = await fetch(
-          `${import.meta.env.REACT_API_URL}boutiks/store`,
-          {
-            method: "POST",
-            headers: {
-              "xsrf-token": csrf,
-            },
-            credentials: "include",
-            body: formData,
+      const response = await fetch(
+        `${import.meta.env.REACT_API_URL}boutiks/store`,
+        {
+          method: "POST",
+          headers: {
+            "xsrf-token": csrf,
           },
-        );
+          credentials: "include",
+          body: formData,
+        },
+      );
 
-        if (!response.ok) {
-          throw new Error("Échec de la création de la boutique");
-        }
-
-        const data = await response.json();
-        toast.success(data.message);
-        navigate("/redirect");
-      }
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.message || "Échec de la création de la boutique.");
+      toast.success(data.message);
+      navigate("/redirect");
     } catch (error) {
-      toast.error("Une erreur s'est produite");
-      throw error;
+      toast.error(
+        error instanceof Error ? error.message : "Une erreur s'est produite.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -245,7 +260,7 @@ function Vendeur() {
                     type="file"
                     id="seller-logo"
                     name="logo"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     className="absolute hidden"
                     onChange={handleFileChange}
                     ref={inputFile}
@@ -353,8 +368,14 @@ function Vendeur() {
                 En envoyant ce formulaire, vous soumettez votre boutique à
                 validation.
               </p>
-              <button type="submit" className="market-button-primary">
-                <FaCloudUploadAlt /> Envoyer ma demande <span>→</span>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="market-button-primary disabled:opacity-60"
+              >
+                <FaCloudUploadAlt />{" "}
+                {isSubmitting ? "Envoi en cours…" : "Envoyer ma demande"}{" "}
+                <span>→</span>
               </button>
             </div>
           </div>

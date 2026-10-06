@@ -27,6 +27,7 @@ function AppAdmin() {
     litiges: "Litiges marketplace",
     commande: "Détail de la commande",
     abonnements: "Abonnements",
+    "abonnements-paiement": "Paiements d’abonnement",
     "upgrade-pro": "Passer à ShopInMada Pro",
     abonnementsDetails: "Détail de l’abonnement",
     boutiksInfo: "Informations de la boutique",

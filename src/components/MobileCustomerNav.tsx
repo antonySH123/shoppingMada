@@ -7,7 +7,7 @@ import {
 } from "react-icons/lia";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../helper/useAuth";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../context/useCart";
 
 function MobileCustomerNav() {
   const { user } = useAuth();

@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import useFormatter from "../helper/useFormatter";
 import parse from "html-react-parser";
 import {
+  LiaAtSolid,
   LiaBuildingSolid,
   LiaMapMarkedSolid,
   LiaPhoneSolid,
@@ -12,15 +13,31 @@ import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
 import Comment from "./comment/Comment";
 import Preloader from "./loading/Preloader";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../context/useCart";
 
 interface IState {
-  product: IProduct | null;
+  product: ProductDetailsData | null;
   loading: boolean;
   error: string | null;
   counter: number;
   selectedVariant?: { [key: string]: string };
   totalPrice: number;
+}
+
+interface ProductVariantValue {
+  value: string;
+  additionalPrice?: number;
+  stock?: number;
+}
+
+interface ProductVariant {
+  _id: string;
+  name: string;
+  values: ProductVariantValue[];
+}
+
+interface ProductDetailsData extends Omit<IProduct, "variant"> {
+  variant: ProductVariant[];
 }
 
 const initialState: IState = {
@@ -31,9 +48,41 @@ const initialState: IState = {
   selectedVariant: {},
   totalPrice: 0,
 };
+
+const isSafeHttpUrl = (value?: string): value is string => {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const getAvailableStock = (
+  product: ProductDetailsData,
+  selectedVariant: Record<string, string> = {},
+) => {
+  const variantStocks = Object.entries(selectedVariant).map(([name, value]) =>
+    product.variant
+      .find((variant) => variant.name === name)
+      ?.values.find((option) => option.value === value)?.stock,
+  );
+  const knownVariantStocks = variantStocks.filter(
+    (stock): stock is number => typeof stock === "number",
+  );
+  if (knownVariantStocks.length) {
+    const productStock = product.stock;
+    return typeof productStock === "number"
+      ? Math.min(productStock, ...knownVariantStocks)
+      : Math.min(...knownVariantStocks);
+  }
+  return product.stock ?? Number.POSITIVE_INFINITY;
+};
+
 type Action =
   | { type: "FETCH_START" }
-  | { type: "FETCH_SUCCESS"; payload: IProduct }
+  | { type: "FETCH_SUCCESS"; payload: ProductDetailsData }
   | { type: "FETCH_ERROR"; payload: string }
   | { type: "INCREMENT"; payload: number | undefined }
   | { type: "DECREMENT"; payload: number | undefined }
@@ -61,12 +110,19 @@ const reducer = (state: IState, action: Action): IState => {
     case "FETCH_ERROR":
       return { ...state, loading: false, error: action.payload };
     case "INCREMENT":
+      if (
+        state.product &&
+        state.counter >=
+          getAvailableStock(state.product, state.selectedVariant)
+      )
+        return state;
       return {
         ...state,
         counter: state.counter + 1,
         totalPrice: state.totalPrice + state.totalPrice / state.counter,
       };
     case "DECREMENT":
+      if (state.counter <= 1) return state;
       return {
         ...state,
         counter: Math.max(1, state.counter - 1),
@@ -131,6 +187,14 @@ function ProductDetails() {
   const { priceInArriary } = useFormatter();
   const csrf = useCSRF();
   const { addItem } = useCart();
+  const shop = state.product?.boutiks_id;
+  const shopLinks = [
+    { label: "Site web", href: shop?.websiteUrl },
+    { label: "Facebook", href: shop?.facebookUrl },
+    { label: "Instagram", href: shop?.instagramUrl },
+    { label: "TikTok", href: shop?.tiktokUrl },
+    { label: "YouTube", href: shop?.youtubeUrl },
+  ].filter((link) => isSafeHttpUrl(link.href));
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!state.product || !id || !state.product.boutiks_id?._id) return;
@@ -157,7 +221,7 @@ function ProductDetails() {
       shopId: state.product.boutiks_id._id,
       shopName: state.product.boutiks_id.name,
       variants: state.selectedVariant ?? {},
-      stock: state.product.stock,
+      stock: getAvailableStock(state.product, state.selectedVariant),
     });
     if (added) {
       toast.success("Article ajouté au panier.");
@@ -174,9 +238,18 @@ function ProductDetails() {
           `${import.meta.env.REACT_API_URL}shop/product/${id}`,
         );
         if (!response.ok) {
-          dispatch({ type: "FETCH_ERROR", payload: "Une erreur est survenue" });
+          const payload = await response.json().catch(() => null);
+          dispatch({
+            type: "FETCH_ERROR",
+            payload: payload?.message || "Produit introuvable.",
+          });
+          return;
         }
         const data = await response.json();
+        if (!data?.data) {
+          dispatch({ type: "FETCH_ERROR", payload: "Produit introuvable." });
+          return;
+        }
 
         const initialSelectedVariant: { [key: string]: string } = {};
         if (data.data.variant) {
@@ -198,8 +271,16 @@ function ProductDetails() {
         }
       }
     };
-    fetchProduct();
+    void fetchProduct();
   }, [id]);
+  if (state.loading) return <Preloader />;
+  if (state.error || !state.product)
+    return (
+      <main className="market-container py-16 text-center" role="alert">
+        <h1 className="text-2xl font-bold text-gray-900">Produit indisponible</h1>
+        <p className="mt-2 text-gray-600">{state.error || "Ce produit n’existe pas ou n’est plus publié."}</p>
+      </main>
+    );
   return !csrf ? (
     <Preloader />
   ) : (
@@ -337,14 +418,48 @@ function ProductDetails() {
                 <li className="mb-2 flex items-center gap-2 text-sm text-gray-600">
                   {" "}
                   <LiaPhoneSolid size={15} />{" "}
-                  {state.product && state.product.boutiks_id.phoneNumber}
+                  {state.product && (
+                    <a href={`tel:${state.product.boutiks_id.phoneNumber}`}>
+                      {state.product.boutiks_id.phoneNumber}
+                    </a>
+                  )}
                 </li>
                 <li className="mb-2 flex items-center gap-2 text-sm text-gray-600">
                   {" "}
                   <LiaMapMarkedSolid size={15} />{" "}
                   {state.product && state.product.boutiks_id.adresse}
                 </li>
+                {state.product?.boutiks_id.email && (
+                  <li className="mb-2 flex items-center gap-2 text-sm text-gray-600">
+                    <LiaAtSolid size={15} />
+                    <a href={`mailto:${state.product.boutiks_id.email}`}>
+                      {state.product.boutiks_id.email}
+                    </a>
+                  </li>
+                )}
               </ul>
+              {state.product?.boutiks_id.description && (
+                <p className="mt-3 text-sm leading-6 text-gray-600">
+                  {state.product.boutiks_id.description}
+                </p>
+              )}
+              {shopLinks.length > 0 && (
+                <nav
+                  className="product-shop-links"
+                  aria-label="Site web et réseaux sociaux de la boutique"
+                >
+                  {shopLinks.map(({ label, href }) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {label}
+                    </a>
+                  ))}
+                </nav>
+              )}
             </div>
             <div className="px-5">
               <p className="mb-2 text-sm font-bold text-gray-900">
@@ -391,8 +506,9 @@ function ProductDetails() {
               <button
                 type="submit"
                 className="market-button-primary w-full uppercase"
+                disabled={state.product.stock === 0 || !csrf}
               >
-                Ajouter au panier
+                {state.product.stock === 0 ? "Rupture de stock" : "Ajouter au panier"}
               </button>
             </div>
           </div>

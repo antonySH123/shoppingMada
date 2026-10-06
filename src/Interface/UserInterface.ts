@@ -19,6 +19,12 @@ interface IBoutiks{
     email:string,
     plan:string,
     subscription_id:Isubscription
+    description?: string;
+    websiteUrl?: string;
+    facebookUrl?: string;
+    instagramUrl?: string;
+    tiktokUrl?: string;
+    youtubeUrl?: string;
 
 }
 

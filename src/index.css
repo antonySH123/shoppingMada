@@ -1923,6 +1923,14 @@ select:focus-visible {
 .product-gallery-thumbnail img { width: 100%; height: 100%; object-fit: contain; border-radius: 0.65rem; }
 .product-purchase-form { min-width: 0; }
 .product-purchase-card { position: sticky; top: 6.5rem; }
+.product-purchase-card a[href^="tel:"],
+.product-purchase-card a[href^="mailto:"] { color: #176b47; font-weight: 650; overflow-wrap: anywhere; }
+.product-purchase-card a[href^="tel:"]:hover,
+.product-purchase-card a[href^="mailto:"]:hover { color: #10492b; text-decoration: underline; }
+.product-shop-links { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.9rem; border-top: 1px solid #e7eee8; padding-top: 0.8rem; }
+.product-shop-links a { display: inline-flex; min-height: 2.1rem; align-items: center; border: 1px solid #d9e8dc; border-radius: 0.65rem; background: #f3f8f4; padding: 0.45rem 0.65rem; color: #176b47; font-size: 0.72rem; font-weight: 750; text-decoration: none; transition: background 140ms ease, border-color 140ms ease, color 140ms ease; }
+.product-shop-links a:hover { border-color: #a9ceb2; background: #eaf5ec; color: #10492b; }
+.product-shop-links a:focus-visible { outline: 3px solid rgb(22 131 75 / 24%); outline-offset: 2px; }
 
 .product-summary-card .bg-lime-100 {
   border: 1px solid #dce8dd;

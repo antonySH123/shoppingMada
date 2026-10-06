@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 import Iuser from "../Interface/UserInterface";
 interface AuthContextType {
   user: Iuser | null; 
+  authReady: boolean;
   setUserInfo: (user: Iuser | null) => void;
 }
 

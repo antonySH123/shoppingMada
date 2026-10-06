@@ -84,10 +84,11 @@ function Compte() {
       const username = account.username?.toLowerCase() ?? "";
       const email = account.email?.toLowerCase() ?? "";
       const phone = account.phonenumber?.toLowerCase() ?? "";
+      const shopName = account.boutiks_id?.name?.toLowerCase() ?? "";
       const role =
         account.userGroupMember_id?.usergroup_id?.name?.toLowerCase() ?? "";
 
-      return [username, email, phone, role].some((value) =>
+      return [username, email, phone, shopName, role].some((value) =>
         value.includes(query),
       );
     });
@@ -225,6 +226,8 @@ function Compte() {
                   <th>#</th>
                   <th>Nom</th>
                   <th>Rôle</th>
+                  <th>Boutique</th>
+                  <th>Statut</th>
                   <th>Téléphone</th>
                   <th>Email</th>
                   <th>Action</th>
@@ -269,6 +272,14 @@ function Compte() {
                             "Compte"}
                         </span>
                       </td>
+                      <td>{account.boutiks_id?.name ?? "—"}</td>
+                      <td>
+                        <span
+                          className={`admin-status-badge admin-status-badge--${account.userGroupMember_id ? "success" : "neutral"}`}
+                        >
+                          {account.userGroupMember_id ? "Actif" : "Désactivé"}
+                        </span>
+                      </td>
                       <td>{account.phonenumber}</td>
                       <td>{account.email}</td>
                       <td>
@@ -283,7 +294,7 @@ function Compte() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="admin-empty-state">
+                    <td colSpan={8} className="admin-empty-state">
                       Aucun compte ne correspond à cette recherche.
                     </td>
                   </tr>

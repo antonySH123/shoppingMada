@@ -41,6 +41,7 @@ function Dash() {
   const isSeller = role === "Boutiks";
   const isSuperAdmin = role === "Super Admin";
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isSavingCin, setIsSavingCin] = useState(false);
   const closeModal = () => setIsModalOpen(false);
   const [cin, setCIN] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -162,12 +163,20 @@ function Dash() {
   ];
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!csrf || isSavingCin) return;
+    if (!cin.trim() || files.length !== 2) {
+      toast.warning(
+        "Saisissez le numéro CIN et ajoutez les photos du recto et du verso.",
+      );
+      return;
+    }
     const formData = new FormData();
     formData.append("cin", cin);
     files.forEach((image) => {
       formData.append("image", image);
     });
-    if (csrf) {
+    setIsSavingCin(true);
+    try {
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}personnal/info`,
         {
@@ -179,14 +188,23 @@ function Dash() {
           credentials: "include",
         },
       );
-
-      if (!response.ok) {
-        toast.error("Une erreur s'est produite! ");
+      const result = await response.json();
+      if (!response.ok || result.status !== "Success") {
+        throw new Error(
+          result.message ||
+            "Impossible d’enregistrer la vérification du compte.",
+        );
       }
-
-      const success = await response.json();
-      toast.success(success.message);
+      toast.success(result.message || "Informations enregistrées.");
       setIsModalOpen(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Impossible d’enregistrer la vérification du compte.",
+      );
+    } finally {
+      setIsSavingCin(false);
     }
   };
 
@@ -422,6 +440,7 @@ function Dash() {
                 )}
                 <button
                   type="button"
+                  disabled={isSavingCin || files.length >= 2}
                   className="cin-info-upload-button"
                   aria-label="Choisir une image de votre CIN"
                   onClick={() => {
@@ -430,26 +449,47 @@ function Dash() {
                 >
                   <LiaUploadSolid size={22} />
                   <span>Ajouter une photo</span>
-                  <small>JPG, PNG ou autre image</small>
+                  <small>
+                    Recto et verso · JPG, PNG ou WebP · 5 Mo max. par image
+                  </small>
                 </button>
                 <input
                   ref={inputFile}
                   hidden
                   type="file"
                   name="image"
-                  id=""
+                  id="cin-images"
+                  accept="image/jpeg,image/png,image/webp"
                   onChange={(e) => {
-                    const selectedFiles = Array.from(e.target.files || []);
+                    const selectedFiles = Array.from(
+                      e.target.files || [],
+                    ).slice(0, 2 - files.length);
+                    const oversized = selectedFiles.some(
+                      (file) => file.size > 5 * 1024 * 1024,
+                    );
+                    if (oversized) {
+                      toast.error("Chaque image doit faire 5 Mo maximum.");
+                      e.currentTarget.value = "";
+                      return;
+                    }
                     setFiles((prevFiles) => [...prevFiles, ...selectedFiles]);
+                    e.currentTarget.value = "";
                   }}
+                  disabled={isSavingCin}
                   multiple
                 />
               </div>
             </div>
 
             <div className="cin-info-actions">
-              <button type="submit" className="market-button-primary">
-                Enregistrer mes informations
+              <button
+                type="submit"
+                disabled={isSavingCin}
+                className="market-button-primary disabled:opacity-60"
+              >
+                {isSavingCin
+                  ? "Enregistrement…"
+                  : "Enregistrer mes informations"}
               </button>
             </div>
           </form>

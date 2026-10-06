@@ -1,6 +1,6 @@
 import { LiaShoppingBagSolid } from "react-icons/lia";
 import { Link } from "react-router-dom";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../context/useCart";
 
 function CartHeaderLink() {
   const { itemCount } = useCart();
