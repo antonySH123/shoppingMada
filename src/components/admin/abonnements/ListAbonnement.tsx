@@ -1,6 +1,6 @@
-import Isubscription from "../../../Interface/subscription.interface";
+﻿import Isubscription from "../../../Interface/subscription.interface";
 import IAction from "../../../Interface/action.interface";
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { toast } from "react-toastify";
 import { LiaEye } from "react-icons/lia";
 import UserInfo from "../../modals/UserInfo";
@@ -15,6 +15,11 @@ interface IState {
   subscribeinfo: Isubscription | null;
   rejected: boolean;
   motif: string | null;
+  loading: boolean;
+  detailLoading: boolean;
+  saving: boolean;
+  error: string | null;
+  detailError: string | null;
 }
 
 const initialState: IState = {
@@ -24,6 +29,11 @@ const initialState: IState = {
   subscribeinfo: null,
   rejected: false,
   motif: null,
+  loading: true,
+  detailLoading: false,
+  saving: false,
+  error: null,
+  detailError: null,
 };
 
 const reducer = (state: IState, action: IAction): IState => {
@@ -32,18 +42,25 @@ const reducer = (state: IState, action: IAction): IState => {
       return {
         ...state,
         subscription: action.payload as Isubscription[],
-        selectedId: null,
+        loading: false,
+        error: null,
       };
     case "SELECT_ID":
-      return { ...state, selectedId: action.payload as string };
+      return { ...state, selectedId: action.payload as string, subscribeinfo: null, detailLoading: true, detailError: null, rejected: false, motif: null };
     case "TOGGLE_MODAL":
-      return { ...state, isOpen: action.payload as boolean, rejected: false };
+      return { ...state, isOpen: action.payload as boolean, rejected: false, ...(action.payload ? {} : { selectedId: null, subscribeinfo: null, detailLoading: false, detailError: null, motif: null }) };
     case "GET_INFO":
-      return { ...state, subscribeinfo: action.payload as Isubscription };
+      return { ...state, subscribeinfo: action.payload as Isubscription, detailLoading: false, detailError: null };
     case "REJECTED":
       return { ...state, rejected: action.payload as boolean };
     case "HANDLE_MOTIF":
       return { ...state, motif: action.payload as string | null };
+    case "LOADING":
+      return { ...state, loading: action.payload as boolean };
+    case "DETAIL_ERROR":
+      return { ...state, detailLoading: false, detailError: action.payload as string | null };
+    case "SAVING":
+      return { ...state, saving: action.payload as boolean };
     default:
       throw new Error("Action inconnue!");
   }
@@ -54,8 +71,11 @@ function ListAbonnement() {
   const { user } = useAuth();
   const csrf = useCSRF();
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
 
   const fetchData = useCallback(async () => {
+    dispatch({ type: "LOADING", payload: true });
+    dispatch({ type: "DETAIL_ERROR", payload: null });
     try {
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}subscription`,
@@ -63,16 +83,20 @@ function ListAbonnement() {
           credentials: "include",
         },
       );
-      if (response.ok) {
-        const result = await response.json();
-        dispatch({ type: "FETCH_START", payload: result.data ?? [] });
-      }
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Impossible de charger les abonnements.");
+      dispatch({ type: "FETCH_START", payload: Array.isArray(result.data) ? result.data : [] });
     } catch (error) {
-      if (error instanceof Error) toast.error(error.message);
+      const message = error instanceof Error ? error.message : "Impossible de charger les abonnements.";
+      dispatch({ type: "DETAIL_ERROR", payload: message });
+      dispatch({ type: "LOADING", payload: false });
+      toast.error(message);
     }
   }, []);
 
   const getData = useCallback(async () => {
+    if (!state.selectedId) return;
+    try {
     const response = await fetch(
       `${import.meta.env.REACT_API_URL}subscription/${state.selectedId}`,
       {
@@ -80,19 +104,23 @@ function ListAbonnement() {
       },
     );
 
-    if (response.ok) {
-      const result = await response.json();
-      dispatch({ type: "GET_INFO", payload: result.data });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "Impossible de charger cette demande.");
+    dispatch({ type: "GET_INFO", payload: result.data });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de charger cette demande.";
+      dispatch({ type: "DETAIL_ERROR", payload: message });
+      toast.error(message);
     }
   }, [state.selectedId]);
 
-  const filteredSubscriptions = state.subscription.filter((item) => {
+  const filteredSubscriptions = useMemo(() => state.subscription.filter((item) => {
     const boutique = item.owner_id?.boutiks_id?.name ?? "";
     const ref = item.refTransaction ?? "";
     const plan = item.plan ?? "";
     const searchValue = `${boutique} ${ref} ${plan}`.toLowerCase();
-    return searchValue.includes(searchTerm.trim().toLowerCase());
-  });
+    return searchValue.includes(searchTerm.trim().toLowerCase()) && (statusFilter === "All" || item.payementStatus === statusFilter);
+  }), [searchTerm, state.subscription, statusFilter]);
 
   const metrics = [
     {
@@ -126,9 +154,9 @@ function ListAbonnement() {
   ];
 
   const updateData = useCallback(
-    async (status: string) => {
+    async (status: "Completed" | "Rejected" | "Canceled") => {
       let data;
-      if (user && user.userGroupMember_id.usergroup_id.name === "Boutiks") {
+      if (status === "Canceled" && user?.userGroupMember_id?.usergroup_id?.name === "Boutiks") {
         data = {
           payementStatus: "Canceled",
         };
@@ -147,7 +175,9 @@ function ListAbonnement() {
         }
       }
 
-      if (data && csrf) {
+        if (data && csrf && !state.saving && state.subscribeinfo?.payementStatus === "Pending") {
+          dispatch({ type: "SAVING", payload: true });
+          try {
         const response = await fetch(
           `${import.meta.env.REACT_API_URL}subscribe/${state.selectedId}`,
           {
@@ -171,10 +201,15 @@ function ListAbonnement() {
             result?.message || "Impossible de mettre à jour l'abonnement.",
           );
         }
-        dispatch({ type: "HANDLE_MOTIF", payload: null });
+          dispatch({ type: "HANDLE_MOTIF", payload: null });
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Impossible de mettre à jour l’abonnement.");
+          } finally {
+            dispatch({ type: "SAVING", payload: false });
+          }
       }
     },
-    [csrf, fetchData, state.motif, state.selectedId, user],
+    [csrf, fetchData, state.motif, state.saving, state.selectedId, state.subscribeinfo?.payementStatus, user],
   );
 
   useEffect(() => {
@@ -202,6 +237,18 @@ function ListAbonnement() {
             placeholder="Rechercher une boutique"
             className="admin-search-input"
           />
+          <select
+            aria-label="Filtrer par statut"
+            className="admin-search-input"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
+            <option value="All">Tous les statuts</option>
+            <option value="Pending">À valider</option>
+            <option value="Completed">Acceptées</option>
+            <option value="Rejected">Rejetées</option>
+            <option value="Canceled">Annulées</option>
+          </select>
         </div>
       </header>
 
@@ -229,6 +276,13 @@ function ListAbonnement() {
           </div>
         </div>
 
+        {state.error && (
+          <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
+            {state.error}
+            <button type="button" className="ml-3 font-semibold underline" onClick={() => void fetchData()}>Réessayer</button>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table>
             <thead>
@@ -241,7 +295,9 @@ function ListAbonnement() {
               </tr>
             </thead>
             <tbody>
-              {filteredSubscriptions.length > 0 ? (
+              {state.loading ? (
+                <tr><td colSpan={5} className="p-8 text-center text-[var(--admin-muted)]">Chargement des demandes…</td></tr>
+              ) : filteredSubscriptions.length > 0 ? (
                 filteredSubscriptions.map((item, index) => (
                   <tr key={item._id || index}>
                     <td className="font-semibold text-[var(--admin-text)]">
@@ -259,6 +315,8 @@ function ListAbonnement() {
                     <td>
                       <button
                         className="admin-link-button"
+                        type="button"
+                        aria-label={`Voir la demande de ${item.owner_id?.boutiks_id?.name || "la boutique"}`}
                         onClick={() => {
                           dispatch({ type: "SELECT_ID", payload: item._id });
                           dispatch({ type: "TOGGLE_MODAL", payload: true });
@@ -347,46 +405,22 @@ function ListAbonnement() {
         </div>
         <hr />
         <div className="flex gap-3 py-3 justify-end">
-          {user && user.userGroupMember_id.usergroup_id.name != "Boutiks" && (
-            <>
-              {!state.rejected ? (
-                <>
-                  <button
-                    className="admin-button-primary"
-                    onClick={() => updateData("Completed")}
-                  >
-                    Accepter
-                  </button>
-                  <button
-                    className="admin-button-danger"
-                    onClick={() =>
-                      dispatch({ type: "REJECTED", payload: true })
-                    }
-                  >
-                    Rejeter
-                  </button>
-                </>
-              ) : (
-                <button
-                  className="admin-button-primary"
-                  onClick={() => updateData("Rejected")}
-                >
-                  Envoyer
-                </button>
-              )}
-            </>
-          )}
-
-          {user &&
-            user.userGroupMember_id.usergroup_id.name === "Boutiks" &&
-            state.subscribeinfo?.payementStatus === "Pending" && (
-              <button
-                className="admin-button-danger"
-                onClick={() => updateData("Canceled")}
-              >
-                Annuler
-              </button>
-            )}
+          {state.detailLoading ? (
+            <span role="status" className="text-sm text-[var(--admin-muted)]">Chargement…</span>
+          ) : state.detailError ? (
+            <button type="button" className="admin-button-secondary" onClick={() => void getData()}>Réessayer</button>
+          ) : state.subscribeinfo && user?.userGroupMember_id?.usergroup_id?.name !== "Boutiks" && state.subscribeinfo.payementStatus === "Pending" ? (
+            state.rejected ? (
+              <button className="admin-button-primary" disabled={state.saving || !state.motif?.trim()} onClick={() => void updateData("Rejected")}>Envoyer le rejet</button>
+            ) : (
+              <>
+                <button className="admin-button-primary" disabled={state.saving} onClick={() => void updateData("Completed")}>Accepter</button>
+                <button className="admin-button-danger" disabled={state.saving} onClick={() => dispatch({ type: "REJECTED", payload: true })}>Rejeter</button>
+              </>
+            )
+          ) : user?.userGroupMember_id?.usergroup_id?.name === "Boutiks" && state.subscribeinfo?.payementStatus === "Pending" ? (
+            <button className="admin-button-danger" disabled={state.saving} onClick={() => void updateData("Canceled")}>Annuler</button>
+          ) : null}
         </div>
       </UserInfo>
     </div>

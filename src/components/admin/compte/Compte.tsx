@@ -19,6 +19,7 @@ interface IState {
   isOpen: boolean;
   newUser: Iuser | null;
   loading: boolean;
+  error: string | null;
 }
 
 type Action =
@@ -26,14 +27,17 @@ type Action =
   | { type: "FETCH_START" }
   | { type: "TOGGLE_MODAL"; payload: boolean }
   | { type: "CREATE_USER"; payload: Iuser | null }
-  | { type: "LOADING"; payload: boolean };
+  | { type: "LOADING"; payload: boolean }
+  | { type: "FETCH_ERROR"; payload: string };
 
 const reducer = (state: IState, action: Action) => {
   switch (action.type) {
     case "FETCH_START":
-      return { ...state, loading: true };
+      return { ...state, loading: true, error: null };
     case "FETCH_SUCCESS":
-      return { ...state, loading: false, users: action.payload };
+      return { ...state, loading: false, error: null, users: action.payload };
+    case "FETCH_ERROR":
+      return { ...state, loading: false, error: action.payload };
     case "TOGGLE_MODAL":
       return { ...state, isOpen: action.payload };
     case "CREATE_USER":
@@ -50,11 +54,14 @@ const initialState: IState = {
   isOpen: false,
   newUser: null,
   loading: false,
+  error: null,
 };
 
 function Compte() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const { user } = useAuth();
   const csrf = useCSRF();
 
@@ -65,21 +72,21 @@ function Compte() {
         credentials: "include",
       });
       const payload = await response.json();
+      if (!response.ok)
+        throw new Error(payload.message || "Impossible de charger les comptes.");
       dispatch({
         type: "FETCH_SUCCESS",
         payload: Array.isArray(payload.data) ? payload.data : [],
       });
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      }
+      const message = error instanceof Error ? error.message : "Impossible de charger les comptes.";
+      dispatch({ type: "FETCH_ERROR", payload: message });
+      toast.error(message);
     }
   }, []);
 
   const filteredUsers = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return state.users;
-
     return state.users.filter((account) => {
       const username = account.username?.toLowerCase() ?? "";
       const email = account.email?.toLowerCase() ?? "";
@@ -88,11 +95,15 @@ function Compte() {
       const role =
         account.userGroupMember_id?.usergroup_id?.name?.toLowerCase() ?? "";
 
-      return [username, email, phone, shopName, role].some((value) =>
-        value.includes(query),
-      );
+      const roleMatches = roleFilter === "all" || role === roleFilter.toLowerCase() || (roleFilter === "disabled" && !role);
+      const statusMatches = statusFilter === "all" || (statusFilter === "active" ? Boolean(account.userGroupMember_id) : !account.userGroupMember_id);
+      const searchMatches = !query || [username, email, phone, shopName, role].some((value) => value.includes(query));
+      return roleMatches && statusMatches && searchMatches;
     });
-  }, [search, state.users]);
+  }, [roleFilter, search, state.users, statusFilter]);
+  const activeCount = state.users.filter((account) => account.userGroupMember_id).length;
+  const sellerCount = state.users.filter((account) => account.userGroupMember_id?.usergroup_id?.name === "Boutiks").length;
+  const clientCount = state.users.filter((account) => account.userGroupMember_id?.usergroup_id?.name === "Client").length;
 
   const closeModal = () => dispatch({ type: "TOGGLE_MODAL", payload: false });
 
@@ -107,6 +118,7 @@ function Compte() {
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
+      if (state.loading) return;
       dispatch({ type: "LOADING", payload: true });
       try {
         if (csrf) {
@@ -141,7 +153,7 @@ function Compte() {
         dispatch({ type: "LOADING", payload: false });
       }
     },
-    [csrf, fetchUsers, state.newUser],
+    [csrf, fetchUsers, state.loading, state.newUser],
   );
 
   useEffect(() => {
@@ -176,6 +188,18 @@ function Compte() {
                   placeholder="Rechercher ..."
                 />
               </label>
+              <select aria-label="Filtrer par profil" className="admin-search-input" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
+                <option value="all">Tous les profils</option>
+                <option value="Boutiks">Vendeurs</option>
+                <option value="Client">Clients</option>
+                <option value="Super Admin">Administrateurs</option>
+                <option value="disabled">Sans profil actif</option>
+              </select>
+              <select aria-label="Filtrer par état du compte" className="admin-search-input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                <option value="all">Tous les états</option>
+                <option value="active">Actifs</option>
+                <option value="inactive">Désactivés</option>
+              </select>
               <button
                 className="admin-action-primary"
                 onClick={() =>
@@ -196,28 +220,29 @@ function Compte() {
             <article className="admin-stat-card">
               <span className="admin-stat-label">Boutiques</span>
               <strong className="admin-stat-value">
-                {
-                  state.users.filter(
-                    (account) =>
-                      account.userGroupMember_id?.usergroup_id?.name ===
-                      "Boutiks",
-                  ).length
-                }
+                {sellerCount}
               </strong>
             </article>
             <article className="admin-stat-card">
               <span className="admin-stat-label">Clients</span>
               <strong className="admin-stat-value">
-                {
-                  state.users.filter(
-                    (account) =>
-                      account.userGroupMember_id?.usergroup_id?.name ===
-                      "Client",
-                  ).length
-                }
+                {clientCount}
               </strong>
             </article>
+            <article className="admin-stat-card">
+              <span className="admin-stat-label">Comptes actifs</span>
+              <strong className="admin-stat-value">{activeCount}</strong>
+            </article>
           </div>
+
+          {state.error && (
+            <div className="mx-4 mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
+              <p>{state.error}</p>
+              <button type="button" className="mt-2 font-semibold underline" onClick={() => void fetchUsers()}>
+                Réessayer
+              </button>
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table>
@@ -295,7 +320,7 @@ function Compte() {
                 ) : (
                   <tr>
                     <td colSpan={8} className="admin-empty-state">
-                      Aucun compte ne correspond à cette recherche.
+                      {state.error ? "Les comptes n’ont pas pu être chargés." : "Aucun compte ne correspond à cette recherche."}
                     </td>
                   </tr>
                 )}
@@ -318,26 +343,38 @@ function Compte() {
             onChange={handleChange}
             name="username"
             placeholder="Nom d'utilisateur"
+            autoComplete="username"
+            required
+            minLength={3}
+            maxLength={50}
           />
           <input
             type="email"
             onChange={handleChange}
             name="email"
             placeholder="Adresse mail"
+            autoComplete="email"
+            required
           />
           <input
             type="text"
             onChange={handleChange}
             name="phonenumber"
             placeholder="Téléphone"
+            autoComplete="tel"
+            required
+            maxLength={40}
           />
           <input
             type="password"
             onChange={handleChange}
             name="password"
             placeholder="Mot de passe"
+            autoComplete="new-password"
+            required
+            minLength={8}
           />
-          <button className="admin-action-primary" type="submit">
+            <button className="admin-action-primary" type="submit" disabled={state.loading}>
             {state.loading ? "Veuillez patienter..." : "Enregistrer"}
           </button>
         </form>
