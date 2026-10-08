@@ -2,8 +2,10 @@ import { FormEvent, useState } from "react";
 import { FaAddressBook, FaPhone } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
+import { useLanguage } from "../context/useLanguage";
 
 function Contact() {
+  const { t } = useLanguage();
   const csrf = useCSRF();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
@@ -26,14 +28,14 @@ function Contact() {
       });
       const result = await response.json();
       if (!response.ok)
-        throw new Error(result.message || "Impossible d’envoyer le message.");
+        throw new Error(result.message || t("contact.sendError"));
       toast.success(result.message);
       setForm({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Impossible d’envoyer le message.",
+          : t("contact.sendError"),
       );
     } finally {
       setIsSubmitting(false);
@@ -45,12 +47,11 @@ function Contact() {
       <div className="market-container">
         <div className="mb-10 max-w-2xl">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
-            Restons en contact
+            {t("contact.kicker")}
           </p>
-          <h2 className="market-section-title">Parlons de votre projet.</h2>
+          <h2 className="market-section-title">{t("contact.title")}</h2>
           <p className="mt-3 text-sm leading-7 text-gray-500">
-            Une question sur ShopInMada ? Notre équipe est disponible pour vous
-            aider.
+            {t("contact.intro")}
           </p>
         </div>
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[0.8fr_1.2fr]">
@@ -60,11 +61,11 @@ function Contact() {
                 <FaAddressBook />
               </span>
               <p className="mt-5 text-xs font-bold uppercase tracking-[0.13em] text-emerald-200">
-                Notre adresse
+                {t("contact.address")}
               </p>
               <h3 className="mt-2 text-xl font-bold text-white">Madagascar</h3>
               <p className="mt-2 text-sm leading-6 text-white/65">
-                Au service du commerce local, partout dans le pays.
+                {t("contact.addressText")}
               </p>
             </article>
             <article className="market-card p-6 sm:p-7">
@@ -72,7 +73,7 @@ function Contact() {
                 <FaPhone />
               </span>
               <p className="mt-5 text-xs font-bold uppercase tracking-[0.13em] text-gray-400">
-                Appelez-nous
+                {t("contact.call")}
               </p>
               <a
                 href="tel:+261345385365"
@@ -81,17 +82,17 @@ function Contact() {
                 +261 34 53 853 65
               </a>
               <p className="mt-2 text-sm text-gray-500">
-                Nous serons ravis d’échanger avec vous.
+                {t("contact.phoneText")}
               </p>
             </article>
           </div>
           <div className="market-card p-6 sm:p-8">
             <div className="mb-6">
               <h3 className="text-xl font-bold tracking-tight text-gray-900">
-                Envoyez-nous un message
+                {t("contact.formTitle")}
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                Remplissez les champs ci-dessous pour nous écrire.
+                {t("contact.formIntro")}
               </p>
             </div>
             <form
@@ -99,12 +100,12 @@ function Contact() {
               className="contact-form grid w-full grid-cols-1 gap-4 sm:grid-cols-2"
             >
               <label className="flex flex-col gap-2 text-sm font-semibold text-gray-700">
-                Votre nom
+                {t("contact.name")}
                 <input
                   type="text"
                   className="market-input w-full"
-                  placeholder="Ex. Rakoto Jean"
-                  aria-label="Votre nom"
+                  placeholder={t("contact.nameExample")}
+                  aria-label={t("contact.name")}
                   autoComplete="name"
                   minLength={2}
                   maxLength={120}
@@ -119,12 +120,12 @@ function Contact() {
                 />
               </label>
               <label className="flex flex-col gap-2 text-sm font-semibold text-gray-700">
-                Adresse email
+                {t("contact.email")}
                 <input
                   type="email"
                   className="market-input w-full"
                   placeholder="nom@exemple.mg"
-                  aria-label="Adresse email"
+                  aria-label={t("contact.email")}
                   autoComplete="email"
                   maxLength={254}
                   required
@@ -138,12 +139,12 @@ function Contact() {
                 />
               </label>
               <label className="flex flex-col gap-2 text-sm font-semibold text-gray-700 sm:col-span-2">
-                Sujet
+                {t("contact.subject")}
                 <input
                   type="text"
                   className="market-input w-full"
-                  placeholder="Comment pouvons-nous vous aider ?"
-                  aria-label="Sujet"
+                  placeholder={t("contact.subjectExample")}
+                  aria-label={t("contact.subject")}
                   minLength={3}
                   maxLength={160}
                   required
@@ -157,12 +158,12 @@ function Contact() {
                 />
               </label>
               <label className="flex flex-col gap-2 text-sm font-semibold text-gray-700 sm:col-span-2">
-                Votre message
+                {t("contact.message")}
                 <textarea
                   className="market-input w-full"
-                  placeholder="Écrivez votre message ici…"
+                  placeholder={t("contact.messageExample")}
                   rows={5}
-                  aria-label="Votre message"
+                  aria-label={t("contact.message")}
                   minLength={10}
                   maxLength={4000}
                   required
@@ -180,7 +181,7 @@ function Contact() {
                 disabled={isSubmitting || !csrf}
                 className="market-button-primary w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
               >
-                {isSubmitting ? "Envoi en cours…" : "Envoyer le message"}
+                {isSubmitting ? t("contact.sending") : t("contact.submit")}
               </button>
             </form>
           </div>

@@ -9,6 +9,8 @@ export default interface Iuser{
     boutiks_id:IBoutiks
     personnalInfo_id:IPersonnalInfo
     userGroupMember_id:Iusergroupmember
+    adminPermissions?: string[]
+    preferences?: { language?: "fr" | "en"; currency?: "MGA" | "EUR" | "USD"; notifications?: { orders?: boolean; support?: boolean; promotions?: boolean } }
 }
 
 interface IBoutiks{

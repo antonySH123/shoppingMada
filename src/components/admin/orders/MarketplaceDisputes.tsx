@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import useCSRF from "../../../helper/useCSRF";
+import { requestAdminStepUp } from "../../../helper/adminStepUp";
 import useFormatter from "../../../helper/useFormatter";
 import Preloader from "../../loading/Preloader";
 
@@ -45,13 +46,15 @@ function MarketplaceDisputes() {
   >({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState("");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
 
   const loadDisputes = useCallback(async () => {
     setLoading(true);
     setLoadError("");
     try {
       const response = await fetch(
-        `${import.meta.env.REACT_API_URL}marketplace/orders/disputes`,
+        `${import.meta.env.REACT_API_URL}marketplace/orders/disputes?page=${page}&limit=20`,
         { credentials: "include" },
       );
       const result = await response.json().catch(() => ({}));
@@ -63,6 +66,7 @@ function MarketplaceDisputes() {
       if (!response.ok)
         throw new Error(result.message || "Impossible de charger les litiges.");
       setOrders(result.data);
+      setPages(result.pagination?.pages ?? 1);
     } catch (error) {
       setLoadError(
         error instanceof Error
@@ -72,7 +76,7 @@ function MarketplaceDisputes() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     void loadDisputes();
@@ -83,12 +87,14 @@ function MarketplaceDisputes() {
     const status = resolutionsById[subOrder._id] || "annulee";
     setBusyId(subOrder._id);
     try {
+      const stepUp = await requestAdminStepUp(csrf);
+      if (!stepUp) return;
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}marketplace/orders/${orderId}/suborders/${subOrder._id}/resolve`,
         {
           method: "PATCH",
           credentials: "include",
-          headers: { "Content-Type": "application/json", "xsrf-token": csrf },
+          headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp },
           body: JSON.stringify({
             status,
             reason: reasons[subOrder._id] || "Décision du Super Admin.",
@@ -306,6 +312,7 @@ function MarketplaceDisputes() {
           );
         })
       )}
+      {pages > 1 && <div className="admin-panel flex items-center justify-between gap-3 p-4"><button type="button" className="admin-button-secondary min-h-10" disabled={page <= 1 || loading} onClick={() => setPage((current) => current - 1)}>Précédent</button><span>Page {page} / {pages}</span><button type="button" className="admin-button-secondary min-h-10" disabled={page >= pages || loading} onClick={() => setPage((current) => current + 1)}>Suivant</button></div>}
     </section>
   );
 }

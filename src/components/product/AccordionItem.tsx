@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { FaPlus, FaMinus } from "react-icons/fa";
 
 interface ICategory {
+  _id: string;
   name: string;
   slug: string;
   children: Array<ICategory>;
@@ -23,7 +24,7 @@ export const AccordionItem = ({ category }: { category: ICategory }) => {
         className="flex justify-between items-center py-3 px-4 cursor-pointer hover:bg-gray-100 transition"
         onClick={toggleAccordion}
       >
-        <Link to={`/shop/${category.slug}`} className="text-gray-800 font-semibold text-sm">
+        <Link to={`/shop?category=${encodeURIComponent(category._id)}`} className="text-gray-800 font-semibold text-sm">
           {category.name}
         </Link>
         {category.children.length > 0 && (

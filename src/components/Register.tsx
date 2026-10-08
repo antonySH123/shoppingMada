@@ -6,6 +6,7 @@ import { LiaArrowLeftSolid, LiaUser } from "react-icons/lia";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
 import Preloader from "./loading/Preloader";
+import { useLanguage } from "../context/useLanguage";
 
 const initialState = {
   user: {
@@ -47,6 +48,7 @@ function reducer(state: typeof initialState, action: Action) {
 }
 
 function Register() {
+  const { t } = useLanguage();
   const [state, dispatch] = useReducer(reducer, initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -120,19 +122,19 @@ function Register() {
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="auth-page auth-register-page flex items-center justify-center px-4 py-8">
+    <div className="auth-page auth-register-page relative flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-lg">
         <button
           type="button"
           onClick={handleBack}
           className="auth-back-button mb-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/20"
         >
-          <LiaArrowLeftSolid size={18} /> Retour
+          <LiaArrowLeftSolid size={18} /> {t("auth.back")}
         </button>
         <div className="auth-panel auth-card w-full max-w-lg">
           <h1 className="text-white flex flex-col justify-center items-center font-bold text-center mb-6 gap-3">
             <LiaUser size={60} />
-            <strong className="text-2xl">S'inscrire</strong>
+            <strong className="text-2xl">{t("auth.registerTitle")}</strong>
           </h1>
           <form onSubmit={handleSubmit}>
             {["username", "email", "phonenumber", "password"].map((field) => (
@@ -153,12 +155,12 @@ function Register() {
                   className="market-input w-full"
                   placeholder={
                     field === "username"
-                      ? "Votre nom"
+                      ? t("auth.name")
                       : field === "email"
-                        ? "Votre email"
+                        ? t("auth.email")
                         : field === "phonenumber"
-                          ? "Numéro de téléphone"
-                          : "Votre mot de passe"
+                          ? t("auth.phone")
+                          : t("auth.password")
                   }
                 />
                 {state.error[field as keyof Iuser] && (
@@ -177,14 +179,14 @@ function Register() {
               {isSubmitting ? (
                 <div className="loader w-5 h-5 border-2 border-t-2 border-green-500 rounded-full animate-spin"></div>
               ) : (
-                "S'inscrire"
+                t("auth.register")
               )}
             </button>
             <div className="flex justify-between items-center">
               <span className="m-4 flex gap-10">
-                Déjà un compte ?
+                {t("auth.alreadyAccount")}
                 <Link to="/login" className="text-green-500">
-                  Se connecter
+                  {t("auth.signIn")}
                 </Link>
               </span>
             </div>

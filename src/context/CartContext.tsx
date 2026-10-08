@@ -149,11 +149,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const clearCart = () => setItems([]);
+  const replaceItems = (nextItems: CartItem[]) => setItems(nextItems);
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <CartContext.Provider
-      value={{ items, itemCount, addItem, setQuantity, removeItem, clearCart }}
+      value={{ items, itemCount, addItem, setQuantity, removeItem, replaceItems, clearCart }}
     >
       {children}
     </CartContext.Provider>

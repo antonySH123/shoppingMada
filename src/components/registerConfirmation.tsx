@@ -12,8 +12,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
 import Preloader from "./loading/Preloader";
+import { useLanguage } from "../context/useLanguage";
 
 function RegisterConfirmation() {
+  const { t } = useLanguage();
   const [code, setCode] = useState<string[]>(new Array(6).fill(""));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -62,14 +64,14 @@ function RegisterConfirmation() {
   const handleSubmit = useCallback(async () => {
     const codeEntered = code.join("");
     if (codeEntered.length < 6) {
-      toast.error("Veuillez entrer le code complet.");
+      toast.error(t("verify.codeRequired"));
       return;
     }
 
     setIsSubmitting(true);
     try {
       if (!csrf) {
-        toast.error("Erreur de sécurité. Veuillez réessayer.");
+        toast.error(t("verify.securityError"));
         return;
       }
       const response = await fetch(
@@ -84,7 +86,7 @@ function RegisterConfirmation() {
       if (!response.ok) {
         await response.json().catch(() => null);
         toast.error(
-          "Le code est invalide, expiré ou indisponible. Vérifiez votre e-mail et réessayez.",
+          t("verify.invalidCode"),
         );
         setCode(new Array(6).fill(""));
         return;
@@ -92,19 +94,19 @@ function RegisterConfirmation() {
       if (response.status === 201) {
         toast.success(
           isPasswordReset
-            ? "Adresse vérifiée. Choisissez un nouveau mot de passe."
-            : "Compte vérifié avec succès !",
+            ? t("verify.addressVerified")
+            : t("verify.accountVerified"),
         );
         setTimeout(() => navigate(from, { replace: true }), 2000);
       }
     } catch {
       toast.error(
-        "Une erreur est survenue. Veuillez vérifier votre connexion.",
+        t("verify.connectionError"),
       );
     } finally {
       setIsSubmitting(false);
     }
-  }, [code, csrf, from, isPasswordReset, navigate]);
+  }, [code, csrf, from, isPasswordReset, navigate, t]);
 
   if (!csrf) return <Preloader />;
 
@@ -117,22 +119,21 @@ function RegisterConfirmation() {
         <div className="otp-security-badge">
           <span />
           <span />
-          <span /> Connexion sécurisée
+          <span /> {t("verify.secureConnection")}
         </div>
         <div className="otp-icon">
           <MdOutlinePhonelinkRing />
         </div>
         <p className="otp-eyebrow">
           {isPasswordReset
-            ? "RÉCUPÉRATION DU MOT DE PASSE"
-            : "VALIDATION DE VOTRE COMPTE"}
+            ? t("verify.passwordRecovery")
+            : t("verify.accountValidation")}
         </p>
-        <h1>Entrez votre code de sécurité.</h1>
+        <h1>{t("verify.enterCode")}</h1>
         <p className="otp-description">
-          Si un compte correspond à l’adresse saisie, un code à 6 chiffres a été
-          envoyé par e-mail.
+          {t("verify.emailCodeHint")}
         </p>
-        <div className="otp-progress" aria-label="Étape 2 sur 2">
+        <div className="otp-progress" aria-label={t("verify.stepProgress")}>
           <span />
           <span className="is-active" />
         </div>
@@ -153,7 +154,7 @@ function RegisterConfirmation() {
                   type="tel"
                   inputMode="numeric"
                   autoComplete={index === 0 ? "one-time-code" : "off"}
-                  aria-label={`Chiffre ${index + 1} du code`}
+                  aria-label={t("verify.codeDigit").replace("{number}", String(index + 1))}
                   className="otp-input"
                   value={digit}
                   maxLength={1}
@@ -168,7 +169,7 @@ function RegisterConfirmation() {
               </div>
             ))}
           </div>
-          <p className="otp-paste-hint">Vous pouvez coller le code complet.</p>
+          <p className="otp-paste-hint">{t("verify.pasteHint")}</p>
           <div className="otp-submit-wrap">
             <button
               type="submit"
@@ -176,13 +177,13 @@ function RegisterConfirmation() {
               className="otp-submit"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Validation…" : "Valider mon compte"}
+              {isSubmitting ? t("verify.submitting") : t("verify.submit")}
               <span>→</span>
             </button>
           </div>
         </form>
         <p className="otp-footnote">
-          Pour votre sécurité, le code expire après un court délai.
+          {t("verify.expiryHint")}
         </p>
       </main>
     </div>

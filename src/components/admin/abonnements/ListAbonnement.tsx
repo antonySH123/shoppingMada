@@ -1,6 +1,7 @@
 ﻿import Isubscription from "../../../Interface/subscription.interface";
 import IAction from "../../../Interface/action.interface";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { LiaEye } from "react-icons/lia";
 import UserInfo from "../../modals/UserInfo";
@@ -70,15 +71,27 @@ function ListAbonnement() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { user } = useAuth();
   const csrf = useCSRF();
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const status = new URLSearchParams(location.search).get("status");
+    if (status && ["Pending", "Completed", "Rejected", "Canceled"].includes(status)) {
+      setStatusFilter(status);
+    }
+  }, [location.search]);
 
   const fetchData = useCallback(async () => {
     dispatch({ type: "LOADING", payload: true });
     dispatch({ type: "DETAIL_ERROR", payload: null });
     try {
       const response = await fetch(
-        `${import.meta.env.REACT_API_URL}subscription`,
+        `${import.meta.env.REACT_API_URL}subscription?page=${page}&limit=20&q=${encodeURIComponent(searchTerm)}${statusFilter === "All" ? "" : `&status=${statusFilter}`}`,
         {
           credentials: "include",
         },
@@ -86,13 +99,15 @@ function ListAbonnement() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Impossible de charger les abonnements.");
       dispatch({ type: "FETCH_START", payload: Array.isArray(result.data) ? result.data : [] });
+      setPages(result.pagination?.pages ?? 1); setTotal(result.pagination?.total ?? 0);
+      setStatusCounts(result.stats ?? {});
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible de charger les abonnements.";
       dispatch({ type: "DETAIL_ERROR", payload: message });
       dispatch({ type: "LOADING", payload: false });
       toast.error(message);
     }
-  }, []);
+  }, [page, searchTerm, statusFilter]);
 
   const getData = useCallback(async () => {
     if (!state.selectedId) return;
@@ -125,30 +140,22 @@ function ListAbonnement() {
   const metrics = [
     {
       label: "À valider",
-      value: state.subscription.filter(
-        (item) => item.payementStatus === "Pending",
-      ).length,
+      value: statusCounts.Pending ?? 0,
       tone: "text-amber-700 bg-amber-50",
     },
     {
       label: "Acceptées",
-      value: state.subscription.filter(
-        (item) => item.payementStatus === "Completed",
-      ).length,
+      value: statusCounts.Completed ?? 0,
       tone: "text-emerald-700 bg-emerald-50",
     },
     {
       label: "Rejetées",
-      value: state.subscription.filter(
-        (item) => item.payementStatus === "Rejected",
-      ).length,
+      value: statusCounts.Rejected ?? 0,
       tone: "text-rose-700 bg-rose-50",
     },
     {
       label: "Annulées",
-      value: state.subscription.filter(
-        (item) => item.payementStatus === "Canceled",
-      ).length,
+      value: statusCounts.Canceled ?? 0,
       tone: "text-slate-700 bg-slate-100",
     },
   ];
@@ -212,9 +219,24 @@ function ListAbonnement() {
     [csrf, fetchData, state.motif, state.saving, state.selectedId, state.subscribeinfo?.payementStatus, user],
   );
 
+  const cancelRenewal = async () => {
+    const id = state.subscribeinfo?._id;
+    if (!id || !csrf || state.saving) return;
+    dispatch({ type: "SAVING", payload: true });
+    try {
+      const response = await fetch(`${import.meta.env.REACT_API_URL}subscription/${id}/cancel`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf }, body: JSON.stringify({}) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Résiliation impossible.");
+      toast.success(result.message); dispatch({ type: "TOGGLE_MODAL", payload: false }); void fetchData();
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Résiliation impossible."); }
+    finally { dispatch({ type: "SAVING", payload: false }); }
+  };
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => { setPage(1); }, [searchTerm, statusFilter]);
 
   useEffect(() => {
     if (state.selectedId) getData();
@@ -228,6 +250,7 @@ function ListAbonnement() {
           <h1 className="text-3xl font-bold tracking-tight text-[var(--admin-text)]">
             Abonnements marketplace
           </h1>
+          {user?.userGroupMember_id?.usergroup_id?.name === "Boutiks" && <p className="mt-1 text-xs text-[var(--admin-muted)]">Les renouvellements et remboursements sont traités manuellement; aucun débit automatique n’est déclenché.</p>}
         </div>
         <div className="admin-toolbar-actions">
           <input
@@ -337,6 +360,7 @@ function ListAbonnement() {
             </tbody>
           </table>
         </div>
+        <div className="flex items-center justify-between gap-3 border-t p-4 text-sm text-[var(--admin-muted)]"><span>{total} demande(s) · page {page} / {Math.max(1,pages)}</span><div className="flex gap-2"><button className="admin-button admin-button--secondary admin-button--sm" disabled={page<=1||state.loading} onClick={()=>setPage(page-1)}>Précédent</button><button className="admin-button admin-button--secondary admin-button--sm" disabled={page>=pages||state.loading} onClick={()=>setPage(page+1)}>Suivant</button></div></div>
       </div>
 
       <UserInfo
@@ -356,6 +380,8 @@ function ListAbonnement() {
                 <strong>
                   Statut : {formatStatus(state.subscribeinfo?.payementStatus)}
                 </strong>
+                {state.subscribeinfo?.lifecycleStatus && <strong>Cycle : {state.subscribeinfo.lifecycleStatus === "active" ? "Actif" : state.subscribeinfo.lifecycleStatus === "grace" ? `Période de grâce jusqu’au ${new Date(state.subscribeinfo.graceUntil ?? "").toLocaleDateString("fr-FR")}` : state.subscribeinfo.lifecycleStatus === "canceled" ? "Résiliation effectuée" : "Expiré"}</strong>}
+                {state.subscribeinfo?.endDate && <strong>Fin de période payée : {new Date(state.subscribeinfo.endDate).toLocaleDateString("fr-FR")}{state.subscribeinfo.cancelAtPeriodEnd ? " · résiliation programmée" : ""}</strong>}
                 <strong>
                   Référence : {state.subscribeinfo?.refTransaction}
                 </strong>
@@ -420,6 +446,8 @@ function ListAbonnement() {
             )
           ) : user?.userGroupMember_id?.usergroup_id?.name === "Boutiks" && state.subscribeinfo?.payementStatus === "Pending" ? (
             <button className="admin-button-danger" disabled={state.saving} onClick={() => void updateData("Canceled")}>Annuler</button>
+          ) : user?.userGroupMember_id?.usergroup_id?.name === "Boutiks" && state.subscribeinfo?.payementStatus === "Completed" && !state.subscribeinfo.cancelAtPeriodEnd ? (
+            <button className="admin-button-danger" disabled={state.saving} onClick={() => void cancelRenewal()}>Résilier à la fin de la période</button>
           ) : null}
         </div>
       </UserInfo>

@@ -4,8 +4,10 @@ import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
 import { useNavigate } from "react-router-dom";
 import Preloader from "./loading/Preloader";
+import { useLanguage } from "../context/useLanguage";
 
 function EmailForgotPass() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const csrf = useCSRF();
@@ -47,11 +49,11 @@ function EmailForgotPass() {
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="auth-page flex items-center justify-center">
+    <div className="auth-page relative flex items-center justify-center">
       <div className="auth-panel w-full max-w-lg">
         <h1 className="text-white font-bold text-center mb-6 flex flex-col justify-center items-center">
           <LiaEnvelopeOpen size={60} />
-          <strong className="text-2xl">Entrer votre Email</strong>
+          <strong className="text-2xl">{t("auth.emailTitle")}</strong>
         </h1>
         <form onSubmit={handleSubmit}>
           <div className="relative my-4">
@@ -61,7 +63,7 @@ function EmailForgotPass() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="block w-72 py-5 px-0 text-white bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:text-white focus:border-blue-600 peer"
-              placeholder="Votre email"
+              placeholder={t("auth.emailPlaceholder")}
               disabled={isSubmitted}
               required
             />
@@ -71,7 +73,7 @@ function EmailForgotPass() {
             type="submit"
             disabled={isSubmitted}
           >
-            {isSubmitted ? "Envoi en cours..." : "Soumettre"}
+            {isSubmitted ? t("auth.sending") : t("auth.submit")}
           </button>
         </form>
       </div>

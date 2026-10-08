@@ -38,8 +38,10 @@ const reducer = (state: State, action: Action): State => {
 };
 
 function Home() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [proPlan, setProPlan] = useState<{ monthlyPriceMGA: number; maxProducts: number; features: { advancedAnalytics: boolean; prioritySupport: boolean; customCategories: boolean } } | null>(null);
+  const [planLoadFailed, setPlanLoadFailed] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
@@ -55,24 +57,16 @@ function Home() {
       dispatch({ type: "FETCH_START" });
       try {
         const response = await fetch(
-          `${import.meta.env.REACT_API_URL}shop/product`,
+          `${import.meta.env.REACT_API_URL}shop/product?page=1&limit=8&sort=newest`,
         );
         if (!response.ok)
-          throw new Error("Impossible de charger les produits.");
+          throw new Error(t("home.productLoadError"));
         const data = await response.json();
-        const shuffledProducts: IProduct[] = [...(data.data ?? [])];
-        for (let index = shuffledProducts.length - 1; index > 0; index -= 1) {
-          const randomIndex = Math.floor(Math.random() * (index + 1));
-          [shuffledProducts[index], shuffledProducts[randomIndex]] = [
-            shuffledProducts[randomIndex],
-            shuffledProducts[index],
-          ];
-        }
-        dispatch({ type: "FETCH_SUCCESS", payload: shuffledProducts });
+        dispatch({ type: "FETCH_SUCCESS", payload: data.data ?? [] });
       } catch (error) {
         dispatch({
           type: "FETCH_ERROR",
-          payload: error instanceof Error ? error.message : "Erreur inconnue",
+          payload: error instanceof Error ? error.message : t("home.productLoadError"),
         });
       }
     };
@@ -85,7 +79,33 @@ function Home() {
           ?.scrollIntoView({ behavior: "smooth" }),
       );
     }
-  }, [location]);
+  }, [location, t]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch(`${import.meta.env.REACT_API_URL}subscription/plans`, { signal: controller.signal })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || t("home.planUnavailable"));
+        const plan = Array.isArray(result.data) ? result.data.find((item: { key?: string }) => item?.key === "pro") : null;
+        if (!plan || !Number.isFinite(Number(plan.monthlyPriceMGA)) || Number(plan.monthlyPriceMGA) < 0) throw new Error(t("home.planUnavailable"));
+        setProPlan({
+          monthlyPriceMGA: Number(plan.monthlyPriceMGA),
+          maxProducts: Number.isFinite(Number(plan.maxProducts)) && Number(plan.maxProducts) >= 0 ? Number(plan.maxProducts) : 0,
+          features: {
+            advancedAnalytics: plan.features?.advancedAnalytics === true,
+            prioritySupport: plan.features?.prioritySupport === true,
+            customCategories: plan.features?.customCategories === true,
+          },
+        });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setPlanLoadFailed(true);
+        }
+      });
+    return () => controller.abort();
+  }, [t]);
 
   return (
     <>
@@ -93,16 +113,14 @@ function Home() {
         <div className="market-container relative z-10 grid min-h-[inherit] grid-cols-1 items-center gap-2 sm:grid-cols-[1.05fr_0.95fr]">
           <div className="flex h-full flex-col items-center justify-center gap-5 py-12 text-center sm:items-start sm:py-0 sm:text-left">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-800/10 bg-white/75 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-900 shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-emerald-600" /> Le
-              commerce malgache, à portée de clic
+              <span className="h-2 w-2 rounded-full bg-emerald-600" /> {t("home.kicker")}
             </span>
             <h1 className="max-w-2xl text-4xl font-bold leading-[1.08] tracking-[-0.055em] text-[#183524] sm:text-5xl md:text-[4.15rem]">
-              Les trouvailles locales{" "}
-              <span className="text-emerald-700">qui font la différence.</span>
+              {t("home.title")}{" "}
+              <span className="text-emerald-700">{t("home.titleAccent")}</span>
             </h1>
             <p className="max-w-xl text-base leading-7 text-gray-600 sm:text-lg">
-              Explorez des produits uniques et soutenez les boutiques de
-              Madagascar. Votre prochaine belle découverte est ici.
+              {t("home.intro")}
             </p>
             <form
               className="relative mt-1 h-fit w-full max-w-xl"
@@ -115,7 +133,7 @@ function Home() {
                 placeholder={t("home.search")}
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                aria-label="Rechercher un produit ou une boutique"
+                aria-label={t("nav.searchDesktop")}
               />
               <button
                 type="submit"
@@ -134,15 +152,14 @@ function Home() {
                 {t("home.localShops")}
               </span>
               <span className="flex items-center gap-1.5">
-                <LiaCheckCircle className="text-emerald-700" size={17} /> Des
-                {t("home.productsForAll")}
+                <LiaCheckCircle className="text-emerald-700" size={17} /> {t("home.productsForAll")}
               </span>
             </div>
           </div>
           <div className="banner-art">
             <img
               src="/marketplace-hero.svg"
-              alt="Illustration d'un sac de shopping ShopInMada entouré de produits"
+              alt={t("home.heroAlt")}
               className="banner-art-image"
             />
             <div className="banner-product-tag banner-product-tag--top hidden items-center gap-3 sm:flex">
@@ -150,8 +167,8 @@ function Home() {
                 ✦
               </span>
               <span>
-                <strong className="block text-sm">Les pépites du pays</strong>
-                <small className="text-gray-500">Sélectionnées pour vous</small>
+                <strong className="block text-sm">{t("home.localFinds")}</strong>
+                <small className="text-gray-500">{t("home.curated")}</small>
               </span>
             </div>
             <div className="banner-product-tag banner-product-tag--bottom flex items-center gap-3">
@@ -159,13 +176,25 @@ function Home() {
                 M
               </span>
               <span>
-                <strong className="block text-sm">Achetez local</strong>
+                <strong className="block text-sm">{t("home.buyLocal")}</strong>
                 <small className="text-gray-500">
-                  Faites grandir nos boutiques
+                  {t("home.growShops")}
                 </small>
               </span>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="home-mobile-hero market-container" aria-label={t("home.kicker")}>
+        <div className="home-mobile-hero-copy">
+          <span className="home-mobile-kicker">
+            <span aria-hidden="true" /> {t("home.kicker")}
+          </span>
+          <h1>
+            {t("home.title")} <strong>{t("home.titleAccent")}</strong>
+          </h1>
+          <p>{t("home.intro")}</p>
         </div>
       </section>
 
@@ -198,7 +227,7 @@ function Home() {
               {t("home.noProducts")}
             </p>
           )}
-          <div className="grid grid-cols-1 gap-5 py-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="home-product-grid grid grid-cols-1 gap-5 py-5 sm:grid-cols-2 lg:grid-cols-4">
             {state.loading
               ? Array.from({ length: 4 }).map((_, index) => (
                   <SkeletonCard key={index} />
@@ -219,21 +248,19 @@ function Home() {
         <div className="market-container grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.17em] text-emerald-300">
-              Une marketplace d’ici
+              {t("home.storyKicker")}
             </p>
             <h2 className="max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
-              Le savoir-faire local mérite une vitrine sans frontières.
+              {t("home.storyTitle")}
             </h2>
             <p className="mt-5 max-w-2xl text-base leading-8 text-emerald-50/75">
-              ShopInMada rapproche les boutiques malgaches et les personnes qui
-              recherchent des produits uniques. Découvrez, échangez avec les
-              vendeurs et faites vivre le commerce local.
+              {t("home.storyText")}
             </p>
             <Link
               to="/shop"
               className="mt-7 inline-flex items-center gap-2 font-semibold text-white transition hover:text-emerald-200"
             >
-              Découvrir la marketplace <LiaArrowRightSolid />
+              {t("home.storyLink")} <LiaArrowRightSolid />
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -243,25 +270,25 @@ function Home() {
               </span>
               <div>
                 <h3 className="font-bold text-white">
-                  Des boutiques malgaches
+                  {t("home.localShopsTitle")}
                 </h3>
                 <p className="mt-1 text-sm leading-6 text-emerald-50/65">
-                  Une place pour les petites entreprises et les marques locales.
+                  {t("home.localShopsText")}
                 </p>
               </div>
             </div>
             <div className="home-story-tile min-h-36 rounded-2xl p-5 sm:p-6">
               <FaMapMarkerAlt className="mb-4 text-xl text-emerald-300" />
-              <h3 className="font-bold text-white">Partout au pays</h3>
+              <h3 className="font-bold text-white">{t("home.everywhere")}</h3>
               <p className="mt-1 text-sm leading-6 text-emerald-50/65">
-                Explorez les offres par ville et par boutique.
+                {t("home.byCity")}
               </p>
             </div>
             <div className="home-story-tile min-h-36 rounded-2xl p-5 sm:p-6">
               <FaRegHeart className="mb-4 text-xl text-emerald-300" />
-              <h3 className="font-bold text-white">Un achat qui soutient</h3>
+              <h3 className="font-bold text-white">{t("home.supportLocal")}</h3>
               <p className="mt-1 text-sm leading-6 text-emerald-50/65">
-                Chaque découverte fait rayonner le talent local.
+                {t("home.supportText")}
               </p>
             </div>
           </div>
@@ -272,32 +299,31 @@ function Home() {
         <div className="market-container">
           <div className="mx-auto mb-9 max-w-2xl text-center">
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
-              Une expérience simple
+              {t("home.simpleExperience")}
             </p>
             <h2 className="market-section-title">
-              Tout commence par une belle découverte.
+              {t("home.discoveryTitle")}
             </h2>
             <p className="mt-3 text-sm leading-7 text-gray-500">
-              Trouvez ce qu’il vous faut et entrez directement en contact avec
-              les boutiques.
+              {t("home.discoveryText")}
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {[
               {
                 icon: <LiaSearchSolid size={22} />,
-                title: "Recherchez facilement",
-                text: "Parcourez le catalogue ou recherchez un article précis en quelques secondes.",
+                title: t("home.searchEasy"),
+                text: t("home.searchEasyText"),
               },
               {
                 icon: <FaMapMarkerAlt size={20} />,
-                title: "Explorez par région",
-                text: "Affinez votre recherche avec les villes disponibles dans la marketplace.",
+                title: t("home.exploreRegions"),
+                text: t("home.exploreRegionsText"),
               },
               {
                 icon: <FaStore size={20} />,
-                title: "Rencontrez les boutiques",
-                text: "Consultez les produits et les informations partagées par chaque vendeur.",
+                title: t("home.meetShops"),
+                text: t("home.meetShopsText"),
               },
             ].map((feature, index) => (
               <article
@@ -326,24 +352,21 @@ function Home() {
         <div className="market-container grid items-center gap-9 lg:grid-cols-[1fr_0.8fr]">
           <div>
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
-              Pour les professionnels
+              {t("home.forProfessionals")}
             </p>
             <h2 className="market-section-title max-w-xl text-3xl sm:text-4xl">
-              Donnez plus de visibilité à votre boutique.
+              {t("home.proTitle")}
             </h2>
             <p className="mt-4 max-w-xl text-base leading-8 text-gray-600">
-              Développez votre présence en ligne et présentez vos produits à de
-              nouveaux clients sur ShopInMada.
+              {t("home.proText")}
             </p>
             <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-              {[
-                "Annonces illimitées",
-                "Mise en avant dans les recherches",
-                "Statistiques avancées",
-                "Support prioritaire",
-                "Page boutique personnalisée",
-                "Promotions exclusives",
-              ].map((feature) => (
+              {(proPlan ? [
+                proPlan.maxProducts > 0 ? t("home.planMaxProducts").replace("{count}", String(proPlan.maxProducts)) : t("home.planUnlimited"),
+                ...(proPlan.features.advancedAnalytics ? [t("home.planAdvancedAnalytics")] : []),
+                ...(proPlan.features.prioritySupport ? [t("home.planPrioritySupport")] : []),
+                ...(proPlan.features.customCategories ? [t("home.planCustomCategories")] : []),
+              ] : []).map((feature) => (
                 <li
                   key={feature}
                   className="flex items-center gap-2 text-sm font-medium text-gray-700"
@@ -362,21 +385,20 @@ function Home() {
               ShopInMada Pro
             </span>
             <h3 className="mt-6 text-2xl font-bold">
-              Votre boutique, en première ligne.
+              {t("home.proSlogan")}
             </h3>
             <p className="mt-2 text-sm leading-7 text-white/65">
-              Des outils pour mettre en valeur votre catalogue et gérer votre
-              activité.
+              {t("home.proDescription")}
             </p>
             <p className="mt-7 border-t border-white/15 pt-5">
-              <strong className="text-3xl font-bold">30 000 Ar</strong>
-              <span className="text-sm text-white/60"> / mois</span>
+              <strong className="text-3xl font-bold">{proPlan ? new Intl.NumberFormat(language === "fr" ? "fr-MG" : "en-US", { style: "currency", currency: "MGA", maximumFractionDigits: 0 }).format(proPlan.monthlyPriceMGA) : t(planLoadFailed ? "home.planUnavailable" : "home.planLoading")}</strong>
+              {proPlan && <span className="text-sm text-white/60"> {t("home.perMonth")}</span>}
             </p>
             <Link
-              to="/espace_vendeur/dash"
+              to="/vendeur"
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-950 transition hover:bg-emerald-50"
             >
-              Commencer maintenant <LiaArrowRightSolid />
+              {t("home.startSelling")} <LiaArrowRightSolid />
             </Link>
           </div>
         </div>

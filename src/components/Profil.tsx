@@ -16,19 +16,27 @@ import { FaHandshake } from "react-icons/fa";
 import { useAuth } from "../helper/useAuth";
 import Commande from "./commande/Commande";
 import MarketplaceOrderHistory from "./commande/MarketplaceOrderHistory";
+import AccountActivity from "./profile/AccountActivity";
 import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
 import Preloader from "./loading/Preloader";
-import LanguageSelector from "./LanguageSelector";
 import { useLanguage } from "../context/useLanguage";
 
 function Profil() {
-  const { user, setUserInfo } = useAuth();
+  const { user, setUserInfo, currencyRates } = useAuth();
   const { t, language } = useLanguage();
   const csrf = useCSRF();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [savingPreferences, setSavingPreferences] = useState(false);
+  const [notifications, setNotifications] = useState({ orders: true, support: true, promotions: false });
+  const [currency, setCurrency] = useState<"MGA" | "EUR" | "USD">("MGA");
+  const [addresses, setAddresses] = useState<Array<{ _id: string; label?: string; recipientName: string; phone: string; address: string; city?: string }>>([]);
+  const [savedProducts, setSavedProducts] = useState<Array<{ _id: string; name: string }>>([]);
+  const [recentProducts, setRecentProducts] = useState<Array<{ _id: string; name: string }>>([]);
+  const [newAddress, setNewAddress] = useState({ label: "", recipientName: "", phone: "", address: "", city: "" });
+  const [savingAddress, setSavingAddress] = useState(false);
   const [isRequestingPasswordReset, setIsRequestingPasswordReset] =
     useState(false);
   const closeModal = () => setIsModalOpen(false);
@@ -51,6 +59,89 @@ function Profil() {
     profileInfo?.phoneNumber || user?.phonenumber,
     profileInfo?.adresse,
   ].filter(Boolean).length;
+
+  useEffect(() => {
+    setCurrency(user?.preferences?.currency ?? "MGA");
+    setNotifications({ orders: user?.preferences?.notifications?.orders ?? true, support: user?.preferences?.notifications?.support ?? true, promotions: user?.preferences?.notifications?.promotions ?? false });
+  }, [user?._id, user?.preferences]);
+
+  useEffect(() => { if (!user?._id || roleName !== "Client") return; void fetch(`${import.meta.env.REACT_API_URL}user/addresses`, { credentials: "include" }).then((response) => response.ok ? response.json() : null).then((result) => { if (result) setAddresses(result.data ?? []); }).catch(() => toast.error("Adresses enregistrées indisponibles.")); }, [user?._id, roleName]);
+
+  useEffect(() => {
+    if (!user?._id || roleName !== "Client") return;
+    let active = true;
+    const loadSavedProducts = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.REACT_API_URL}wishlist?page=1&limit=50`, { credentials: "include" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "Impossible de charger vos favoris.");
+        if (active) setSavedProducts(result.data ?? []);
+      } catch (error) {
+        if (active) toast.error(error instanceof Error ? error.message : "Favoris indisponibles.");
+      }
+
+      let recentIds: string[] = [];
+      try {
+        const parsed: unknown = JSON.parse(localStorage.getItem("shopinmada.recent-products") ?? "[]");
+        if (Array.isArray(parsed)) recentIds = parsed.filter((id): id is string => typeof id === "string").slice(0, 8);
+      } catch {
+        recentIds = [];
+      }
+      const products = await Promise.all(recentIds.map(async (id) => {
+        try {
+          const response = await fetch(`${import.meta.env.REACT_API_URL}shop/product/${encodeURIComponent(id)}`);
+          if (!response.ok) return null;
+          const result = await response.json();
+          return result.data as { _id: string; name: string } | undefined;
+        } catch {
+          return null;
+        }
+      }));
+      if (active) setRecentProducts(products.filter((product): product is { _id: string; name: string } => Boolean(product)));
+    };
+    void loadSavedProducts();
+    return () => { active = false; };
+  }, [user?._id, roleName]);
+
+  const removeSavedProduct = async (productId: string) => {
+    if (!csrf) return;
+    try {
+      const response = await fetch(`${import.meta.env.REACT_API_URL}wishlist/${productId}`, { method: "PUT", credentials: "include", headers: { "xsrf-token": csrf } });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Impossible de modifier vos favoris.");
+      setSavedProducts((products) => products.filter((product) => product._id !== productId));
+      toast.success("Produit retiré de vos favoris.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Favoris indisponibles.");
+    }
+  };
+
+  const saveAddress = async (event: React.FormEvent) => {
+    event.preventDefault(); if (!csrf || savingAddress) return; setSavingAddress(true);
+    try { const response = await fetch(`${import.meta.env.REACT_API_URL}user/addresses`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf }, body: JSON.stringify(newAddress) }); const result = await response.json(); if (!response.ok) throw new Error(result.message); setAddresses(result.data ?? []); setNewAddress({ label: "", recipientName: "", phone: "", address: "", city: "" }); toast.success("Adresse enregistrée."); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Impossible d’enregistrer l’adresse."); } finally { setSavingAddress(false); }
+  };
+
+  const deleteAddress = async (id: string) => { if (!csrf) return; try { const response = await fetch(`${import.meta.env.REACT_API_URL}user/addresses/${id}`, { method: "DELETE", credentials: "include", headers: { "xsrf-token": csrf } }); const result = await response.json(); if (!response.ok) throw new Error(result.message); setAddresses(result.data ?? []); } catch (error) { toast.error(error instanceof Error ? error.message : "Suppression impossible."); } };
+
+  const savePreferences = async (next: { currency: "MGA" | "EUR" | "USD"; notifications: { orders: boolean; support: boolean; promotions: boolean } }) => {
+    if (!csrf || !user || savingPreferences) return;
+    setSavingPreferences(true);
+    try {
+      const response = await fetch(`${import.meta.env.REACT_API_URL}user/preferences`, { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf }, body: JSON.stringify(next) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Enregistrement impossible.");
+      setUserInfo({ ...user, preferences: result.data });
+      toast.success("Préférences enregistrées.");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Enregistrement impossible."); }
+    finally { setSavingPreferences(false); }
+  };
+
+  const saveNotification = (key: "orders" | "support" | "promotions", checked: boolean) => {
+    const nextNotifications = { ...notifications, [key]: checked };
+    setNotifications(nextNotifications);
+    void savePreferences({ currency, notifications: nextNotifications });
+  };
 
   const form = useRef(null);
 
@@ -192,11 +283,10 @@ function Profil() {
       <div className="profile-layout page-container">
         <header className="profile-page-heading">
           <div>
-            <p className="profile-eyebrow">ShopInMada · Mon compte</p>
-            <h1>Profil et coordonnées</h1>
+            <p className="profile-eyebrow">ShopInMada · {t("nav.account")}</p>
+            <h1>{t("profile.title")}</h1>
             <p>
-              Gérez votre identité, votre sécurité et les informations utiles à
-              vos achats et à votre boutique.
+              {t("profile.description")}
             </p>
           </div>
           <button
@@ -204,7 +294,7 @@ function Profil() {
             onClick={() => setIsModalOpen(true)}
             className="profile-edit-button"
           >
-            <LiaEditSolid size={18} /> Modifier mes informations
+            <LiaEditSolid size={18} /> {t("profile.edit")}
           </button>
         </header>
 
@@ -230,13 +320,13 @@ function Profil() {
             </div>
             <div className="profile-completion">
               <div className="profile-completion-heading">
-                <span>Profil complété</span>
+                <span>{t("profile.completed")}</span>
                 <strong>{completedProfileFields}/4</strong>
               </div>
               <div
                 className="profile-completion-track"
                 role="progressbar"
-                aria-label="Complétude du profil"
+                aria-label={t("profile.completed")}
                 aria-valuemin={0}
                 aria-valuemax={4}
                 aria-valuenow={completedProfileFields}
@@ -245,13 +335,13 @@ function Profil() {
               </div>
               <p>
                 {completedProfileFields === 4
-                  ? "Vos coordonnées sont à jour."
-                  : "Complétez vos coordonnées pour faciliter vos achats et vos livraisons."}
+                  ? t("profile.upToDate")
+                  : t("profile.completeHint")}
               </p>
             </div>
             {roleName === "Client" && (
               <Link to="/vendeur" className="profile-seller-link">
-                <FaHandshake size={18} /> Ouvrir une boutique{" "}
+                <FaHandshake size={18} /> {t("profile.openShop")}{" "}
                 <span aria-hidden="true">→</span>
               </Link>
             )}
@@ -266,8 +356,8 @@ function Profil() {
           <section className="profile-details-panel">
             <div className="profile-section-heading">
               <div>
-                <p className="profile-eyebrow">Informations du compte</p>
-                <h2>Coordonnées personnelles</h2>
+                <p className="profile-eyebrow">{t("profile.accountInfo")}</p>
+                <h2>{t("profile.personalInfo")}</h2>
               </div>
               <button
                 type="button"
@@ -275,30 +365,30 @@ function Profil() {
                 className="profile-inline-edit"
               >
                 <LiaEditSolid size={17} />
-                <span>Modifier</span>
+                <span>{t("profile.edit")}</span>
               </button>
             </div>
 
             <div className="profile-information-grid">
               <div className="profile-information-item">
-                <span className="profile-field-label">Nom</span>
-                <strong>{profileInfo?.firstName || "À compléter"}</strong>
+                <span className="profile-field-label">{t("profile.name")}</span>
+                <strong>{profileInfo?.firstName || t("profile.toComplete")}</strong>
               </div>
               <div className="profile-information-item">
-                <span className="profile-field-label">Prénom</span>
-                <strong>{profileInfo?.lastName || "À compléter"}</strong>
+                <span className="profile-field-label">{t("profile.firstName")}</span>
+                <strong>{profileInfo?.lastName || t("profile.toComplete")}</strong>
               </div>
               <div className="profile-information-item">
-                <span className="profile-field-label">Téléphone</span>
+                <span className="profile-field-label">{t("profile.phone")}</span>
                 <strong>
                   {profileInfo?.phoneNumber ||
                     user?.phonenumber ||
-                    "À compléter"}
+                    t("profile.toComplete")}
                 </strong>
               </div>
               <div className="profile-information-item">
-                <span className="profile-field-label">Ville</span>
-                <strong>{profileInfo?.adresse || "À compléter"}</strong>
+                <span className="profile-field-label">{t("profile.city")}</span>
+                <strong>{profileInfo?.adresse || t("profile.toComplete")}</strong>
               </div>
             </div>
 
@@ -309,25 +399,25 @@ function Profil() {
                     <LiaShieldAltSolid size={18} />
                   </span>
                   <div>
-                    <h3>Sécurité</h3>
-                    <p>Mot de passe, sessions et vigilance</p>
+                    <h3>{t("profile.security")}</h3>
+                    <p>{t("profile.securityHint")}</p>
                   </div>
                 </div>
                 <div className="profile-section-body">
                   <div className="profile-inline-row">
-                    <span>Adresse e-mail</span>
+                    <span>{t("contact.email")}</span>
                     <span className="profile-pill profile-pill-neutral">
-                      {user?.email ? "Renseignée" : "Non renseignée"}
+                      {user?.email ? t("profile.provided") : t("profile.notProvided")}
                     </span>
                   </div>
                   <div className="profile-inline-row">
-                    <span>Téléphone</span>
+                    <span>{t("profile.phone")}</span>
                     <span className="profile-pill profile-pill-neutral">
-                      {user?.phonenumber ? "Renseigné" : "Non renseigné"}
+                      {user?.phonenumber ? t("profile.providedMasc") : t("profile.notProvidedMasc")}
                     </span>
                   </div>
                   <div className="profile-inline-row">
-                    <span>Mot de passe</span>
+                    <span>{t("auth.password")}</span>
                     <button
                       type="button"
                       className="profile-text-button"
@@ -335,14 +425,14 @@ function Profil() {
                       disabled={isRequestingPasswordReset || !user?.email}
                     >
                       {isRequestingPasswordReset
-                        ? "Envoi du code…"
-                        : "Changer le mot de passe"}
+                        ? t("profile.sendCode")
+                        : t("profile.changePassword")}
                     </button>
                   </div>
                   <div className="profile-inline-row">
-                    <span>Session actuelle</span>
+                    <span>{t("profile.currentSession")}</span>
                     <Link to="/logout" className="profile-text-button">
-                      Se déconnecter
+                      {t("profile.signOut")}
                     </Link>
                   </div>
                 </div>
@@ -354,25 +444,27 @@ function Profil() {
                     <LiaBellSolid size={18} />
                   </span>
                   <div>
-                    <h3>Notifications</h3>
-                    <p>Gérez vos alertes et préférences</p>
+                    <h3>{t("profile.notifications")}</h3>
+                    <p>{t("profile.notificationHint")}</p>
                   </div>
                 </div>
                 <div className="profile-section-body">
                   <div className="profile-toggle-row">
-                    <span>Commandes et livraisons</span>
-                    <input type="checkbox" defaultChecked />
+                    <span>{t("profile.orderAlerts")}</span>
+                    <input type="checkbox" checked={notifications.orders} disabled={savingPreferences} onChange={(event) => saveNotification("orders", event.target.checked)} />
                   </div>
                   <div className="profile-toggle-row">
-                    <span>Promotions et bons</span>
-                    <input type="checkbox" defaultChecked />
+                    <span>{t("profile.promotionAlerts")}</span>
+                    <input type="checkbox" checked={notifications.promotions} disabled={savingPreferences} onChange={(event) => saveNotification("promotions", event.target.checked)} />
                   </div>
                   <div className="profile-toggle-row">
-                    <span>Messages marketplace</span>
-                    <input type="checkbox" />
+                    <span>{t("profile.marketplaceMessages")}</span>
+                    <input type="checkbox" checked={notifications.support} disabled={savingPreferences} onChange={(event) => saveNotification("support", event.target.checked)} />
                   </div>
                 </div>
               </div>
+
+              {roleName === "Client" && <div className="profile-section-card"><div className="profile-section-title"><span className="profile-section-icon"><LiaAtSolid size={18}/></span><div><h3>{t("profile.addresses")}</h3><p>{t("profile.addressesHint")}</p></div></div><div className="profile-section-body">{addresses.map((item)=><div className="profile-inline-row" key={item._id}><span><strong>{item.label || item.recipientName}</strong><br/>{item.address} · {item.city} · {item.phone}</span><button type="button" className="profile-text-button danger-text" onClick={()=>void deleteAddress(item._id)}>{t("profile.delete")}</button></div>)}<form className="grid gap-3 sm:grid-cols-2" onSubmit={(event)=>void saveAddress(event)}><input required maxLength={40} placeholder={t("profile.addressLabel")} value={newAddress.label} onChange={(event)=>setNewAddress(v=>({...v,label:event.target.value}))}/><input required minLength={2} maxLength={120} placeholder={t("profile.recipient")} value={newAddress.recipientName} onChange={(event)=>setNewAddress(v=>({...v,recipientName:event.target.value}))}/><input required minLength={6} maxLength={40} placeholder={t("profile.phone")} value={newAddress.phone} onChange={(event)=>setNewAddress(v=>({...v,phone:event.target.value}))}/><input required minLength={5} maxLength={300} placeholder={t("profile.fullAddress")} value={newAddress.address} onChange={(event)=>setNewAddress(v=>({...v,address:event.target.value}))}/><input maxLength={100} placeholder={t("profile.city")} value={newAddress.city} onChange={(event)=>setNewAddress(v=>({...v,city:event.target.value}))}/><button disabled={savingAddress} className="profile-text-button">{savingAddress?t("profile.saving"):t("profile.addAddress")}</button></form></div></div>}
 
               <div className="profile-section-card">
                 <div className="profile-section-title">
@@ -387,15 +479,17 @@ function Profil() {
                 <div className="profile-section-body compact-grid">
                   <label className="profile-pref-field">
                     <span>{t("language.label")}</span>
-                    <LanguageSelector />
+                    <span className="text-xs text-gray-500">{language === "fr" ? "Ce choix s’applique à toutes les pages et est enregistré sur votre compte." : "This choice applies across the app and is saved to your account."}</span>
                   </label>
                   <label className="profile-pref-field">
-                    <span>{language === "en" ? "Currency" : "Devise"}</span>
-                    <select defaultValue="MGA">
+                    <span>{t("profile.currency")}</span>
+                    <select value={currency} disabled={savingPreferences} onChange={(event) => { const nextCurrency = event.target.value as "MGA" | "EUR" | "USD"; setCurrency(nextCurrency); void savePreferences({ currency: nextCurrency, notifications }); }}>
                       <option value="MGA">Ariary (MGA)</option>
-                      <option value="EUR">Euro</option>
-                      <option value="USD">Dollar</option>
+                      <option value="EUR" disabled={!currencyRates.fresh || !currencyRates.EUR}>Euro</option>
+                      <option value="USD" disabled={!currencyRates.fresh || !currencyRates.USD}>Dollar</option>
                     </select>
+                    {currency !== "MGA" && currencyRates.updatedAt && <small>{t("profile.exchangeDate").replace("{date}", new Date(currencyRates.updatedAt).toLocaleDateString(language === "fr" ? "fr-FR" : "en-US"))}</small>}
+                    {currency !== "MGA" && !currencyRates.fresh && <small>{t("profile.conversionUnavailable")}</small>}
                   </label>
                 </div>
               </div>
@@ -406,13 +500,13 @@ function Profil() {
                     <LiaLockSolid size={18} />
                   </span>
                   <div>
-                    <h3>{language === "en" ? "Privacy" : "Confidentialité"}</h3>
-                    <p>Export de vos informations personnelles</p>
+                    <h3>{t("profile.privacy")}</h3>
+                    <p>{t("profile.exportDescription")}</p>
                   </div>
                 </div>
                 <div className="profile-section-body">
                   <div className="profile-inline-row">
-                    <span>{language === "en" ? "Export my data" : "Exporter mes données"}</span>
+                    <span>{t("profile.exportData")}</span>
                     <button
                       type="button"
                       className="profile-text-button"
@@ -478,6 +572,14 @@ function Profil() {
 
             {roleName !== "Super Admin" && (
               <div className="profile-orders-content">
+                {roleName === "Client" && <section className="profile-section-card">
+                  <div className="profile-section-title"><span className="profile-section-icon"><LiaAtSolid size={18} /></span><div><h3>{t("profile.products")}</h3><p>{t("profile.productsHint")}</p></div></div>
+                  <div className="profile-section-body grid gap-5 md:grid-cols-2">
+                    <div><h4 className="mb-2 font-semibold">{t("profile.favorites")}</h4>{savedProducts.length ? savedProducts.map((product) => <div className="profile-inline-row" key={product._id}><Link to={`/product/${product._id}/details`} className="profile-text-button">{product.name}</Link><button type="button" className="profile-text-button danger-text" onClick={() => void removeSavedProduct(product._id)}>{t("profile.remove")}</button></div>) : <p className="text-sm text-gray-500">{t("profile.noFavorites")}</p>}</div>
+                    <div><h4 className="mb-2 font-semibold">{t("profile.recentlyViewed")}</h4>{recentProducts.length ? recentProducts.map((product) => <div className="profile-inline-row" key={product._id}><Link to={`/product/${product._id}/details`} className="profile-text-button">{product.name}</Link></div>) : <p className="text-sm text-gray-500">{t("profile.noRecentlyViewed")}</p>}</div>
+                  </div>
+                </section>}
+                <AccountActivity />
                 <Commande csrf={csrf as string} />
                 {roleName === "Client" && <MarketplaceOrderHistory />}
               </div>
@@ -493,9 +595,9 @@ function Profil() {
               <LiaUserCircle size={25} />
             </span>
             <div>
-              <p className="personal-info-modal-eyebrow">Mon profil</p>
-              <h2>Informations personnelles</h2>
-              <p>Quelques détails pour compléter votre espace ShopInMada.</p>
+              <p className="personal-info-modal-eyebrow">{t("profile.personalModal")}</p>
+              <h2>{t("profile.personalModalTitle")}</h2>
+              <p>{t("profile.personalModalHint")}</p>
             </div>
           </header>
           <form
@@ -505,37 +607,37 @@ function Profil() {
           >
             <div className="personal-info-fields">
               <label className="personal-info-field">
-                Nom
+                {t("profile.name")}
                 <input
                   type="text"
                   name="firstName"
-                  placeholder="Votre nom"
+                  placeholder={t("profile.name")}
                   value={userProfil.firstName}
                   onChange={handleChange}
                 />
               </label>
               <label className="personal-info-field">
-                Prénom
+                {t("profile.firstName")}
                 <input
                   type="text"
                   name="lastName"
-                  placeholder="Votre prénom"
+                  placeholder={t("profile.firstName")}
                   value={userProfil.lastName}
                   onChange={handleChange}
                 />
               </label>
               <label className="personal-info-field personal-info-field-wide">
-                Adresse
+                {t("profile.address")}
                 <input
                   type="text"
                   name="adresse"
-                  placeholder="Votre adresse"
+                  placeholder={t("profile.address")}
                   value={userProfil.adresse}
                   onChange={handleChange}
                 />
               </label>
               <fieldset className="personal-info-gender">
-                <legend>Sexe</legend>
+                <legend>{t("profile.gender")}</legend>
                 <label className="personal-info-gender-option">
                   <input
                     type="radio"
@@ -544,7 +646,7 @@ function Profil() {
                     checked={userProfil.gender === "male"}
                     onChange={handleChange}
                   />
-                  Homme
+                  {t("profile.male")}
                 </label>
                 <label className="personal-info-gender-option">
                   <input
@@ -554,15 +656,15 @@ function Profil() {
                     checked={userProfil.gender === "female"}
                     onChange={handleChange}
                   />
-                  Femme
+                  {t("profile.female")}
                 </label>
               </fieldset>
               <label className="personal-info-field personal-info-field-wide">
-                Numéro de téléphone
+                {t("profile.phoneNumber")}
                 <input
                   type="tel"
                   name="phoneNumber"
-                  placeholder="Ex. 034 00 000 00"
+                  placeholder={t("profile.phoneExample")}
                   value={userProfil.phoneNumber}
                   onChange={handleChange}
                 />
@@ -574,14 +676,14 @@ function Profil() {
                 className="market-button-primary"
                 disabled={isSaving}
               >
-                {isSaving ? "Enregistrement…" : "Enregistrer"}
+                {isSaving ? t("profile.saving") : t("profile.save")}
               </button>
               <button
                 type="button"
                 onClick={closeModal}
                 className="market-button-secondary"
               >
-                Fermer
+                {t("profile.close")}
               </button>
             </div>
           </form>

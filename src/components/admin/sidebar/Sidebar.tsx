@@ -11,10 +11,17 @@ import {
   FaTachometerAlt,
   FaUserCog,
   FaWrench,
+  FaUserCheck,
+  FaHeadset,
+  FaHistory,
+  FaLayerGroup,
+  FaChartLine,
+  FaSlidersH,
 } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../../helper/useAuth";
 import { LiaTimesSolid, LiaUser } from "react-icons/lia";
+import { useLanguage } from "../../../context/useLanguage";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -23,11 +30,15 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const location = useLocation();
   const previousPath = useRef(location.pathname);
   const roleName = user?.userGroupMember_id?.usergroup_id?.name;
   const isSeller = roleName === "Boutiks";
   const isSuperAdmin = roleName === "Super Admin";
+  const canModerate = isSuperAdmin || user?.adminPermissions?.includes("moderation.review") === true;
+  const canSupport = isSuperAdmin || user?.adminPermissions?.includes("support.read") === true;
+  const canReadFinance = isSuperAdmin || user?.adminPermissions?.includes("finance.read") === true;
 
   const navClass = (path: string) =>
     `admin-nav-link ${location.pathname === path || location.pathname.startsWith(`${path}/`) ? "admin-nav-link-active" : ""}`;
@@ -43,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
       {!isCollapsed && (
         <button
           type="button"
-          aria-label="Fermer le menu"
+          aria-label={t("admin.closeMenu")}
           onClick={toggleSidebar}
           className="fixed inset-0 z-30 bg-gray-950/40 md:hidden"
         />
@@ -67,18 +78,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
             </span>
             <span className="mt-3 flex w-full items-center justify-between gap-2 text-white/65">
               <strong className="text-xs font-medium text-emerald-100">
-                {user?.boutiks_id ? user.boutiks_id.plan : roleName || "Compte"}
+                {user?.boutiks_id ? user.boutiks_id.plan : roleName || t("admin.account")}
               </strong>
               {user?.boutiks_id && user?.boutiks_id.subscription_id ? (
                 <strong className="text-right text-[10px] font-medium text-emerald-200">
-                  Expire le{" "}
+                  {t("admin.expiresOn")} {" "}
                   {new Date(
                     user.boutiks_id.subscription_id.endDate,
-                  ).toLocaleDateString("fr-FR")}
+                  ).toLocaleDateString(language === "en" ? "en-GB" : "fr-FR")}
                 </strong>
               ) : (
                 <strong className="text-right text-[10px] font-medium text-amber-200">
-                  {user?.boutiks_id ? "Sans abonnement" : "Compte actif"}
+                  {user?.boutiks_id ? t("admin.noSubscription") : t("admin.accountActive")}
                 </strong>
               )}
             </span>
@@ -99,7 +110,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                 isCollapsed && "hidden"
               }`}
             >
-              Menu
+              {t("admin.menu")}
             </p>
             <div
               className={`flex flex-col gap-2.5 py-3 ${
@@ -113,7 +124,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                 <FaTachometerAlt />
                 {!isCollapsed && (
                   <span className="text-[14px] leading-[20px]">
-                    Tableau de bord
+                    {t("admin.dashboard")}
                   </span>
                 )}
               </Link>
@@ -127,7 +138,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                     <FaShoppingBag />
                     {!isCollapsed && (
                       <span className="text-[14px] leading-[20px]">
-                        Produits
+                        {t("admin.products")}
                       </span>
                     )}
                   </Link>
@@ -138,7 +149,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                     <FaShoppingBasket />
                     {!isCollapsed && (
                       <span className="text-[14px] leading-[20px]">
-                        Commandes
+                        {t("admin.orders")}
                       </span>
                     )}
                   </Link>
@@ -149,14 +160,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                     <FaClipboardList />
                     {!isCollapsed && (
                       <span className="text-[14px] leading-[20px]">
-                        Commandes marketplace
+                        {t("admin.marketOrders")}
                       </span>
                     )}
                   </Link>
                 </>
               )}
-              {isSuperAdmin && (
+              {(isSuperAdmin || canModerate || canSupport || canReadFinance) && (
                 <>
+                  {canModerate && <Link to="/espace_vendeur/moderation" className={navClass("/espace_vendeur/moderation")}><FaClipboardList />{!isCollapsed && <span className="text-[14px] leading-[20px]">{t("admin.moderation")}</span>}</Link>}
+                  {canSupport && <Link to="/espace_vendeur/support" className={navClass("/espace_vendeur/support")}><FaHeadset />{!isCollapsed && <span className="text-[14px] leading-[20px]">{t("admin.support")}</span>}</Link>}
+                  {canReadFinance && <Link to="/espace_vendeur/finances" className={navClass("/espace_vendeur/finances")}><FaChartLine />{!isCollapsed && <span className="text-[14px] leading-[20px]">{t("admin.finance")}</span>}</Link>}
+                  {isSuperAdmin && <>
                   <Link
                     to="/espace_vendeur/marketplace-orders"
                     className={navClass("/espace_vendeur/marketplace-orders")}
@@ -175,21 +190,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                     <FaExclamationTriangle />
                     {!isCollapsed && (
                       <span className="text-[14px] leading-[20px]">
-                        Litiges marketplace
+                        {t("admin.disputes")}
                       </span>
                     )}
                   </Link>
-                  <Link
-                    to="/espace_vendeur/moderation"
-                    className={navClass("/espace_vendeur/moderation")}
-                  >
-                    <FaClipboardList />
-                    {!isCollapsed && (
-                      <span className="text-[14px] leading-[20px]">
-                        Modération
-                      </span>
-                    )}
+                  <Link to="/espace_vendeur/verification-vendeurs" className={navClass("/espace_vendeur/verification-vendeurs")}>
+                    <FaUserCheck />
+                    {!isCollapsed && <span className="text-[14px] leading-[20px]">{t("admin.sellerVerification")}</span>}
                   </Link>
+                  </>}
+                  {isSuperAdmin && <>
+                  <Link to="/espace_vendeur/categories-admin" className={navClass("/espace_vendeur/categories-admin")}>
+                    <FaLayerGroup />
+                    {!isCollapsed && <span className="text-[14px] leading-[20px]">{t("admin.categories")}</span>}
+                  </Link>
+                  <Link to="/espace_vendeur/forfaits" className={navClass("/espace_vendeur/forfaits")}><FaSlidersH />{!isCollapsed && <span className="text-[14px] leading-[20px]">{t("admin.plansPermissions")}</span>}</Link>
+                  </>}
                 </>
               )}
             </div>
@@ -202,7 +218,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
               isCollapsed && "hidden"
             }`}
           >
-            Paramètres
+            {t("admin.settings")}
           </p>
           <div
             className={`flex flex-col gap-2.5 py-3 ${
@@ -217,7 +233,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                 <FaUserCog />
                 {!isCollapsed && (
                   <span className="text-[14px] leading-[20px]">
-                    Informations boutique
+                    {t("admin.shopInfo")}
                   </span>
                 )}
               </Link>
@@ -230,7 +246,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                 <FaMoneyBillWave />
                 {!isCollapsed && (
                   <span className="text-[14px] leading-[20px]">
-                    Paiement et livraison
+                    {t("admin.deliveryPayment")}
                   </span>
                 )}
               </Link>
@@ -242,7 +258,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
             >
               <FaRegCreditCard />
               {!isCollapsed && (
-                <span className="text-[14px] leading-[20px]">Abonnements</span>
+                <span className="text-[14px] leading-[20px]">{t("admin.subscriptions")}</span>
               )}
             </Link>
 
@@ -254,9 +270,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                 <FaWrench />
                 {!isCollapsed && (
                   <span className="text-[14px] leading-[20px]">
-                    Gestion de compte
+                    {t("admin.accounts")}
                   </span>
                 )}
+              </Link>
+            )}
+
+            {isSuperAdmin && (
+              <Link to="/espace_vendeur/journal-activite" className={navClass("/espace_vendeur/journal-activite")}>
+                <FaHistory />
+                {!isCollapsed && <span className="text-[14px] leading-[20px]">{t("admin.activityLog")}</span>}
               </Link>
             )}
 
@@ -268,7 +291,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                 <FaMoneyBillWave />
                 {!isCollapsed && (
                   <span className="text-[14px] leading-[20px]">
-                    Paiements d’abonnement
+                    {t("admin.subscriptionPayments")}
                   </span>
                 )}
               </Link>
@@ -277,14 +300,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
             <Link to="/" className={navClass("/")}>
               <FaHome />
               {!isCollapsed && (
-                <span className="text-[14px] leading-[20px]">Accueil</span>
+                <span className="text-[14px] leading-[20px]">{t("admin.home")}</span>
               )}
             </Link>
 
             <Link to="/logout" className="admin-nav-link">
               <FaSignOutAlt />
               {!isCollapsed && (
-                <span className="text-[14px] leading-[20px]">Déconnexion</span>
+                <span className="text-[14px] leading-[20px]">{t("admin.signOut")}</span>
               )}
             </Link>
           </div>
@@ -295,7 +318,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
             to="/espace_vendeur/upgrade-pro"
             className="mt-5 flex w-full items-center justify-center rounded-xl border border-emerald-300/20 bg-gradient-to-r from-emerald-500/20 to-cyan-400/10 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-950/20 transition hover:border-emerald-200/40 hover:from-emerald-500/30"
           >
-            Découvrir ShopInMada Pro
+            {t("admin.discoverPro")}
           </Link>
         )}
       </div>

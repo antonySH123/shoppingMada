@@ -4,8 +4,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../helper/useAuth";
 import { useSidebar } from "../../context/useSidebar";
 import CartHeaderLink from "../CartHeaderLink";
-import LanguageSelector from "../LanguageSelector";
 import { useLanguage } from "../../context/useLanguage";
+import LanguageSelector from "../LanguageSelector";
 
 function Navbar() {
   const { t } = useLanguage();
@@ -65,10 +65,10 @@ function Navbar() {
           <input
             type="search"
             className="h-11 w-full rounded-full border border-gray-200 bg-[#f6f8f6] pl-11 pr-14 text-sm outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-700/10"
-            placeholder="Rechercher un produit ou une boutique"
+            placeholder={t("nav.searchDesktop")}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            aria-label="Rechercher dans la boutique"
+            aria-label={t("nav.searchDesktop")}
           />
           <button
             type="submit"
@@ -79,7 +79,7 @@ function Navbar() {
           </button>
         </form>
         <div className="hidden shrink-0 items-center gap-2 md:flex">
-          <LanguageSelector compact />
+          <LanguageSelector compact className="desktop-inline-language-selector" />
           <CartHeaderLink />
           <Link
             to={user ? "/profil" : "/login"}
@@ -103,28 +103,31 @@ function Navbar() {
 
       <div className="border-t border-gray-100">
         {query ? (
-          <nav
-            aria-label="Filtrer par ville"
-            className="market-container flex gap-2 overflow-x-auto py-2"
-          >
-            <Link
-              to={`/shop?q=${encodeURIComponent(query)}`}
-              className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition ${!location ? "bg-emerald-800 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+          <div className="market-container flex min-w-0 items-center gap-2 py-2">
+            <nav
+              aria-label={t("shop.city")}
+              className="flex min-w-0 flex-1 gap-2 overflow-x-auto"
             >
-              {t("nav.allCities")}
-            </Link>
-            {locations.map((city) => (
               <Link
-                key={city}
-                to={`/shop?q=${encodeURIComponent(query)}&location=${encodeURIComponent(city)}`}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition ${location === city ? "bg-emerald-800 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+                to={`/shop?q=${encodeURIComponent(query)}`}
+                className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition ${!location ? "bg-emerald-800 text-white" : "text-gray-600 hover:bg-gray-100"}`}
               >
-                {city}
+                {t("nav.allCities")}
               </Link>
-            ))}
-          </nav>
+              {locations.map((city) => (
+                <Link
+                  key={city}
+                  to={`/shop?q=${encodeURIComponent(query)}&location=${encodeURIComponent(city)}`}
+                  className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition ${location === city ? "bg-emerald-800 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+                >
+                  {city}
+                </Link>
+              ))}
+            </nav>
+            <LanguageSelector compact className="mobile-inline-language-selector md:hidden" />
+          </div>
         ) : (
-          <div className="market-container flex items-center justify-between gap-3 py-2">
+          <div className="market-container flex items-center justify-between gap-2 py-2">
             <div className="flex min-w-0 items-center gap-2">
               <button
                 type="button"
@@ -135,6 +138,7 @@ function Navbar() {
               >
                 <span aria-hidden="true">☷</span> {t("nav.categories")}
               </button>
+              <LanguageSelector compact className="mobile-inline-language-selector md:hidden" />
               <Link
                 to="/shop"
                 className="hidden text-xs font-semibold text-gray-600 transition hover:text-emerald-800 md:inline"

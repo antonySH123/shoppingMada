@@ -10,6 +10,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUserState] = useState<Iuser | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [currencyRates, setCurrencyRates] = useState<{ EUR: number | null; USD: number | null; updatedAt: string | null; fresh: boolean }>({ EUR: null, USD: null, updatedAt: null, fresh: false });
   const csrf = useCSRF();
 
   // Vérifie la session active sur le backend
@@ -29,6 +30,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUserState(
         currentUser?.userGroupMember_id?.usergroup_id ? currentUser : null,
       );
+      if (currentUser) {
+        const ratesResponse = await fetch(`${import.meta.env.REACT_API_URL}currency-rates`, { credentials: "include" });
+        if (ratesResponse.ok) { const rates = await ratesResponse.json(); setCurrencyRates(rates.data); }
+      }
     } catch {
       setUserState(null);
     } finally {
@@ -81,7 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuthReady(true);
   };
 
-  const value = { user, authReady, setUserInfo };
+  const value = { user, authReady, setUserInfo, currencyRates };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -15,6 +15,8 @@ import Comment from "./comment/Comment";
 import Preloader from "./loading/Preloader";
 import { useCart } from "../context/useCart";
 import { useLanguage } from "../context/useLanguage";
+import { useAuth } from "../helper/useAuth";
+import { Link } from "react-router-dom";
 
 interface IState {
   product: ProductDetailsData | null;
@@ -189,6 +191,9 @@ function ProductDetails() {
   const { priceInArriary } = useFormatter();
   const csrf = useCSRF();
   const { addItem } = useCart();
+  const { user } = useAuth();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [recentlyViewed, setRecentlyViewed] = useState<IProduct[]>([]);
   const shop = state.product?.boutiks_id;
   const shopLinks = [
     { label: "Site web", href: shop?.websiteUrl },
@@ -226,11 +231,35 @@ function ProductDetails() {
       stock: getAvailableStock(state.product, state.selectedVariant),
     });
     if (added) {
-      toast.success("Article ajouté au panier.");
+      toast.success(t("product.addedToCart"));
     } else {
-      toast.error("La quantité dépasse le stock disponible.");
+      toast.error(t("product.stockExceeded"));
     }
   };
+
+  const toggleFavorite = async () => {
+    if (!user || !id) { toast.info(t("product.loginForFavorites")); return; }
+    try { const response = await fetch(`${import.meta.env.REACT_API_URL}wishlist/${id}`, { method: "PUT", credentials: "include", headers: { "xsrf-token": csrf ?? "" } }); const result = await response.json(); if (!response.ok) throw new Error(result.message); setIsFavorite(Boolean(result.data.saved)); toast.success(result.data.saved ? t("product.favoriteAdded") : t("product.favoriteRemoved")); }
+    catch (error) { toast.error(error instanceof Error ? error.message : t("product.favoriteUnavailable")); }
+  };
+
+  useEffect(() => {
+    if (id) {
+      const recent = JSON.parse(localStorage.getItem("shopinmada.recent-products") ?? "[]") as string[];
+      const next = [id, ...recent.filter((productId) => productId !== id)].slice(0, 12);
+      localStorage.setItem("shopinmada.recent-products", JSON.stringify(next));
+      const recentIds = next.filter((productId) => productId !== id).slice(0, 4);
+      void Promise.all(recentIds.map(async (productId) => {
+        try {
+          const response = await fetch(`${import.meta.env.REACT_API_URL}shop/product/${encodeURIComponent(productId)}`);
+          if (!response.ok) return null;
+          const result = await response.json();
+          return result.data as IProduct | undefined;
+        } catch { return null; }
+      })).then((products) => setRecentlyViewed(products.filter((product): product is IProduct => Boolean(product))));
+      if (user) void fetch(`${import.meta.env.REACT_API_URL}wishlist?page=1&limit=50`, { credentials: "include" }).then((response) => response.ok ? response.json() : null).then((result) => { if (result) setIsFavorite(result.data.some((product: IProduct) => product._id === id)); });
+    }
+  }, [id, user?._id]);
 
   useEffect(() => {
     dispatch({ type: "FETCH_START" });
@@ -243,13 +272,13 @@ function ProductDetails() {
           const payload = await response.json().catch(() => null);
           dispatch({
             type: "FETCH_ERROR",
-            payload: payload?.message || "Produit introuvable.",
+            payload: payload?.message || t("product.notFound"),
           });
           return;
         }
         const data = await response.json();
         if (!data?.data) {
-          dispatch({ type: "FETCH_ERROR", payload: "Produit introuvable." });
+          dispatch({ type: "FETCH_ERROR", payload: t("product.notFound") });
           return;
         }
 
@@ -269,7 +298,7 @@ function ProductDetails() {
         if (error instanceof Error) {
           dispatch({ type: "FETCH_ERROR", payload: error.message });
         } else {
-          dispatch({ type: "FETCH_ERROR", payload: "Une erreur est survenue" });
+          dispatch({ type: "FETCH_ERROR", payload: t("product.loadError") });
         }
       }
     };
@@ -298,7 +327,7 @@ function ProductDetails() {
                   className="product-gallery-active"
                 />
               ) : (
-                <div className="product-gallery-empty">Image indisponible</div>
+                <div className="product-gallery-empty">{t("product.imageUnavailable")}</div>
               )}
             </div>
             {(state.product?.photos?.length || 0) > 1 && (
@@ -312,7 +341,7 @@ function ProductDetails() {
                     key={`${photo}-${index}`}
                     className={`product-gallery-thumbnail ${activePhoto === index ? "is-active" : ""}`}
                     onClick={() => setActivePhoto(index)}
-                    aria-label={`Afficher la photo ${index + 1}`}
+                    aria-label={t("product.showPhoto").replace("{number}", (index + 1).toString())}
                     aria-pressed={activePhoto === index}
                   >
                     <img
@@ -326,7 +355,7 @@ function ProductDetails() {
           </div>
           <div className="product-details-copy flex min-w-0 flex-col gap-5 p-5 sm:p-7">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
-              Détails du produit
+              {t("product.details")}
             </p>
             <div className="product-price-row flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
               <p>
@@ -360,7 +389,7 @@ function ProductDetails() {
               false) && (
               <div className="border-t border-gray-100 pt-4">
                 <p className="mb-3 text-sm font-bold text-gray-900">
-                  Choisir une option
+                  {t("product.chooseOption")}
                 </p>
                 <div>
                   {state.product &&
@@ -403,13 +432,14 @@ function ProductDetails() {
         <form
           method="post"
           action=""
+          id="product-purchase-form"
           className="product-purchase-form"
           onSubmit={handleSubmit}
         >
           <div className="product-purchase-card market-card sticky top-24 flex flex-col gap-6 p-5 sm:p-6">
             <div className="px-5">
               <h4 className="mb-3 text-sm font-bold text-gray-900">
-                <strong>Vendu par</strong>
+              <strong>{t("product.soldBy")}</strong>
               </h4>
               <ul>
                 <li className="mb-2 flex items-center gap-2 text-sm text-gray-600">
@@ -465,7 +495,7 @@ function ProductDetails() {
             </div>
             <div className="px-5">
               <p className="mb-2 text-sm font-bold text-gray-900">
-                <strong>Quantités</strong>
+                <strong>{t("product.quantities")}</strong>
               </p>
               <div className="flex items-center gap-1">
                 <button
@@ -497,8 +527,9 @@ function ProductDetails() {
               </div>
             </div>
             <div className="px-5">
+              <button type="button" onClick={() => void toggleFavorite()} aria-pressed={isFavorite} className="mb-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700">{isFavorite ? t("product.removeFavorite") : t("product.addFavorite")}</button>
               <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-sm">
-                <span className="text-gray-500">Total estimé</span>
+                <span className="text-gray-500">{t("product.totalEstimate")}</span>
                 <strong className="text-lg text-gray-900">
                   {priceInArriary(state.totalPrice)}
                 </strong>
@@ -517,9 +548,25 @@ function ProductDetails() {
         </form>
       </div>
 
+      <div className="product-mobile-action-bar">
+        <div className="product-mobile-action-total">
+          <span>{t("product.totalEstimate")}</span>
+          <strong>{priceInArriary(state.totalPrice)}</strong>
+        </div>
+        <button
+          type="submit"
+          form="product-purchase-form"
+          className="market-button-primary"
+          disabled={state.product.stock === 0 || !csrf}
+        >
+          {state.product.stock === 0 ? t("product.outOfStock") : t("product.addToCart")}
+        </button>
+      </div>
+
       <div className="product-comments-container market-container pb-10 sm:pb-14">
         <Comment product_id={id as string} csrf={csrf as string} />
       </div>
+      {recentlyViewed.length > 0 && <section className="market-container pb-12"><h2 className="mb-4 text-xl font-bold">{t("product.recentlyViewed")}</h2><div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{recentlyViewed.map((product)=><Link key={product._id} to={`/product/${product._id}/details`} className="market-card overflow-hidden"><img src={product.photos?.[0]} alt={product.name} className="h-36 w-full object-cover" /><div className="p-4"><p className="font-medium">{product.name}</p><p className="mt-1 text-sm">{priceInArriary(product.price)}</p></div></Link>)}</div></section>}
     </>
   );
 }

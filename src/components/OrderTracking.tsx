@@ -1,10 +1,11 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../helper/useAuth";
 import useCSRF from "../helper/useCSRF";
 import useFormatter from "../helper/useFormatter";
 import Preloader from "./loading/Preloader";
+import { useLanguage } from "../context/useLanguage";
 
 type OrderItem = {
   product_id: string;
@@ -47,32 +48,12 @@ type MarketplaceOrder = {
   createdAt: string;
 };
 
-const statusLabels: Record<string, string> = {
-  en_attente_vendeur: "En attente de réponse du vendeur",
-  en_attente_paiement: "Paiement à effectuer",
-  paiement_declare: "Paiement déclaré, en vérification",
-  paiement_confirme: "Paiement confirmé",
-  en_preparation: "En préparation",
-  expediee: "Expédiée",
-  livree: "Livrée",
-  terminee: "Terminée",
-  annulee: "Annulée",
-  refusee: "Refusée",
-  expiree: "Expirée",
-  litige: "En litige",
-  partiellement_terminee: "Partiellement terminée",
-};
-const methodLabels: Record<string, string> = {
-  mvola: "MVola",
-  orange_money: "Orange Money",
-  airtel_money: "Airtel Money",
-  virement: "Virement bancaire",
-  paiement_livraison: "Paiement à la livraison",
-};
-
 function OrderTracking() {
+  const { t, language } = useLanguage();
   const { orderId = "" } = useParams();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const csrf = useCSRF();
   const { priceInArriary } = useFormatter();
@@ -83,10 +64,14 @@ function OrderTracking() {
   const [reference, setReference] = useState("");
   const [evidence, setEvidence] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
-  const token =
-    searchParams.get("token") ??
-    sessionStorage.getItem(`shopinmada.order.${orderId}`) ??
-    "";
+  const legacyToken = searchParams.get("token") ?? "";
+  const token = sessionStorage.getItem(`shopinmada.order.${orderId}`) ?? legacyToken;
+
+  useEffect(() => {
+    if (!legacyToken) return;
+    sessionStorage.setItem(`shopinmada.order.${orderId}`, legacyToken);
+    navigate(`${location.pathname}`, { replace: true });
+  }, [legacyToken, location.pathname, navigate, orderId]);
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
@@ -209,19 +194,17 @@ function OrderTracking() {
         <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
-              Suivi de commande
+              {t("order.tracking")}
             </p>
             <h1 className="market-section-title">
-              {order
-                ? (statusLabels[order.status] ?? order.status)
-                : "Votre commande"}
-            </h1>
+                {order ? (t(`order.status.${order.status}`) === `order.status.${order.status}` ? order.status : t(`order.status.${order.status}`)) : t("order.yourOrder")}
+              </h1>
           </div>
           <Link
             to="/shop"
             className="text-sm font-semibold text-emerald-800 hover:text-emerald-950"
           >
-            Continuer mes achats
+            {t("order.continueShopping")}
           </Link>
         </header>
 
@@ -230,18 +213,17 @@ function OrderTracking() {
             role="alert"
             className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"
           >
-            <p>{error || "Commande introuvable."}</p>
+            <p>{error || t("order.notFound")}</p>
             {!user && !token && (
               <p className="mt-2">
-                Ouvrez le lien de suivi complet reçu après validation de la
-                commande.
+                {t("order.guestLinkHint")}
               </p>
             )}
           </section>
         ) : (
           <div className="space-y-5">
             <p className="text-sm text-gray-500">
-              Commande du {new Date(order.createdAt).toLocaleString("fr-FR")}
+              {t("order.date")} {new Date(order.createdAt).toLocaleString(language === "fr" ? "fr-FR" : "en-US")}
             </p>
             {order.subOrders.map((subOrder) => {
               const shop =
@@ -272,14 +254,14 @@ function OrderTracking() {
                   <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-white px-5 py-4">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700">
-                        Sous-commande
+                        {t("order.suborder")}
                       </p>
                       <h2 className="mt-1 text-base font-bold text-gray-900">
-                        {shop?.name ?? "Boutique"}
+                        {shop?.name ?? t("order.shop")}
                       </h2>
                     </div>
                     <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-900">
-                      {statusLabels[subOrder.status] ?? subOrder.status}
+                      {t(`order.status.${subOrder.status}`) === `order.status.${subOrder.status}` ? subOrder.status : t(`order.status.${subOrder.status}`)}
                     </span>
                   </header>
                   <div className="space-y-4 p-5">
@@ -312,53 +294,52 @@ function OrderTracking() {
                     ))}
                     <div className="space-y-2 border-t border-gray-100 pt-4 text-sm">
                       <div className="flex justify-between text-gray-500">
-                        <span>Sous-total boutique</span>
+                        <span>{t("order.subtotal")}</span>
                         <span>{priceInArriary(subOrder.subtotal)}</span>
                       </div>
                       <div className="flex justify-between text-gray-500">
-                        <span>Livraison</span>
+                        <span>{t("order.delivery")}</span>
                         <span>{priceInArriary(subOrder.deliveryFee)}</span>
                       </div>
                       <div className="flex justify-between font-bold text-gray-900">
-                        <span>À payer à {shop?.name ?? "la boutique"}</span>
+                        <span>{t("order.toPay").replace("{shop}", shop?.name ?? t("order.shop"))}</span>
                         <span>{priceInArriary(subOrder.payableTotal)}</span>
                       </div>
                       <div className="flex justify-between text-gray-500">
-                        <span>Mode</span>
+                        <span>{t("order.method")}</span>
                         <span>
-                          {methodLabels[subOrder.paymentMethod] ??
-                            subOrder.paymentMethod}
+                          {t(`order.paymentMethod.${subOrder.paymentMethod}`) !== `order.paymentMethod.${subOrder.paymentMethod}` ? t(`order.paymentMethod.${subOrder.paymentMethod}`) : subOrder.paymentMethod}
                         </span>
                       </div>
                     </div>
 
                     {subOrder.status === "en_attente_vendeur" && (
                       <p className="rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-                        Le vendeur doit accepter votre demande avant le{" "}
+                        {t("order.sellerAccept")}{" "}
                         {subOrder.expiresAt
                           ? new Date(subOrder.expiresAt).toLocaleString("fr-FR")
-                          : "expiration du délai"}
+                          : t("order.expiration")}
                         .
                       </p>
                     )}
                     {canDeclare && (
                       <section className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
                         <h3 className="text-sm font-bold text-gray-900">
-                          Payer directement le vendeur
+                          {t("order.paySeller")}
                         </h3>
                         <p className="mt-1 text-xs text-gray-600">
-                          Bénéficiaire :{" "}
+                          {t("order.beneficiary")}:{" "}
                           {subOrder.paymentInstructions.recipientName}
                         </p>
                         {subOrder.paymentInstructions.phone && (
                           <p className="mt-1 text-xs text-gray-600">
-                            Téléphone / compte :{" "}
+                            {t("order.phoneAccount")}:{" "}
                             {subOrder.paymentInstructions.phone}
                           </p>
                         )}
                         {subOrder.paymentInstructions.account && (
                           <p className="mt-1 text-xs text-gray-600">
-                            Référence du compte :{" "}
+                            {t("order.accountReference")}:{" "}
                             {subOrder.paymentInstructions.account}
                           </p>
                         )}
@@ -375,7 +356,7 @@ function OrderTracking() {
                             }
                           >
                             <label className="grid gap-1 text-xs font-semibold text-gray-700">
-                              Référence de transaction
+                              {t("order.transactionReference")}
                               <input
                                 required
                                 maxLength={120}
@@ -387,7 +368,7 @@ function OrderTracking() {
                               />
                             </label>
                             <label className="grid gap-1 text-xs font-semibold text-gray-700">
-                              Capture d’écran (facultative)
+                              {t("order.screenshotOptional")}
                               <input
                                 type="file"
                                 accept="image/jpeg,image/png,image/webp"
@@ -402,14 +383,14 @@ function OrderTracking() {
                                 disabled={busy}
                                 className="market-button-primary min-h-10 px-4 text-sm"
                               >
-                                Déclarer le paiement
+                                {t("order.declarePayment")}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setActivePayment(null)}
                                 className="market-button-secondary min-h-10 px-4 text-sm"
                               >
-                                Annuler
+                                {t("order.cancel")}
                               </button>
                             </div>
                           </form>
@@ -419,7 +400,7 @@ function OrderTracking() {
                             onClick={() => setActivePayment(subOrder._id)}
                             className="market-button-primary mt-4 min-h-10 px-4 text-sm"
                           >
-                            J’ai payé, déclarer
+                            {t("order.iPaid")}
                           </button>
                         )}
                       </section>
@@ -427,9 +408,9 @@ function OrderTracking() {
                     {subOrder.status === "paiement_declare" && (
                       <div className="rounded-lg bg-sky-50 p-3 text-xs leading-5 text-sky-900">
                         <p>
-                          Référence déclarée :{" "}
+                          {t("order.declaredReference")}:{" "}
                           {subOrder.paymentDeclaration?.reference}. Le vendeur
-                          doit confirmer la réception des fonds.
+                          {t("order.sellerMustConfirm")}
                         </p>
                         {subOrder.paymentDeclaration?.evidencePath && (
                           <a
@@ -438,7 +419,7 @@ function OrderTracking() {
                             rel="noreferrer"
                             className="mt-2 inline-flex font-bold underline"
                           >
-                            Voir la capture envoyée
+                            {t("order.viewEvidence")}
                           </a>
                         )}
                       </div>
@@ -452,7 +433,7 @@ function OrderTracking() {
                         }
                         className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 disabled:opacity-50"
                       >
-                        Annuler cette sous-commande
+                        {t("order.cancelSuborder")}
                       </button>
                     )}
                     {canComplete && (
@@ -464,7 +445,7 @@ function OrderTracking() {
                         }
                         className="ml-2 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"
                       >
-                        Confirmer la réception
+                        {t("order.confirmReceipt")}
                       </button>
                     )}
                     {canDispute && (
@@ -476,7 +457,7 @@ function OrderTracking() {
                         }
                         className="ml-2 rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                       >
-                        Signaler un litige
+                        {t("order.reportDispute")}
                       </button>
                     )}
                   </div>

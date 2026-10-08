@@ -22,6 +22,7 @@ interface CartContextValue {
     quantity: number,
   ) => void;
   removeItem: (productId: string, variants: Record<string, string>) => void;
+  replaceItems: (items: CartItem[]) => void;
   clearCart: () => void;
 }
 

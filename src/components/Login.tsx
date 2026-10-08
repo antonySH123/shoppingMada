@@ -5,7 +5,9 @@ import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
 import { useAuth } from "../helper/useAuth";
 import Preloader from "./loading/Preloader";
+import { useLanguage } from "../context/useLanguage";
 function Login() {
+  const { t } = useLanguage();
   const { setUserInfo } = useAuth();
   const [userAuth, setUserAuth] = useState({ emailOrPhone: "", password: "" });
   const [isSubmited, setIsSubmited] = useState<boolean>(false);
@@ -96,7 +98,7 @@ function Login() {
       />
       <Link
         to={"/"}
-        aria-label="Retour à l'accueil"
+        aria-label={t("auth.back")}
         className="absolute left-5 top-4 h-16 w-32 sm:left-10 sm:top-7"
       >
         <img src="/src/assets/logo.png" alt="" className="object-contain" />
@@ -107,17 +109,17 @@ function Login() {
           onClick={handleBack}
           className="auth-back-button mb-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white/90 px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-emerald-200 hover:text-emerald-800"
         >
-          <LiaArrowLeftSolid size={18} /> Retour
+          <LiaArrowLeftSolid size={18} /> {t("auth.back")}
         </button>
         <div className="auth-panel auth-card rounded-3xl border border-gray-100 bg-white p-7 sm:p-10">
           <h1 className="mb-2 flex flex-col items-center text-center font-bold text-gray-900">
             <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
               <LiaUserSolid size={28} />
             </span>
-            <strong className="text-2xl">Bon retour</strong>
+            <strong className="text-2xl">{t("auth.welcomeBack")}</strong>
           </h1>
           <p className="mb-7 text-center text-sm text-gray-500">
-            Connectez-vous à votre espace ShopInMada.
+            {t("auth.loginIntro")}
           </p>
           <form action="" method="post" onSubmit={handleSubmit}>
             <div className="my-4">
@@ -125,7 +127,7 @@ function Login() {
                 htmlFor="email"
                 className="mb-2 block text-sm font-semibold text-gray-700"
               >
-                Adresse e-mail ou téléphone
+                {t("auth.emailOrPhone")}
               </label>
               <input
                 type="text"
@@ -143,7 +145,7 @@ function Login() {
                 htmlFor="password"
                 className="mb-2 block text-sm font-semibold text-gray-700"
               >
-                Mot de passe
+                {t("auth.password")}
               </label>
               <input
                 type="password"
@@ -152,7 +154,7 @@ function Login() {
                 value={userAuth.password}
                 onChange={handleChange}
                 className="market-input w-full"
-                placeholder="Votre mot de passe"
+                placeholder={t("auth.password")}
                 disabled={isSubmited}
               />
             </div>
@@ -161,7 +163,7 @@ function Login() {
                 to="/forgotPass"
                 className="text-sm font-semibold text-emerald-800 hover:text-emerald-950"
               >
-                Mot de passe oublié
+                {t("auth.forgotPassword")}
               </Link>
             </div>
             <button
@@ -188,17 +190,17 @@ function Login() {
                       fill="currentColor"
                     />
                   </svg>
-                  <span className="text-sm">veuillez patienter</span>
+                  <span className="text-sm">{t("auth.wait")}</span>
                 </>
               ) : (
-                <span className="text-sm uppercase">Se connecter</span>
+                <span className="text-sm uppercase">{t("auth.signIn")}</span>
               )}
             </button>
             <div className="flex justify-between items-center">
               <span className="mt-3 flex w-full justify-center gap-2 text-sm text-gray-600">
-                Pas encore de compte ?
+                {t("auth.noAccount")}
                 <Link to="/register" className="font-semibold text-emerald-800">
-                  S'inscrire
+                  {t("auth.register")}
                 </Link>
               </span>
             </div>

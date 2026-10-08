@@ -64,6 +64,7 @@ function Add() {
     stock: 0,
     photos: [], // Initialiser les photos à un tableau vide
   });
+  const [quota, setQuota] = useState<{ name: string; quota: number; used: number; remaining: number | null } | null>(null);
 
   const { content, setNewContent } = useContent();
 
@@ -78,6 +79,7 @@ function Add() {
     [],
   );
   const { productId } = useParams();
+  const quotaReached = Boolean(!productId && quota?.quota && quota.remaining === 0);
 
   const csrf = useCSRF();
   const handleFileRemove = (index: number) => {
@@ -102,6 +104,10 @@ function Add() {
   // Fonction pour envoyer le formulaire (ajouter ou éditer)
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (quotaReached) {
+      toast.info("Votre forfait a atteint sa limite de produits. Passez à un forfait supérieur pour publier davantage.");
+      return;
+    }
     try {
       const formData = createFormDataFromObject(product);
       formData.set("details", content);
@@ -197,6 +203,14 @@ function Add() {
     }
   }, [selectedCategoryId, productId, fetchProduct]);
 
+  useEffect(() => {
+    if (productId) return;
+    void fetch(`${import.meta.env.REACT_API_URL}seller/entitlements`, { credentials: "include" }).then(async (response) => {
+      const result = await response.json();
+      if (response.ok) setQuota(result.data);
+    }).catch(() => undefined);
+  }, [productId]);
+
   return !csrf ? (
     <Preloader />
   ) : (
@@ -214,6 +228,7 @@ function Add() {
           </Link>
         }
       />
+      {!productId && quota && <div className={`admin-panel grid gap-3 px-4 py-4 sm:grid-cols-[1fr_auto] sm:items-center ${quotaReached ? "border-amber-400/40" : ""}`}><div><div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span>Forfait <strong>{quota.name}</strong></span><span className="text-[var(--admin-muted)]">{quota.used} produit(s) utilisé(s){quota.quota > 0 ? ` sur ${quota.quota}` : " · sans limite"}</span></div>{quota.quota > 0 && <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className={`h-full rounded-full ${quotaReached ? "bg-amber-400" : "bg-[var(--admin-accent-solid)]"}`} style={{ width: `${Math.min(100, quota.used / quota.quota * 100)}%` }} /></div>}{quotaReached && <p className="mt-2 text-xs text-[var(--admin-warning)]">La limite du forfait est atteinte. Vous pouvez toujours modifier vos produits existants.</p>}</div>{quotaReached && <Link to="/espace_vendeur/upgrade-pro" className="admin-button admin-button--primary admin-button--md">Découvrir un forfait supérieur</Link>}</div>}
 
       <form
         action=""
@@ -381,7 +396,7 @@ function Add() {
           <p>
             Les modifications seront visibles sur la page de votre boutique.
           </p>
-          <AdminButton type="submit" variant="primary" size="lg">
+          <AdminButton type="submit" variant="primary" size="lg" disabled={quotaReached}>
             <LiaDatabaseSolid size={18} />
             {productId ? "Enregistrer les modifications" : "Publier le produit"}
           </AdminButton>

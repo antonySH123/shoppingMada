@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
 import { useAuth } from "../helper/useAuth";
 import Preloader from "./loading/Preloader";
+import { useLanguage } from "../context/useLanguage";
 
 interface CategoryOption {
   value: string;
@@ -32,6 +33,7 @@ interface BoutikState {
 function Vendeur() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const [boutik, setBoutik] = useState<BoutikState>({
     name: "",
@@ -60,7 +62,7 @@ function Vendeur() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch categories");
+        throw new Error(t("seller.categoriesLoadError"));
       }
 
       const result = await response.json();
@@ -72,10 +74,10 @@ function Vendeur() {
       );
       setOption(datas);
     } catch (error) {
-      toast.error("Erreur lors du chargement des catégories");
+      toast.error(t("seller.categoriesLoadError"));
       console.error("Category options could not be loaded", error);
     }
-  }, []);
+  }, [t]);
 
   const inputFile = useRef<HTMLInputElement | null>(null);
 
@@ -94,18 +96,14 @@ function Vendeur() {
       !boutik.logo ||
       boutik.product_category.length === 0
     ) {
-      toast.error(
-        "Renseignez les coordonnées, le logo et au moins une catégorie.",
-      );
+      toast.error(t("seller.requiredFields"));
       return;
     }
     if (
       !/^image\/(jpeg|png|webp)$/.test(boutik.logo.type) ||
       boutik.logo.size > 5 * 1024 * 1024
     ) {
-      toast.error(
-        "Le logo doit être au format JPG, PNG ou WebP et peser 5 Mo maximum.",
-      );
+      toast.error(t("seller.invalidLogo"));
       return;
     }
     if (!csrf || isSubmitting) return;
@@ -142,12 +140,12 @@ function Vendeur() {
 
       const data = await response.json();
       if (!response.ok)
-        throw new Error(data.message || "Échec de la création de la boutique.");
+        throw new Error(data.message || t("seller.submitError"));
       toast.success(data.message);
       navigate("/redirect");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Une erreur s'est produite.",
+        error instanceof Error ? error.message : t("seller.genericError"),
       );
     } finally {
       setIsSubmitting(false);
@@ -187,19 +185,18 @@ function Vendeur() {
         <div className="market-container seller-hero-inner">
           <div className="seller-hero-copy">
             <span className="seller-hero-kicker">
-              <FaCloudUploadAlt /> Espace des professionnels
+              <FaCloudUploadAlt /> {t("seller.heroKicker")}
             </span>
             <h1>
-              Votre boutique mérite une <span>vitrine remarquable.</span>
+              {t("seller.heroTitle")}
             </h1>
             <p>
-              Rejoignez ShopInMada et présentez vos produits aux clients partout
-              à Madagascar.
+              {t("seller.heroDescription")}
             </p>
             <div className="seller-hero-points">
-              <span>01 · Créez votre vitrine</span>
-              <span>02 · Ajoutez vos catégories</span>
-              <span>03 · Touchez de nouveaux clients</span>
+              <span>{t("seller.stepStorefront")}</span>
+              <span>{t("seller.stepCategories")}</span>
+              <span>{t("seller.stepCustomers")}</span>
             </div>
           </div>
           <div className="seller-hero-visual" aria-hidden="true">
@@ -209,8 +206,8 @@ function Vendeur() {
               <span className="seller-visual-icon">
                 <FaCloudUploadAlt />
               </span>
-              <strong>Votre marque, partout.</strong>
-              <small>Une vitrine pensée pour grandir</small>
+              <strong>{t("seller.brandAnywhere")}</strong>
+              <small>{t("seller.storefrontGrowth")}</small>
               <span className="seller-visual-bars">
                 <i />
                 <i />
@@ -224,25 +221,22 @@ function Vendeur() {
       <section className="seller-onboarding-section py-9 sm:py-14">
         <div className="market-container">
           <div className="seller-onboarding-heading">
-            <span>COMMENÇONS ENSEMBLE</span>
-            <h2>Créez votre espace vendeur</h2>
-            <p>
-              Quelques informations suffisent pour préparer votre boutique en
-              ligne.
-            </p>
+            <span>{t("seller.startTogether")}</span>
+            <h2>{t("seller.createWorkspace")}</h2>
+            <p>{t("seller.onboardingDescription")}</p>
           </div>
           <div className="seller-form-card">
             <div className="seller-form-card-heading">
               <div>
-                <span>VOTRE VITRINE</span>
-                <h3>Informations de la boutique</h3>
+                <span>{t("seller.storefront")}</span>
+                <h3>{t("seller.shopInformation")}</h3>
               </div>
-              <span className="seller-form-step">Étape 1 sur 1</span>
+              <span className="seller-form-step">{t("seller.step")}</span>
             </div>
             <div className="seller-form-grid grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div className="seller-form-identity col-span-1 relative">
                 <label htmlFor="seller-logo" className="seller-field-label">
-                  Logo de la boutique
+                  {t("seller.logo")}
                 </label>
                 <div
                   className="seller-logo-upload relative left-0 right-0 top-0 mb-3 flex h-64 w-full cursor-pointer flex-col items-center justify-center overflow-hidden"
@@ -271,8 +265,8 @@ function Vendeur() {
                         className="font-bold text-green-600"
                         size={50}
                       />
-                      <strong>Déposez votre logo ici</strong>
-                      <small>Formats image · Cliquez pour parcourir</small>
+                      <strong>{t("seller.dropLogo")}</strong>
+                      <small>{t("seller.logoBrowse")}</small>
                     </>
                   ) : (
                     <img
@@ -289,92 +283,85 @@ function Vendeur() {
                   isClearable
                   value={boutik.product_category}
                   onChange={handleSelectChange}
-                  placeholder={"Sélectionnez vos catégories"}
+                  placeholder={t("seller.selectCategories")}
                   classNamePrefix="seller-category"
                 />
                 <p className="seller-category-hint">
-                  Choisissez les catégories qui représentent le mieux vos
-                  produits.
+                  {t("seller.categoryHint")}
                 </p>
               </div>
               <div className="seller-form-fields col-span-2">
                 <div className="seller-form-intro">
-                  <h4>Présentez votre activité</h4>
-                  <p>
-                    Ces informations aideront vos clients à vous trouver et à
-                    vous contacter.
-                  </p>
+                  <h4>{t("seller.presentActivity")}</h4>
+                  <p>{t("seller.contactHint")}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="seller-field-label">
-                    Nom de la boutique
+                    {t("seller.shopName")}
                     <input
                       type="text"
                       name="name"
                       value={boutik.name}
                       onChange={handleInputChange}
-                      placeholder="Ex. Atelier Mada"
+                      placeholder={t("seller.exampleShop")}
                       required
                     />
                   </label>
                   <label className="seller-field-label">
-                    Adresse
+                    {t("seller.address")}
                     <input
                       type="text"
                       name="adresse"
                       value={boutik.adresse}
                       onChange={handleInputChange}
-                      placeholder="Ville, quartier, adresse"
+                      placeholder={t("seller.addressExample")}
                       required
                     />
                   </label>
                 </div>
                 <label className="seller-field-label">
-                  Téléphone
+                  {t("seller.phone")}
                   <input
                     type="tel"
                     name="phoneNumber"
                     value={boutik.phoneNumber}
                     onChange={handleInputChange}
-                    placeholder="Ex. 034 12 345 67"
+                    placeholder={t("seller.phoneExample")}
                     required
                   />
                 </label>
                 <label className="seller-field-label">
-                  Adresse e-mail
+                  {t("seller.email")}
                   <input
                     type="email"
                     name="email"
                     value={boutik.email}
                     onChange={handleInputChange}
-                    placeholder="contact@votreboutique.mg"
+                    placeholder={t("seller.emailExample")}
                     required
                   />
                 </label>
                 <label className="seller-field-label">
-                  NIF / STAT <span className="seller-optional">Facultatif</span>
+                  {t("seller.taxId")} <span className="seller-optional">{t("seller.optional")}</span>
                   <input
                     type="text"
                     name="issuer"
                     value={boutik.issuer}
                     onChange={handleInputChange}
-                    placeholder="Vos références administratives"
+                    placeholder={t("seller.taxReference")}
                   />
                 </label>
               </div>
             </div>
             <div className="seller-form-footer">
-              <p>
-                En envoyant ce formulaire, vous soumettez votre boutique à
-                validation.
-              </p>
+              <p>{t("seller.submitHint")}</p>
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="market-button-primary disabled:opacity-60"
               >
                 <FaCloudUploadAlt />{" "}
-                {isSubmitting ? "Envoi en cours…" : "Envoyer ma demande"}{" "}
+                {isSubmitting ? t("seller.submitting") : t("seller.submit")}{" "}
                 <span>→</span>
               </button>
             </div>

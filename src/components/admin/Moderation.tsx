@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import useCSRF from "../../helper/useCSRF";
+import { requestAdminStepUp } from "../../helper/adminStepUp";
 import { useAuth } from "../../helper/useAuth";
 import { AdminButton, PageHeader, StatusBadge } from "./ui";
 
@@ -53,18 +54,23 @@ function Moderation() {
   const [commentReasons, setCommentReasons] = useState<Record<string, string>>(
     {},
   );
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedComments, setSelectedComments] = useState<string[]>([]);
+  const [bulkReasons, setBulkReasons] = useState({ products: "", comments: "" });
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState({ products: 1, comments: 1 });
 
   const loadQueues = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
       const [productResponse, commentResponse] = await Promise.all([
-        fetch(`${import.meta.env.REACT_API_URL}admin/products`, {
+        fetch(`${import.meta.env.REACT_API_URL}admin/products?page=${page}&limit=20`, {
           credentials: "include",
           signal,
         }),
-        fetch(`${import.meta.env.REACT_API_URL}admin/comments`, {
+        fetch(`${import.meta.env.REACT_API_URL}admin/comments?page=${page}&limit=20`, {
           credentials: "include",
           signal,
         }),
@@ -88,6 +94,7 @@ function Moderation() {
         : [];
       setProducts(nextProducts);
       setComments(nextComments);
+      setPages({ products: productResult.pagination?.pages ?? 1, comments: commentResult.pagination?.pages ?? 1 });
       setProductReasons(
         Object.fromEntries(
           nextProducts.map((item: ModerationProduct) => [
@@ -112,7 +119,7 @@ function Moderation() {
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -160,11 +167,13 @@ function Moderation() {
     }
     setUpdatingId(id);
     try {
+      const stepUp = await requestAdminStepUp(csrf);
+      if (!stepUp) return;
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}admin/${kind}/${id}/moderation`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json", "xsrf-token": csrf },
+          headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp },
           credentials: "include",
           body: JSON.stringify({
             [kind === "products" ? "publicationStatus" : "moderationStatus"]:
@@ -215,7 +224,59 @@ function Moderation() {
     }
   };
 
-  if (user?.userGroupMember_id?.usergroup_id?.name !== "Super Admin") {
+  const updateBulkStatus = async (
+    kind: "products" | "comments",
+    status: Exclude<PublicationStatus, "Pending">,
+  ) => {
+    const ids = kind === "products" ? selectedProducts : selectedComments;
+    const reason = bulkReasons[kind].trim();
+    if (!csrf || updatingId || ids.length === 0) return;
+    if (ids.length > 100) {
+      toast.warning("Traitez au maximum 100 éléments par lot.");
+      return;
+    }
+    if (status === "Rejected" && !reason) {
+      toast.warning("Indiquez un motif commun pour refuser la sélection.");
+      return;
+    }
+    setUpdatingId("bulk");
+    try {
+      const stepUp = await requestAdminStepUp(csrf);
+      if (!stepUp) return;
+      const response = await fetch(`${import.meta.env.REACT_API_URL}admin/${kind}/moderation/bulk`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp },
+        body: JSON.stringify({
+          ids,
+          [kind === "products" ? "publicationStatus" : "moderationStatus"]: status,
+          moderationReason: status === "Rejected" ? reason : "",
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Traitement groupé impossible.");
+      if (kind === "products") setSelectedProducts([]);
+      else setSelectedComments([]);
+      toast.success(result.message);
+      await loadQueues();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Traitement groupé impossible.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const toggleVisibleSelection = (kind: "products" | "comments", checked: boolean) => {
+    const visibleIds = kind === "products"
+      ? visibleProducts.map((item) => item._id)
+      : visibleComments.map((item) => item._id);
+    const setSelection = kind === "products" ? setSelectedProducts : setSelectedComments;
+    setSelection((current) => checked
+      ? [...new Set([...current, ...visibleIds])]
+      : current.filter((id) => !visibleIds.includes(id)));
+  };
+
+  if (user?.userGroupMember_id?.usergroup_id?.name !== "Super Admin" && !user?.adminPermissions?.includes("moderation.review")) {
     return <Navigate to="/espace_vendeur/dash" replace />;
   }
 
@@ -231,7 +292,7 @@ function Moderation() {
             <select
               className="admin-field__control"
               value={filter}
-              onChange={(event) => setFilter(event.target.value as QueueFilter)}
+      onChange={(event) => { setFilter(event.target.value as QueueFilter); setPage(1); }}
             >
               <option value="Pending">En attente</option>
               <option value="Approved">Approuvés</option>
@@ -256,6 +317,13 @@ function Moderation() {
             label={`${products.filter((item) => !item.publicationStatus || item.publicationStatus === "Pending").length} en attente`}
           />
         </header>
+        <div className="flex flex-wrap items-end gap-3 border-b border-[var(--admin-border)] p-3 sm:p-4">
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={visibleProducts.length > 0 && visibleProducts.every((item) => selectedProducts.includes(item._id))} onChange={(event) => toggleVisibleSelection("products", event.target.checked)} />Sélectionner cette page</label>
+          <span className="text-xs text-[var(--admin-muted)]">{selectedProducts.length} sélectionné(s)</span>
+          <input className="admin-search-input min-w-52 flex-1" maxLength={500} placeholder="Motif commun pour un refus groupé" value={bulkReasons.products} onChange={(event) => setBulkReasons((current) => ({ ...current, products: event.target.value }))} />
+          <AdminButton size="sm" variant="danger" disabled={updatingId !== null || selectedProducts.length === 0} onClick={() => void updateBulkStatus("products", "Rejected")}>Refuser la sélection</AdminButton>
+          <AdminButton size="sm" variant="primary" disabled={updatingId !== null || selectedProducts.length === 0} onClick={() => void updateBulkStatus("products", "Approved")}>Approuver la sélection</AdminButton>
+        </div>
         <div className="grid gap-3 p-3 sm:p-4">
           {loading ? (
             <p className="admin-empty-state">Chargement des publications…</p>
@@ -269,6 +337,7 @@ function Moderation() {
                   key={item._id}
                   className="rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface-raised)] p-4"
                 >
+                  <label className="mb-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedProducts.includes(item._id)} onChange={(event) => setSelectedProducts((current) => event.target.checked ? [...new Set([...current, item._id])] : current.filter((id) => id !== item._id))} />Sélectionner ce produit</label>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="font-bold text-[var(--admin-text)]">
@@ -370,6 +439,7 @@ function Moderation() {
           )}
         </div>
       </section>
+      {(pages.products > 1 || pages.comments > 1) && <div className="admin-panel flex items-center justify-between gap-3 p-4"><button className="admin-button admin-button--secondary admin-button--md" disabled={page <= 1 || loading} onClick={() => setPage((current) => current - 1)}>Précédent</button><span>Page {page} · Produits {pages.products} / Avis {pages.comments}</span><button className="admin-button admin-button--secondary admin-button--md" disabled={page >= Math.max(pages.products, pages.comments) || loading} onClick={() => setPage((current) => current + 1)}>Suivant</button></div>}
 
       <section className="admin-panel">
         <header className="admin-panel-heading">
@@ -382,6 +452,13 @@ function Moderation() {
             label={`${comments.filter((item) => !item.moderationStatus || item.moderationStatus === "Pending").length} en attente`}
           />
         </header>
+        <div className="flex flex-wrap items-end gap-3 border-b border-[var(--admin-border)] p-3 sm:p-4">
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={visibleComments.length > 0 && visibleComments.every((item) => selectedComments.includes(item._id))} onChange={(event) => toggleVisibleSelection("comments", event.target.checked)} />Sélectionner cette page</label>
+          <span className="text-xs text-[var(--admin-muted)]">{selectedComments.length} sélectionné(s)</span>
+          <input className="admin-search-input min-w-52 flex-1" maxLength={500} placeholder="Motif commun pour un refus groupé" value={bulkReasons.comments} onChange={(event) => setBulkReasons((current) => ({ ...current, comments: event.target.value }))} />
+          <AdminButton size="sm" variant="danger" disabled={updatingId !== null || selectedComments.length === 0} onClick={() => void updateBulkStatus("comments", "Rejected")}>Refuser la sélection</AdminButton>
+          <AdminButton size="sm" variant="primary" disabled={updatingId !== null || selectedComments.length === 0} onClick={() => void updateBulkStatus("comments", "Approved")}>Approuver la sélection</AdminButton>
+        </div>
         <div className="grid gap-3 p-3 sm:p-4">
           {loading ? (
             <p className="admin-empty-state">Chargement des commentaires…</p>
@@ -397,6 +474,7 @@ function Moderation() {
                   key={item._id}
                   className="rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface-raised)] p-4"
                 >
+                  <label className="mb-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedComments.includes(item._id)} onChange={(event) => setSelectedComments((current) => event.target.checked ? [...new Set([...current, item._id])] : current.filter((id) => id !== item._id))} />Sélectionner cet avis</label>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h3 className="font-bold text-[var(--admin-text)]">

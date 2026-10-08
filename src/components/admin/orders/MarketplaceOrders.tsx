@@ -73,6 +73,11 @@ function MarketplaceOrders() {
   const [loadError, setLoadError] = useState("");
   const [busyId, setBusyId] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [refusalDraft, setRefusalDraft] = useState<Record<string, string>>({});
   const [shippingDraft, setShippingDraft] = useState<
     Record<string, { carrier: string; trackingNumber: string }>
@@ -84,7 +89,7 @@ function MarketplaceOrders() {
     setLoadError("");
     try {
       const response = await fetch(
-        `${import.meta.env.REACT_API_URL}marketplace/orders`,
+        `${import.meta.env.REACT_API_URL}marketplace/orders?page=${page}&limit=20&status=${encodeURIComponent(statusFilter)}&search=${encodeURIComponent(searchQuery)}`,
         { credentials: "include" },
       );
       const result = await response.json().catch(() => ({}));
@@ -98,6 +103,8 @@ function MarketplaceOrders() {
           result.message || "Impossible de charger les commandes.",
         );
       setOrders(result.data);
+      setPages(result.pagination?.pages ?? 1);
+      setTotalOrders(result.pagination?.total ?? 0);
     } catch (error) {
       setLoadError(
         error instanceof Error
@@ -107,7 +114,12 @@ function MarketplaceOrders() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, searchQuery, statusFilter]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setSearchQuery(search.trim()), 300);
+    return () => window.clearTimeout(timeout);
+  }, [search]);
 
   useEffect(() => {
     void loadOrders();
@@ -155,19 +167,8 @@ function MarketplaceOrders() {
 
   if (!csrf) return <Preloader />;
 
-  const visibleOrders =
-    statusFilter === "all"
-      ? orders
-      : orders.filter((order) =>
-          order.subOrders.some((subOrder) => subOrder.status === statusFilter),
-        );
-  const statuses = [
-    ...new Set(
-      orders.flatMap((order) =>
-        order.subOrders.map((subOrder) => subOrder.status),
-      ),
-    ),
-  ].sort();
+  const visibleOrders = orders;
+  const statuses = Object.keys(statusLabels);
 
   return (
     <section className="space-y-5">
@@ -177,18 +178,18 @@ function MarketplaceOrders() {
           <h1 className="admin-panel-title text-2xl">
             {isSeller ? "Commandes de la boutique" : "Commandes multi-vendeurs"}
           </h1>
-          <p className="admin-panel-subtitle mt-1 text-sm">
-            Chaque boutique traite sa sous-commande, son paiement et sa
-            livraison.
-          </p>
+            <p className="admin-panel-subtitle mt-1 text-sm">{totalOrders} commande(s) · chaque boutique suit son paiement et sa livraison.</p>
         </div>
         <div className="admin-toolbar-actions">
+          <label className="grid gap-1 text-xs font-bold text-[var(--admin-muted)]">Recherche client
+            <input className="admin-input min-h-11" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Nom ou téléphone" aria-label="Rechercher par nom ou téléphone" />
+          </label>
           <label className="grid gap-1 text-xs font-bold text-[var(--admin-muted)]">
             Statut
             <select
               className="admin-input min-h-11"
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
+              onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}
             >
               <option value="all">Tous les statuts</option>
               {statuses.map((status) => (
@@ -547,6 +548,7 @@ function MarketplaceOrders() {
           </article>
         ))
       )}
+      {pages > 1 && <div className="admin-panel flex items-center justify-between gap-3 p-4"><button type="button" className="admin-button-secondary min-h-10" disabled={page <= 1 || loading} onClick={() => setPage((current) => current - 1)}>Précédent</button><span>Page {page} / {pages}</span><button type="button" className="admin-button-secondary min-h-10" disabled={page >= pages || loading} onClick={() => setPage((current) => current + 1)}>Suivant</button></div>}
     </section>
   );
 }

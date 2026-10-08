@@ -5,11 +5,16 @@ import JodiProvider from "../../context/JodiProvider";
 import { LiaBarsSolid, LiaMoonSolid, LiaSunSolid } from "react-icons/lia";
 import { useLocation } from "react-router-dom";
 import "./ui/tokens.css";
-import LanguageSelector from "../LanguageSelector";
 import { useLanguage } from "../../context/useLanguage";
+import { useAuth } from "../../helper/useAuth";
+import useCSRF from "../../helper/useCSRF";
+import { toast } from "react-toastify";
+import LanguageSelector from "../LanguageSelector";
 
 function AppAdmin() {
   const { t } = useLanguage();
+  const { user, setUserInfo } = useAuth();
+  const csrf = useCSRF();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -37,6 +42,12 @@ function AppAdmin() {
     shopaccounts: t("admin.accounts"),
     accountsSettings: t("admin.accountSettings"),
     addProduct: t("admin.addProduct"),
+    "verification-vendeurs": t("admin.sellerVerification"),
+    support: t("admin.support"),
+    "journal-activite": t("admin.activityLog"),
+    "categories-admin": t("admin.categories"),
+    finances: t("admin.finance"),
+    forfaits: t("admin.plansPermissions"),
   };
   const pageKey = location.pathname.split("/").filter(Boolean).pop() || "dash";
 
@@ -65,6 +76,7 @@ function AppAdmin() {
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
       <div className="admin-shell-main min-w-0 flex-1 overflow-y-auto">
+        {(user as any)?.impersonation?.active && <div className="sticky top-0 z-50 flex items-center justify-between gap-3 bg-amber-300 px-4 py-2 text-sm font-bold text-slate-950"><span>{t("admin.impersonationActive")}</span><button className="rounded-lg bg-slate-950 px-3 py-1 text-white" onClick={async()=>{try{const r=await fetch(`${import.meta.env.REACT_API_URL}auth/impersonation`,{method:"DELETE",credentials:"include",headers:{"xsrf-token":csrf??""}});const j=await r.json();if(!r.ok)throw new Error(j.message);const me=await fetch(`${import.meta.env.REACT_API_URL}auth/me`,{credentials:"include"});const profile=await me.json();setUserInfo(profile.userInfo);toast.success(t("admin.impersonationStopped"));}catch(e){toast.error(e instanceof Error?e.message:t("admin.impersonationStopError"));}}}>{t("admin.stopImpersonation")}</button></div>}
         <header className="admin-page-header sticky top-0 z-20 flex h-[4.5rem] items-center gap-3 border-b px-4 shadow-sm sm:px-6">
           <button
             aria-label="Afficher/masquer le menu"
@@ -82,7 +94,6 @@ function AppAdmin() {
               {t("admin.professionalSpace")}
             </h1>
           </div>
-          <LanguageSelector compact />
           <button
             type="button"
             className="admin-theme-toggle"
@@ -98,6 +109,7 @@ function AppAdmin() {
               <LiaMoonSolid size={18} />
             )}
           </button>
+          <LanguageSelector compact className="admin-language-selector" />
           <span className="admin-mobile-page-badge ml-auto rounded-full px-3 py-1.5 text-xs font-semibold">
             {currentPageLabels[pageKey] || t("admin.professionalSpace")}
           </span>

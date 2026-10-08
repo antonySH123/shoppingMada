@@ -11,7 +11,7 @@ function ProductCard({ product }: IProductProps) {
   const {priceInArriary} = useFormatter();
   return (
     <React.Fragment>
-      <Link to={`/product/${product._id}/details`} className="market-card group flex h-full w-full flex-col cursor-pointer">
+      <Link to={`/product/${product._id}/details`} className="market-card product-card group flex h-full w-full flex-col cursor-pointer">
       <div className="relative m-3 mb-0 overflow-hidden rounded-xl bg-gray-50">
         <span className="absolute right-3 top-3 z-10 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-emerald-800 shadow-sm">
           {priceInArriary(product.price)}

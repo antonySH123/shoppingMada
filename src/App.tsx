@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 
 import Base from "./components/layouts/Base";
 import BaseShop from "./components/layouts/BaseShop";
@@ -8,6 +8,7 @@ import ProductProvider from "./context/ProductContext";
 import TopProgressBar from "./components/progress/TopProgressBar";
 import ScrollToTop from "./components/progress/ScrollToTop";
 import { CartProvider } from "./context/CartContext";
+import LanguageSelector from "./components/LanguageSelector";
 
 const Home = lazy(() => import("./components/Home"));
 const Register = lazy(() => import("./components/Register"));
@@ -65,10 +66,28 @@ const ShopPaymentSettings = lazy(
 const MarketplaceDisputes = lazy(
   () => import("./components/admin/orders/MarketplaceDisputes"),
 );
+const KycQueue = lazy(() => import("./components/admin/operations/KycQueue"));
+const ContactInbox = lazy(() => import("./components/admin/operations/ContactInbox"));
+const AuditLog = lazy(() => import("./components/admin/operations/AuditLog"));
+const CategoryManagement = lazy(() => import("./components/admin/operations/CategoryManagement"));
+const PlanManagement = lazy(() => import("./components/admin/operations/PlanManagement"));
+const FinancialDashboard = lazy(() => import("./components/admin/operations/FinancialDashboard"));
+
+function GlobalLanguageSelector() {
+  const location = useLocation();
+  const inAppShell = location.pathname === "/" || location.pathname.startsWith("/shop") || [
+    "/vendeur", "/profil", "/panier", "/suivi-commande", "/redirect", "/product/", "/confirmCompte",
+  ].some((path) => location.pathname.startsWith(path));
+
+  if (inAppShell || location.pathname.startsWith("/espace_vendeur")) return null;
+  return <LanguageSelector compact className="global-language-selector" />;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <CartProvider>
+        <GlobalLanguageSelector />
         <TopProgressBar />
         <ScrollToTop />
         <Suspense fallback={<div className="p-8 text-center">Chargement…</div>}>
@@ -132,6 +151,12 @@ function App() {
                 Component={SubscriptionPaymentSettings}
               ></Route>
               <Route path="moderation" Component={Moderation}></Route>
+              <Route path="verification-vendeurs" Component={KycQueue}></Route>
+              <Route path="support" Component={ContactInbox}></Route>
+              <Route path="journal-activite" Component={AuditLog}></Route>
+              <Route path="categories-admin" Component={CategoryManagement}></Route>
+              <Route path="forfaits" Component={PlanManagement}></Route>
+              <Route path="finances" Component={FinancialDashboard}></Route>
               <Route path="upgrade-pro" Component={UpgradePro}></Route>
               <Route
                 path="abonnementsDetails/:id"

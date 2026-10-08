@@ -1,8 +1,10 @@
 import React, { FormEvent, useCallback, useEffect, useReducer } from "react";
 import { LiaCommentAltSolid, LiaPaperPlane } from "react-icons/lia";
+import { FaCheckCircle } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
 import { formatFrenchDateTime } from "../../helper/locale";
+import { useLanguage } from "../../context/useLanguage";
 type CommentProps = {
   product_id: string;
   csrf: string;
@@ -17,6 +19,7 @@ interface IComment {
   owner_id?: IUser;
   product_id?: string;
   date?: Date;
+  verifiedPurchase?: boolean;
 }
 
 interface IState {
@@ -59,6 +62,7 @@ const Comment: React.FC<CommentProps> = ({
   csrf,
 }: CommentProps) => {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -93,12 +97,12 @@ const Comment: React.FC<CommentProps> = ({
         if (!response.ok && response.status !== 401) {
           const result = await response.json().catch(() => null);
           toast.error(
-            result?.message || "Impossible d’envoyer le commentaire.",
+            result?.message || t("comment.sendError"),
           );
         }
 
         if (response.status === 401) {
-          toast.error("Vous devez vous connecté tout d'abord!");
+          toast.error(t("comment.loginRequired"));
           navigate("/login", {
             state: {
               from: location.pathname,
@@ -142,16 +146,16 @@ const Comment: React.FC<CommentProps> = ({
         <div className="mb-5 flex items-end justify-between gap-4 border-b border-gray-100 pb-5">
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
-              Votre avis compte
+              {t("comment.yourOpinion")}
             </p>
             <h2 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
-              Commentaires
+              {t("comment.title")}
             </h2>
           </div>
           <div className="comments-count flex shrink-0 items-center gap-2">
             <strong>{state.comments.length}</strong>
             <LiaCommentAltSolid aria-hidden="true" />
-            <span className="sr-only">commentaires</span>
+            <span className="sr-only">{t("comment.countLabel")}</span>
           </div>
         </div>
         <div className="comments-list">
@@ -162,9 +166,16 @@ const Comment: React.FC<CommentProps> = ({
                   <h3 className="font-bold text-gray-900">
                     {element.owner_id?.username || "Client"}
                   </h3>
-                  <time className="text-xs font-medium text-gray-400">
-                    {formatFrenchDateTime(element.date)}
-                  </time>
+                  <div className="flex items-center gap-3">
+                    {element.verifiedPurchase && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800"><FaCheckCircle aria-hidden="true" /> {t("comment.verifiedBuyer")}</span>}
+                    <time className="text-xs font-medium text-gray-400">
+                      {language === "fr"
+                        ? formatFrenchDateTime(element.date)
+                        : element.date && !Number.isNaN(new Date(element.date).getTime())
+                          ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(element.date))
+                          : "—"}
+                    </time>
+                  </div>
                 </div>
                 <div className="mt-3">
                   <p className="whitespace-pre-wrap text-sm leading-7 text-gray-600">
@@ -179,11 +190,10 @@ const Comment: React.FC<CommentProps> = ({
                 <LiaCommentAltSolid />
               </span>
               <h3 className="font-semibold text-gray-800">
-                Aucun commentaire pour le moment
+                {t("comment.emptyTitle")}
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                Partagez votre expérience et soyez le premier à donner votre
-                avis.
+                {t("comment.emptyHint")}
               </p>
             </div>
           )}
@@ -197,7 +207,7 @@ const Comment: React.FC<CommentProps> = ({
             htmlFor="product-comment"
             className="mb-2 block text-sm font-semibold text-gray-800"
           >
-            Ajouter un commentaire
+            {t("comment.add")}
           </label>
           <div className="comments-composer">
             <textarea
@@ -205,7 +215,7 @@ const Comment: React.FC<CommentProps> = ({
               name="comment"
               className="market-input w-full resize-y"
               rows={3}
-              placeholder="Qu’avez-vous pensé de ce produit ?"
+              placeholder={t("comment.placeholder")}
               required
               value={state.newComment.comment}
               onChange={(e) =>
@@ -222,7 +232,7 @@ const Comment: React.FC<CommentProps> = ({
             <div className="comments-submit-wrap">
               <button
                 type="submit"
-                aria-label="Envoyer le commentaire"
+                aria-label={t("comment.submit")}
                 disabled={state.loading}
                 className="comments-submit"
               >

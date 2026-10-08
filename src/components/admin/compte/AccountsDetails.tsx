@@ -6,7 +6,9 @@ import { LiaAtSolid, LiaPhoneAltSolid, LiaUser } from "react-icons/lia";
 import useCSRF from "../../../helper/useCSRF";
 import { useAuth } from "../../../helper/useAuth";
 import Preloader from "../../loading/Preloader";
+import { requestAdminStepUp } from "../../../helper/adminStepUp";
 import { AdminButton, PageHeader } from "../ui";
+import { useCallback as useCallbackData } from "react";
 
 interface IState {
   user: Iuser | null;
@@ -39,6 +41,8 @@ function AccountsDetails() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const csrf = useCSRF();
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [seller360, setSeller360] = useState<any>(null);
+  const [commission, setCommission] = useState("0");
 
   const checkAccount = useCallback(async () => {
     try {
@@ -82,10 +86,25 @@ function AccountsDetails() {
     }
   }, [id]);
 
+  const loadSeller360 = useCallbackData(async () => {
+    if (!state.user?.boutiks_id) return;
+    const shopId = typeof state.user.boutiks_id === "string" ? state.user.boutiks_id : state.user.boutiks_id._id;
+    try { const response = await fetch(`${import.meta.env.REACT_API_URL}admin/sellers/${shopId}/360`, { credentials: "include" }); const result = await response.json(); if (response.ok) { setSeller360(result.data); setCommission(String(result.data.shop.commissionPercent ?? 0)); } }
+    catch { toast.error("Impossible de charger la fiche vendeur 360°."); }
+  }, [state.user?.boutiks_id]);
+
   useEffect(() => {
     checkAccount();
     fetchData();
   }, [checkAccount, fetchData, id]);
+  useEffect(() => { void loadSeller360(); }, [loadSeller360]);
+
+  const saveCommission = async () => {
+    if (!csrf || !state.user?.boutiks_id) return;
+    const shopId = typeof state.user.boutiks_id === "string" ? state.user.boutiks_id : state.user.boutiks_id._id;
+    try { const stepUp = await requestAdminStepUp(csrf); if (!stepUp) return; const response = await fetch(`${import.meta.env.REACT_API_URL}admin/sellers/${shopId}/commission`, { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ commissionPercent: Number(commission) }) }); const result = await response.json(); if (!response.ok) throw new Error(result.message); toast.success("Commission enregistrée."); void loadSeller360(); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Enregistrement impossible."); }
+  };
 
   const handleRoleChange = useCallback(async () => {
     try {
@@ -132,6 +151,10 @@ function AccountsDetails() {
       )
     )
       return;
+    const reason = !activate
+      ? window.prompt("Motif de désactivation (facultatif)") ?? undefined
+      : undefined;
+    if (!activate && reason === undefined) return;
 
     setIsUpdatingStatus(true);
     try {
@@ -141,6 +164,7 @@ function AccountsDetails() {
           method: "PUT",
           headers: { "Content-Type": "application/json", "xsrf-token": csrf },
           credentials: "include",
+          body: JSON.stringify({ ...(reason ? { reason } : {}) }),
         },
       );
       const result = await response.json();
@@ -355,6 +379,7 @@ function AccountsDetails() {
           </div>
         </section>
       )}
+      {seller360 && <section className="admin-panel p-5"><div className="admin-panel-heading"><div><p className="admin-panel-kicker">Vue consolidée vendeur</p><h2 className="admin-panel-title">Fiche vendeur 360°</h2><p className="admin-panel-subtitle">KYC, quota, abonnement, activité récente et historique administratif.</p></div></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-lg bg-white/5 p-3">KYC<strong className="block">{seller360.kyc?.verificationStatus ?? "Non soumis"}</strong></div><div className="rounded-lg bg-white/5 p-3">Produits<strong className="block">{seller360.productCount}</strong></div><div className="rounded-lg bg-white/5 p-3">Forfait<strong className="block">{seller360.shop.subscription_id?.plan ?? seller360.shop.plan}</strong></div><div className="rounded-lg bg-white/5 p-3">Commandes récentes<strong className="block">{seller360.orders.length}</strong></div></div><div className="mt-4 flex flex-wrap items-end gap-3"><label className="admin-field"><span>Commission marketplace (%)</span><input className="admin-field__control" type="number" min="0" max="50" step="0.1" value={commission} onChange={(event) => setCommission(event.target.value)} /></label><button type="button" className="admin-button admin-button--primary admin-button--md" onClick={() => void saveCommission()}>Enregistrer le taux</button></div><div className="mt-5 grid gap-5 lg:grid-cols-2"><div><h3 className="font-bold">Commandes récentes</h3>{seller360.orders.map((order: any) => <p className="mt-2 text-sm text-[var(--admin-muted)]" key={order._id}>{new Date(order.createdAt).toLocaleDateString("fr-FR")} · {order.customer?.name} · {order.subOrders.map((line: any) => line.status).join(", ")}</p>)}</div><div><h3 className="font-bold">Actions administratives</h3>{seller360.audit.map((entry: any) => <p className="mt-2 text-sm text-[var(--admin-muted)]" key={entry._id}>{new Date(entry.createdAt).toLocaleString("fr-FR")} · {entry.actorName} · {entry.action}</p>)}</div></div></section>}
     </div>
   );
 }

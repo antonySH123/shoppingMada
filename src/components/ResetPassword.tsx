@@ -5,8 +5,10 @@ import { LiaUserCogSolid } from "react-icons/lia";
 import useCSRF from "../helper/useCSRF";
 import { useAuth } from "../helper/useAuth";
 import Preloader from "./loading/Preloader";
+import { useLanguage } from "../context/useLanguage";
 
 function ResetPassword() {
+  const { t } = useLanguage();
   const [passwordData, setPasswordData] = useState({
     newPassword: "",
     confirmPassword: "",
@@ -21,7 +23,7 @@ function ResetPassword() {
     setIsSubmitting(true);
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("Les mots de passe ne correspondent pas !");
+      toast.error(t("auth.passwordMismatch"));
       setIsSubmitting(false);
       return;
     }
@@ -65,12 +67,12 @@ function ResetPassword() {
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="auth-page flex items-center justify-center">
+    <div className="auth-page relative flex items-center justify-center">
       <div>
         <div className="auth-panel w-full max-w-lg">
           <h1 className="text-white font-bold text-center mb-6 flex flex-col justify-center items-center">
             <LiaUserCogSolid size={60} />
-            <strong className="text-2xl">Réinitialiser le mot de passe</strong>
+            <strong className="text-2xl">{t("auth.resetTitle")}</strong>
           </h1>
           <form onSubmit={handleSubmit}>
             <div className="relative my-4">
@@ -80,7 +82,7 @@ function ResetPassword() {
                 value={passwordData.newPassword}
                 onChange={handleChange}
                 className="block w-72 py-5 px-0 text-white bg-transparent border-0 border-b-2 border-gray-300 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                placeholder="Nouveau mot de passe"
+                placeholder={t("auth.newPassword")}
                 disabled={isSubmitting}
               />
             </div>
@@ -91,7 +93,7 @@ function ResetPassword() {
                 value={passwordData.confirmPassword}
                 onChange={handleChange}
                 className="block w-72 py-5 px-0 text-white bg-transparent border-0 border-b-2 border-gray-300 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                placeholder="Confirmer le mot de passe"
+                placeholder={t("auth.confirmPassword")}
                 disabled={isSubmitting}
               />
             </div>
@@ -101,9 +103,9 @@ function ResetPassword() {
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <span className="text-sm">Veuillez patienter...</span>
+                <span className="text-sm">{t("auth.wait")}...</span>
               ) : (
-                <span className="text-sm uppercase">Réinitialiser</span>
+                <span className="text-sm uppercase">{t("auth.reset")}</span>
               )}
             </button>
           </form>

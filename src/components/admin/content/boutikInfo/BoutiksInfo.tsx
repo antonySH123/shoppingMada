@@ -6,6 +6,7 @@ import Preloader from "../../../loading/Preloader";
 import { PageHeader } from "../../ui";
 
 type ShopInfo = {
+  logo: string;
   name: string;
   adresse: string;
   phoneNumber: string;
@@ -20,6 +21,7 @@ type ShopInfo = {
 };
 
 const initialShopInfo: ShopInfo = {
+  logo: "",
   name: "",
   adresse: "",
   phoneNumber: "",
@@ -35,23 +37,33 @@ const initialShopInfo: ShopInfo = {
 
 function BoutiksInfo() {
   const [shopInfo, setShopInfo] = useState<ShopInfo>(initialShopInfo);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const csrf = useCSRF();
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await fetch(
-        `${import.meta.env.REACT_API_URL}boutiks/info`,
-        {
-          credentials: "include",
-        },
-      );
-
-      const result = await response.json();
-      setShopInfo({ ...initialShopInfo, ...(result.boutiks ?? {}) });
+      try {
+        const response = await fetch(`${import.meta.env.REACT_API_URL}boutiks/info`, { credentials: "include" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "Impossible de charger les informations boutique.");
+        setShopInfo({ ...initialShopInfo, ...(result.boutiks ?? {}) });
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Chargement de la boutique impossible.");
+      } finally { setLoading(false); }
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!logoFile) { setLogoPreview(null); return; }
+    const preview = URL.createObjectURL(logoFile);
+    setLogoPreview(preview);
+    return () => URL.revokeObjectURL(preview);
+  }, [logoFile]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -62,28 +74,29 @@ function BoutiksInfo() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (csrf) {
+    if (csrf && !saving) {
+      setSaving(true);
+      try {
+      const body = new FormData();
+      Object.entries(shopInfo).forEach(([key, value]) => { if (key !== "logo") body.append(key, String(value ?? "")); });
+      if (logoFile) body.append("image", logoFile);
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}boutiks/update`,
         {
           method: "PUT",
           credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            "xsrf-token": csrf,
-          },
-          body: JSON.stringify(shopInfo),
+          headers: { "xsrf-token": csrf },
+          body,
         },
       );
 
-      const { status, message } = await response.json();
-
-      if ((status as string).toLocaleLowerCase() === "success") {
-        toast.success(message);
-      }
-      if ((status as string).toLocaleLowerCase() === "failed") {
-        toast.error(message);
-      }
+      const result = await response.json();
+      if (!response.ok || String(result.status).toLowerCase() !== "success") throw new Error(result.message || "Impossible d’enregistrer les informations boutique.");
+      setShopInfo((current) => ({ ...current, logo: result.data?.logo ?? current.logo }));
+      setLogoFile(null);
+      toast.success(result.message || "Informations enregistrées.");
+      } catch (error) { toast.error(error instanceof Error ? error.message : "Enregistrement impossible."); }
+      finally { setSaving(false); }
     }
   };
 
@@ -97,11 +110,12 @@ function BoutiksInfo() {
         description="Tenez à jour les coordonnées visibles par vos clients."
       />
 
-      <form
+      {loading ? <div className="admin-panel p-6 text-sm text-[var(--admin-muted)]">Chargement des informations boutique…</div> : <form
         onSubmit={handleSubmit}
         className="admin-panel mx-auto w-full max-w-3xl p-5 sm:p-8"
       >
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+          <div className="admin-field sm:col-span-2"><label htmlFor="shop-logo">Logo de la boutique</label><div className="flex flex-wrap items-center gap-4 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-raised)] p-4"><div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white">{logoPreview || shopInfo.logo ? <img src={logoPreview ?? `${import.meta.env.REACT_API_URL}uploads/${encodeURIComponent(shopInfo.logo)}`} alt="Aperçu du logo boutique" className="h-full w-full object-contain" /> : <span className="text-2xl font-bold text-emerald-800">{shopInfo.name.slice(0, 1) || "B"}</span>}</div><div className="grid gap-1"><input id="shop-logo" type="file" accept="image/jpeg,image/png,image/webp" className="admin-field__control" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 5 * 1024 * 1024) { toast.error("Choisissez une image JPEG, PNG ou WebP de 5 Mo maximum."); event.target.value = ""; return; } setLogoFile(file); }} /><small className="text-xs text-[var(--admin-muted)]">Format JPEG, PNG ou WebP · 5 Mo maximum</small></div></div></div>
           <div className="admin-field">
             <label>Nom de la boutique</label>
             <input
@@ -219,12 +233,13 @@ function BoutiksInfo() {
         <div className="mt-6 flex justify-end">
           <button
             type="submit"
+            disabled={saving}
             className="admin-button admin-button--primary admin-button--md"
           >
-            <FaSave className="mr-2" /> Enregistrer
+            <FaSave className="mr-2" /> {saving ? "Enregistrement…" : "Enregistrer les informations"}
           </button>
         </div>
-      </form>
+      </form>}
     </div>
   );
 }

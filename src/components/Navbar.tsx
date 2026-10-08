@@ -16,8 +16,8 @@ import {
 } from "react-router-dom";
 import { useAuth } from "../helper/useAuth";
 import CartHeaderLink from "./CartHeaderLink";
-import LanguageSelector from "./LanguageSelector";
 import { useLanguage } from "../context/useLanguage";
+import LanguageSelector from "./LanguageSelector";
 
 const Navbar = () => {
   const { t } = useLanguage();
@@ -161,7 +161,7 @@ const Navbar = () => {
         </form>
 
         <div className="ml-auto hidden shrink-0 items-center gap-1 md:flex">
-          <LanguageSelector compact />
+          <LanguageSelector compact className="desktop-inline-language-selector" />
           <CartHeaderLink />
           {accountLinks}
         </div>
@@ -206,8 +206,8 @@ const Navbar = () => {
         </span>
       </div>
 
-      <div className="market-container pb-3 md:hidden">
-        <form onSubmit={handleSearch} role="search" className="relative">
+      <div className="market-container flex items-center gap-2 pb-3 md:hidden">
+        <form onSubmit={handleSearch} role="search" className="relative min-w-0 flex-1">
           <LiaSearchSolid
             aria-hidden="true"
             className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
@@ -229,6 +229,7 @@ const Navbar = () => {
             <LiaSearchSolid size={18} />
           </button>
         </form>
+        <LanguageSelector compact className="mobile-inline-language-selector" />
       </div>
 
       {open && (
@@ -237,7 +238,6 @@ const Navbar = () => {
             aria-label="Navigation mobile"
             className="market-container flex flex-col gap-1"
           >
-            <div className="px-3 py-2"><LanguageSelector /></div>
             {[
               ...secondaryMobileMenu,
               { href: "/#contact", label: t("nav.contact") },

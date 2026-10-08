@@ -208,10 +208,24 @@
 .admin-shell .text-red-600 { color: var(--admin-danger) !important; }
 .admin-shell .admin-page .rounded-xl.border { border-color: var(--admin-border); }
 .admin-dashboard { width: 100%; min-width: 0; }
-.admin-dashboard-metrics { grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
+.admin-dashboard-metrics { grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0.85rem; }
+.admin-dashboard-metric-link { display: block; min-width: 0; border-radius: var(--admin-radius-lg); text-decoration: none; transition: transform 160ms ease, box-shadow 160ms ease; }
+.admin-dashboard-metric-link:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgb(0 0 0 / 18%); }
+.admin-dashboard-metric-link:focus-visible { outline: none; box-shadow: var(--admin-focus); }
+.admin-dashboard-metric-link .admin-stat-card { height: 100%; min-height: 7rem; border-color: rgb(255 255 255 / 8%); background: linear-gradient(145deg, var(--admin-surface), color-mix(in srgb, var(--admin-surface-raised) 72%, transparent)); }
 .admin-dashboard-orders { overflow: hidden; }
 .admin-dashboard-orders > .admin-panel-heading { padding: 0.9rem 1rem; }
 .admin-dashboard-orders .admin-panel-link { color: var(--admin-accent-solid); }
+.admin-dashboard-order-row { display: flex; min-height: 4.2rem; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.7rem 0.2rem; color: var(--admin-text); text-decoration: none; }
+.admin-dashboard-order-row:hover strong { color: var(--admin-accent-solid); }
+.admin-dashboard-shortcuts { display: flex; flex-wrap: wrap; gap: 0.5rem; border-top: 1px solid var(--admin-border); padding: 0.8rem 1rem; }
+.admin-dashboard-shortcuts a { display: inline-flex; align-items: center; gap: 0.45rem; border: 1px solid var(--admin-border); border-radius: 999px; background: var(--admin-surface-raised); padding: 0.45rem 0.7rem; color: var(--admin-text); font-size: var(--admin-font-xs); font-weight: 700; text-decoration: none; transition: border-color 140ms ease, color 140ms ease, background 140ms ease; }
+.admin-dashboard-shortcuts a:hover { border-color: var(--admin-accent-solid); color: var(--admin-accent-solid); }
+.admin-shell .admin-page .admin-panel { border-radius: 1rem; box-shadow: 0 10px 30px rgb(0 0 0 / 12%); }
+.admin-shell .admin-page .admin-panel-heading { min-height: 4rem; }
+.admin-shell .admin-page-header { background: color-mix(in srgb, var(--admin-surface) 88%, transparent); backdrop-filter: blur(18px); }
+.admin-shell .admin-sidebar .admin-nav-link { min-height: 2.9rem; gap: 0.75rem; font-weight: 650; }
+.admin-shell .admin-sidebar .admin-nav-link svg { width: 1.05rem; color: var(--admin-accent-solid); }
 .admin-shell .cin-info-modal { background: var(--admin-surface); color: var(--admin-text); }
 .admin-shell .cin-info-modal input { border-color: var(--admin-border); background: var(--admin-surface-raised); color: var(--admin-text); }
 

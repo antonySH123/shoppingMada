@@ -1,0 +1,21 @@
+import { useCallback, useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { useAuth } from "../../../helper/useAuth";
+import useCSRF from "../../../helper/useCSRF";
+import { requestAdminStepUp } from "../../../helper/adminStepUp";
+import { PageHeader } from "../ui";
+
+type Plan = { key: "free" | "pro"; name: string; monthlyPriceMGA: number; durationDays: number; graceDays: number; maxProducts: number; active: boolean; features: Record<string, boolean> };
+const featureLabels: Record<string, string> = { advancedAnalytics: "Analyses avancées", prioritySupport: "Support prioritaire", customCategories: "Catégories personnalisées" };
+
+export default function PlanManagement() {
+  const { user } = useAuth(); const csrf = useCSRF(); const [plans, setPlans] = useState<Plan[]>([]); const [loading, setLoading] = useState(true); const [busy, setBusy] = useState("");
+  const admin = user?.userGroupMember_id?.usergroup_id?.name === "Super Admin";
+  const load = useCallback(async () => { setLoading(true); try { const r = await fetch(`${import.meta.env.REACT_API_URL}admin/plans`, { credentials: "include" }); const j = await r.json(); if (!r.ok) throw new Error(j.message); setPlans(j.data ?? []); } catch (e) { toast.error(e instanceof Error ? e.message : "Chargement impossible."); } finally { setLoading(false); } }, []);
+  useEffect(() => { if (admin) void load(); }, [admin, load]);
+  const change = (key: Plan["key"], field: string, value: any) => setPlans((items) => items.map((p) => p.key === key ? (field.startsWith("features.") ? { ...p, features: { ...p.features, [field.slice(9)]: value } } : { ...p, [field]: value }) : p));
+  const save = async (plan: Plan) => { if (!csrf) return; setBusy(plan.key); try { const stepUp = await requestAdminStepUp(csrf); if (!stepUp) return; const r = await fetch(`${import.meta.env.REACT_API_URL}admin/plans/${plan.key}`, { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify(plan) }); const j = await r.json(); if (!r.ok) throw new Error(j.message); toast.success("Forfait enregistré."); await load(); } catch (e) { toast.error(e instanceof Error ? e.message : "Enregistrement impossible."); } finally { setBusy(""); } };
+  if (!admin) return <Navigate to="/espace_vendeur/dash" replace />;
+  return <div className="space-y-5"><PageHeader eyebrow="Offre commerciale" title="Forfaits et droits" description="Définissez les limites et fonctionnalités réellement appliquées par l’API. Une limite de produits à 0 signifie illimitée." />{loading ? <div className="admin-panel p-6">Chargement…</div> : plans.map((plan) => <section key={plan.key} className="admin-panel space-y-4 p-5"><div><h2 className="text-xl font-bold">{plan.name} <span className="text-xs uppercase text-[var(--admin-muted)]">{plan.key}</span></h2></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{([["name","Nom"],["monthlyPriceMGA","Prix mensuel (MGA)"],["durationDays","Durée (jours)"],["graceDays","Délai de grâce (jours)"],["maxProducts","Produits maximum (0 = illimité)"]] as const).map(([key,label]) => <label key={key} className="text-sm font-medium">{label}<input className="admin-search-input mt-1 w-full" value={(plan as any)[key]} type={key === "name" ? "text" : "number"} min={0} onChange={(e) => change(plan.key,key,key === "name" ? e.target.value : Number(e.target.value))} /></label>)}</div><div className="flex flex-wrap gap-5">{Object.entries(featureLabels).map(([key,label]) => <label key={key} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(plan.features?.[key])} onChange={(e) => change(plan.key,`features.${key}`,e.target.checked)} />{label}</label>)}<label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={plan.active} onChange={(e) => change(plan.key,"active",e.target.checked)} />Forfait disponible</label></div><button className="admin-button admin-button--primary admin-button--md" disabled={busy === plan.key} onClick={() => void save(plan)}>{busy === plan.key ? "Enregistrement…" : "Enregistrer le forfait"}</button></section>)}</div>;
+}

@@ -24,10 +24,20 @@ function Content() {
   const [title, setTitle] = useState("Confirmation");
   const close = () => setOpenDialog(false);
   const [products, setProduct] = useState<IProduct[]>();
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [status, setStatus] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const fetchData = useCallback(async () => {
+    setLoading(true);
+    setLoadError("");
     try {
       const response = await fetch(
-        `${import.meta.env.REACT_API_URL}boutiks/product`,
+        `${import.meta.env.REACT_API_URL}boutiks/product?page=${page}&limit=20&status=${encodeURIComponent(status)}&search=${encodeURIComponent(searchQuery)}`,
         {
           method: "GET",
           headers: {
@@ -38,16 +48,26 @@ function Content() {
       );
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la récupération des produits");
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.message || "Erreur lors de la récupération des produits");
       }
-      if (response.status == 200) {
-        const result = await response.json();
-        setProduct(result.data);
-      }
+      const result = await response.json();
+      setProduct(result.data ?? []);
+      setPages(result.pagination?.pages ?? 1);
+      setTotal(result.pagination?.total ?? 0);
     } catch (error) {
-      console.error("Erreur:", error);
+      const message = error instanceof Error ? error.message : "Catalogue indisponible.";
+      setLoadError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [page, searchQuery, status]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setSearchQuery(search.trim()), 300);
+    return () => window.clearTimeout(timeout);
+  }, [search]);
 
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null,
@@ -202,14 +222,22 @@ function Content() {
         }
       />
       <section className="admin-panel p-3 sm:p-4">
+        <div className="mb-3 flex flex-wrap items-end gap-3">
+          <label className="grid min-w-[14rem] flex-1 gap-1 text-xs font-bold text-[var(--admin-muted)]">Rechercher un produit<input className="admin-input min-h-10" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Nom ou description" /></label>
+          <label className="grid min-w-44 gap-1 text-xs font-bold text-[var(--admin-muted)]">Publication<select className="admin-input min-h-10" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="all">Tous les statuts</option><option value="Approved">Publié</option><option value="Pending">En attente</option><option value="Rejected">Refusé</option></select></label>
+          <span className="pb-2 text-xs text-[var(--admin-muted)]">{total} produit(s)</span>
+        </div>
+        {loadError && <div role="alert" className="mb-3 rounded-lg border border-red-400/20 bg-red-400/10 p-3 text-sm text-[var(--admin-danger)]">{loadError} <button type="button" className="ml-2 underline" onClick={() => void fetchData()}>Réessayer</button></div>}
         <DataTable
           columns={productColumns}
           rows={products ?? []}
           getRowKey={(product) => product._id}
-          loading={!products}
+          loading={loading}
+          pageSize={20}
           emptyTitle="Votre catalogue est vide"
-          emptyDescription="Ajoutez votre premier produit pour commencer à vendre."
+          emptyDescription={search || status !== "all" ? "Aucun produit ne correspond à ces filtres." : "Ajoutez votre premier produit pour commencer à vendre."}
         />
+        {!loading && pages > 1 && <div className="admin-table-pagination mt-3"><span>Page {page} sur {pages}</span><div><button type="button" className="admin-button admin-button--outline admin-button--sm" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>Précédent</button><button type="button" className="admin-button admin-button--outline admin-button--sm" disabled={page >= pages} onClick={() => setPage((current) => current + 1)}>Suivant</button></div></div>}
       </section>
       <Dialog
         title={title}

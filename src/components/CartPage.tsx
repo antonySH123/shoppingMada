@@ -50,6 +50,7 @@ function CartPage() {
     Record<string, PaymentMethod>
   >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<Array<{ _id: string; label?: string; recipientName: string; phone: string; address: string; city?: string }>>([]);
   const [customer, setCustomer] = useState({
     name: "",
     phone: "",
@@ -76,6 +77,8 @@ function CartPage() {
     }));
   }, [user]);
 
+  useEffect(() => { if (!user) return; void fetch(`${import.meta.env.REACT_API_URL}user/addresses`, { credentials: "include" }).then((response) => response.ok ? response.json() : null).then((result) => { if (result) setSavedAddresses(result.data ?? []); }); }, [user?._id]);
+
   useEffect(() => {
     let active = true;
     if (!shopIdsKey) {
@@ -95,7 +98,7 @@ function CartPage() {
             const payload = await response.json();
             if (!response.ok)
               throw new Error(
-                payload.message || "Modes de paiement indisponibles.",
+                payload.message || t("cart.paymentMethodsUnavailable"),
               );
             return [shopId, payload.data as ShopPaymentOptions] as const;
           } catch (error) {
@@ -104,7 +107,7 @@ function CartPage() {
               null,
               error instanceof Error
                 ? error.message
-                : "Impossible de charger les modes de paiement.",
+                : t("cart.paymentLoadError"),
             ] as const;
           }
         }),
@@ -116,7 +119,7 @@ function CartPage() {
         if (options) nextOptions[shopId] = options;
         else
           nextErrors[shopId] =
-            errorMessage || "Impossible de charger les modes de paiement.";
+              errorMessage || t("cart.paymentLoadError");
       }
       setShopOptions(nextOptions);
       setShopErrors(nextErrors);
@@ -156,7 +159,7 @@ function CartPage() {
     event.preventDefault();
     if (!csrf || isSubmitting) return;
     if (groupedItems.some((group) => !paymentSelection[group.shopId])) {
-      toast.error("Choisissez un mode de paiement pour chaque boutique.");
+      toast.error(t("cart.choosePaymentPerShop"));
       return;
     }
     setIsSubmitting(true);
@@ -180,20 +183,20 @@ function CartPage() {
       );
       const result = await response.json();
       if (!response.ok)
-        throw new Error(result.message || "Impossible de valider la commande.");
+        throw new Error(result.message || t("cart.checkoutFailed"));
 
       clearCart();
       const orderId = result.data._id;
       const trackingToken = result.trackingToken as string | undefined;
       if (trackingToken)
         sessionStorage.setItem(`shopinmada.order.${orderId}`, trackingToken);
-      toast.success(result.message || "Commande envoyée aux boutiques.");
+      toast.success(result.message || t("cart.orderSent"));
       navigate(
-        `/suivi-commande/${orderId}${trackingToken ? `?token=${encodeURIComponent(trackingToken)}` : ""}`,
+        `/suivi-commande/${orderId}`,
       );
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Une erreur est survenue.",
+        error instanceof Error ? error.message : t("cart.checkoutError"),
       );
     } finally {
       setIsSubmitting(false);
@@ -378,10 +381,10 @@ function CartPage() {
                         >
                           <option value="">
                             {shopErrors[group.shopId]
-                              ? "Modes de paiement indisponibles"
+                              ? t("cart.paymentUnavailable")
                               : options
                                 ? t("cart.choosePayment")
-                                : "Chargement des modes de paiement…"}
+                                : t("cart.loadingPayment")}
                           </option>
                           {options?.paymentMethods.map((method) => (
                             <option value={method.method} key={method.method}>
@@ -393,7 +396,7 @@ function CartPage() {
                       {(!options || !options.paymentMethods.length) && (
                         <p role="status" className="text-xs text-amber-800">
                           {shopErrors[group.shopId] ||
-                            "Cette boutique doit configurer ses modes de paiement avant de recevoir une commande."}
+                            t("cart.configurePayment")}
                         </p>
                       )}
                     </footer>
@@ -421,7 +424,7 @@ function CartPage() {
                 [
                   ["name", t("cart.name"), "text"],
                   ["phone", t("cart.phone"), "tel"],
-                  ["email", "E-mail (facultatif)", "email"],
+                  ["email", t("cart.emailOptional"), "email"],
                   ["city", t("cart.city"), "text"],
                 ] as const
               ).map(([name, label, type]) => (
@@ -453,9 +456,7 @@ function CartPage() {
                 />
               </label>
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-                Chaque boutique recevra et traitera sa propre sous-commande.
-                Vous paierez directement chaque vendeur selon le mode
-                sélectionné.
+                {t("cart.multiVendorNote")}
               </div>
               <button
                 type="submit"
@@ -474,6 +475,7 @@ function CartPage() {
             </form>
           </div>
         )}
+              {savedAddresses.length > 0 && <label className="grid gap-1.5 text-xs font-bold text-gray-600">{t("cart.useSavedAddress")}<select className="min-h-11 rounded-xl border border-gray-200 px-3 text-sm font-normal text-gray-900" defaultValue="" onChange={(event) => { const address = savedAddresses.find((item) => item._id === event.target.value); if (address) setCustomer((current) => ({ ...current, name: address.recipientName, phone: address.phone, address: address.address, city: address.city ?? current.city })); }}><option value="">{t("cart.chooseAddress")}</option>{savedAddresses.map((address) => <option key={address._id} value={address._id}>{address.label || address.recipientName} · {address.city}</option>)}</select></label>}
       </div>
     </main>
   );

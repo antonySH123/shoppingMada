@@ -8,8 +8,10 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../helper/useAuth";
 import { useCart } from "../context/useCart";
+import { useLanguage } from "../context/useLanguage";
 
 function MobileCustomerNav() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const { itemCount } = useCart();
   const location = useLocation();
@@ -23,33 +25,33 @@ function MobileCustomerNav() {
   const items = [
     {
       to: "/",
-      label: "Accueil",
+      label: t("nav.mobileHome"),
       icon: <LiaHomeSolid size={21} />,
       active: isActive("/"),
     },
     {
       to: "/shop",
-      label: "Explorer",
+      label: t("nav.mobileExplore"),
       icon: <LiaSearchSolid size={21} />,
       active: isActive("/shop"),
     },
     {
       to: "/panier",
       label: itemCount
-        ? `Panier ${itemCount > 99 ? "99+" : itemCount}`
-        : "Panier",
+        ? `${t("nav.mobileCart")} ${itemCount > 99 ? "99+" : itemCount}`
+        : t("nav.mobileCart"),
       icon: <LiaShoppingBagSolid size={21} />,
       active: isActive("/panier"),
     },
     {
       to: user ? "/profil" : "/login",
-      label: "Compte",
+      label: t("nav.mobileAccount"),
       icon: <LiaUser size={21} />,
       active: isActive(user ? "/profil" : "/login"),
     },
     {
       to: isProfessional ? "/espace_vendeur/dash" : "/vendeur",
-      label: isProfessional ? "Mon espace" : "Vendre",
+      label: isProfessional ? t("nav.sellerSpace") : t("nav.mobileSell"),
       icon: <LiaStoreSolid size={21} />,
       active: isProfessional
         ? isActive("/espace_vendeur")
@@ -58,7 +60,7 @@ function MobileCustomerNav() {
   ];
 
   return (
-    <nav className="customer-mobile-nav" aria-label="Navigation mobile">
+    <nav className="customer-mobile-nav" aria-label={t("nav.mobileNavigation")}>
       {items.map((item) => (
         <Link
           key={item.label}

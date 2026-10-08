@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 import useCSRF from "../../../helper/useCSRF";
 import Skeleton from "react-loading-skeleton";
 import Preloader from "../../loading/Preloader";
+import { requestAdminStepUp } from "../../../helper/adminStepUp";
 
 interface IState {
   users: Iuser[] | [];
@@ -20,10 +21,12 @@ interface IState {
   newUser: Iuser | null;
   loading: boolean;
   error: string | null;
+  pagination: { page: number; pages: number; total: number };
+  stats: { total: number; sellers: number; clients: number; active: number };
 }
 
 type Action =
-  | { type: "FETCH_SUCCESS"; payload: Iuser[] }
+  | { type: "FETCH_SUCCESS"; payload: { users: Iuser[]; pagination?: IState["pagination"]; stats?: IState["stats"] } }
   | { type: "FETCH_START" }
   | { type: "TOGGLE_MODAL"; payload: boolean }
   | { type: "CREATE_USER"; payload: Iuser | null }
@@ -35,7 +38,7 @@ const reducer = (state: IState, action: Action) => {
     case "FETCH_START":
       return { ...state, loading: true, error: null };
     case "FETCH_SUCCESS":
-      return { ...state, loading: false, error: null, users: action.payload };
+      return { ...state, loading: false, error: null, users: action.payload.users, pagination: action.payload.pagination ?? state.pagination, stats: action.payload.stats ?? state.stats };
     case "FETCH_ERROR":
       return { ...state, loading: false, error: action.payload };
     case "TOGGLE_MODAL":
@@ -55,6 +58,8 @@ const initialState: IState = {
   newUser: null,
   loading: false,
   error: null,
+  pagination: { page: 1, pages: 1, total: 0 },
+  stats: { total: 0, sellers: 0, clients: 0, active: 0 },
 };
 
 function Compte() {
@@ -62,13 +67,21 @@ function Compte() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const { user } = useAuth();
   const csrf = useCSRF();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const role = params.get("role");
+    if (role === "Boutiks") setRoleFilter("Boutiks");
+  }, []);
 
   const fetchUsers = useCallback(async () => {
     dispatch({ type: "FETCH_START" });
     try {
-      const response = await fetch(`${import.meta.env.REACT_API_URL}users`, {
+      const params = new URLSearchParams({ page: String(page), limit: "20", q: search, role: roleFilter, status: statusFilter });
+      const response = await fetch(`${import.meta.env.REACT_API_URL}users?${params}`, {
         credentials: "include",
       });
       const payload = await response.json();
@@ -76,14 +89,14 @@ function Compte() {
         throw new Error(payload.message || "Impossible de charger les comptes.");
       dispatch({
         type: "FETCH_SUCCESS",
-        payload: Array.isArray(payload.data) ? payload.data : [],
+        payload: { users: Array.isArray(payload.data) ? payload.data : [], pagination: payload.pagination, stats: payload.stats },
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible de charger les comptes.";
       dispatch({ type: "FETCH_ERROR", payload: message });
       toast.error(message);
     }
-  }, []);
+  }, [page, roleFilter, search, statusFilter]);
 
   const filteredUsers = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -100,12 +113,26 @@ function Compte() {
       const searchMatches = !query || [username, email, phone, shopName, role].some((value) => value.includes(query));
       return roleMatches && statusMatches && searchMatches;
     });
-  }, [roleFilter, search, state.users, statusFilter]);
-  const activeCount = state.users.filter((account) => account.userGroupMember_id).length;
-  const sellerCount = state.users.filter((account) => account.userGroupMember_id?.usergroup_id?.name === "Boutiks").length;
-  const clientCount = state.users.filter((account) => account.userGroupMember_id?.usergroup_id?.name === "Client").length;
+  }, [state.users]);
+  const activeCount = state.stats.active;
+  const sellerCount = state.stats.sellers;
+  const clientCount = state.stats.clients;
 
   const closeModal = () => dispatch({ type: "TOGGLE_MODAL", payload: false });
+
+  const impersonate = async (account: Iuser) => {
+    const reason = window.prompt(`Motif obligatoire pour accéder temporairement au compte vendeur ${account.username} (8 caractères minimum) :`);
+    if (!reason?.trim() || reason.trim().length < 8 || !csrf) return;
+    try {
+      const stepUp = await requestAdminStepUp(csrf);
+      if (!stepUp) return;
+      const response = await fetch(`${import.meta.env.REACT_API_URL}admin/impersonation/${account._id}`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ reason }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Assistance impossible.");
+      await fetch(`${import.meta.env.REACT_API_URL}auth/refresh`, { method: "POST", credentials: "include", headers: { "xsrf-token": csrf } });
+      window.location.assign("/espace_vendeur/dash");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Assistance impossible."); }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -159,6 +186,8 @@ function Compte() {
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  useEffect(() => { setPage(1); }, [search, roleFilter, statusFilter]);
 
   if (user?.userGroupMember_id.usergroup_id.name !== "Super Admin") {
     return <Navigate to="/espace_vendeur/dash" />;
@@ -215,7 +244,7 @@ function Compte() {
           <div className="admin-quick-stats">
             <article className="admin-stat-card">
               <span className="admin-stat-label">Total</span>
-              <strong className="admin-stat-value">{state.users.length}</strong>
+                <strong className="admin-stat-value">{state.stats.total}</strong>
             </article>
             <article className="admin-stat-card">
               <span className="admin-stat-label">Boutiques</span>
@@ -234,6 +263,7 @@ function Compte() {
               <strong className="admin-stat-value">{activeCount}</strong>
             </article>
           </div>
+          <div className="flex items-center justify-between gap-3 border-t p-4 text-sm text-[var(--admin-muted)]"><span>{state.pagination.total} compte(s) · page {state.pagination.page} / {Math.max(1,state.pagination.pages)}</span><div className="flex gap-2"><button className="admin-button admin-button--secondary admin-button--sm" disabled={page<=1||state.loading} onClick={()=>setPage(page-1)}>Précédent</button><button className="admin-button admin-button--secondary admin-button--sm" disabled={page>=state.pagination.pages||state.loading} onClick={()=>setPage(page+1)}>Suivant</button></div></div>
 
           {state.error && (
             <div className="mx-4 mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
@@ -314,6 +344,7 @@ function Compte() {
                         >
                           Voir plus
                         </Link>
+                        {account.userGroupMember_id?.usergroup_id?.name === "Boutiks" && <button type="button" className="admin-table-action ml-2" onClick={() => void impersonate(account)}>Assister</button>}
                       </td>
                     </tr>
                   ))
