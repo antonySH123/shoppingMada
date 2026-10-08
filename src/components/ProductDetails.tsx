@@ -62,6 +62,12 @@ const isSafeHttpUrl = (value?: string): value is string => {
   }
 };
 
+const whatsappHref = (value?: string) => {
+  const digits = value?.replace(/\D/g, "") ?? "";
+  if (digits.length < 7 || digits.length > 15) return undefined;
+  return `https://wa.me/${digits}`;
+};
+
 const getAvailableStock = (
   product: ProductDetailsData,
   selectedVariant: Record<string, string> = {},
@@ -491,6 +497,11 @@ function ProductDetails() {
                     </a>
                   ))}
                 </nav>
+              )}
+              {shop?.whatsappNumber && whatsappHref(shop.whatsappNumber) && (
+                <a href={whatsappHref(shop.whatsappNumber)} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-10 items-center rounded-full bg-[#25D366] px-4 text-sm font-bold text-white hover:bg-[#1fb85a]">
+                  Contacter la boutique sur WhatsApp
+                </a>
               )}
             </div>
             <div className="px-5">

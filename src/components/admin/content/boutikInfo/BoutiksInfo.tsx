@@ -10,6 +10,7 @@ type ShopInfo = {
   name: string;
   adresse: string;
   phoneNumber: string;
+  whatsappNumber: string;
   email: string;
   description: string;
   ville: string;
@@ -25,6 +26,7 @@ const initialShopInfo: ShopInfo = {
   name: "",
   adresse: "",
   phoneNumber: "",
+  whatsappNumber: "",
   email: "",
   description: "",
   ville: "",
@@ -166,6 +168,12 @@ function BoutiksInfo() {
               className="admin-field__control"
               required
             />
+          </div>
+
+          <div className="admin-field">
+            <label htmlFor="shop-whatsappNumber">WhatsApp (visible aux clients)</label>
+            <input id="shop-whatsappNumber" type="tel" inputMode="tel" name="whatsappNumber" value={shopInfo.whatsappNumber} onChange={handleChange} placeholder="+261 34 00 000 00" maxLength={24} className="admin-field__control" />
+            <small className="text-xs text-[var(--admin-muted)]">Utilisez l’indicatif international pour faciliter le contact.</small>
           </div>
 
           <div className="admin-field sm:col-span-2">

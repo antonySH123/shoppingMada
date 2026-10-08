@@ -12,6 +12,7 @@ export default interface IProduct{
         name:string;
         logo:string;
         phoneNumber:string;
+        whatsappNumber?: string;
         email:string;
         _id:string;
         adresse:string;

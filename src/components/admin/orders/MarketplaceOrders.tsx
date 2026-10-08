@@ -14,6 +14,8 @@ type SubOrder = {
   payableTotal: number;
   paymentMethod: string;
   paymentStatus: string;
+  invoiceNumber?: string;
+  invoiceIssuedAt?: string;
   status: string;
   paymentDeclaration?: { reference: string; evidencePath?: string };
   shipping: {
@@ -165,6 +167,22 @@ function MarketplaceOrders() {
     }
   };
 
+  const issueInvoice = async (orderId: string, subOrder: SubOrder) => {
+    if (!csrf || busyId || subOrder.invoiceNumber) return;
+    setBusyId(subOrder._id);
+    try {
+      const response = await fetch(`${import.meta.env.REACT_API_URL}marketplace/orders/${orderId}/suborders/${subOrder._id}/invoice`, {
+        method: "POST", credentials: "include", headers: { "xsrf-token": csrf },
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Impossible d’émettre la facture.");
+      toast.success(result.message || "Facture émise.");
+      await loadOrders();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Émission de facture impossible.");
+    } finally { setBusyId(""); }
+  };
+
   if (!csrf) return <Preloader />;
 
   const visibleOrders = orders;
@@ -172,7 +190,7 @@ function MarketplaceOrders() {
 
   return (
     <section className="space-y-5">
-      <header className="admin-toolbar">
+      <header className="admin-toolbar marketplace-orders-toolbar">
         <div>
           <p className="admin-kicker">Opérations marketplace</p>
           <h1 className="admin-panel-title text-2xl">
@@ -180,11 +198,11 @@ function MarketplaceOrders() {
           </h1>
             <p className="admin-panel-subtitle mt-1 text-sm">{totalOrders} commande(s) · chaque boutique suit son paiement et sa livraison.</p>
         </div>
-        <div className="admin-toolbar-actions">
-          <label className="grid gap-1 text-xs font-bold text-[var(--admin-muted)]">Recherche client
+        <div className="admin-toolbar-actions marketplace-orders-filters">
+          <label className="marketplace-orders-filter-field">Recherche client
             <input className="admin-input min-h-11" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Nom ou téléphone" aria-label="Rechercher par nom ou téléphone" />
           </label>
-          <label className="grid gap-1 text-xs font-bold text-[var(--admin-muted)]">
+          <label className="marketplace-orders-filter-field">
             Statut
             <select
               className="admin-input min-h-11"
@@ -202,7 +220,7 @@ function MarketplaceOrders() {
           <button
             type="button"
             onClick={() => void loadOrders()}
-            className="admin-button-secondary min-h-11"
+            className="admin-button admin-button--secondary admin-button--md marketplace-orders-refresh"
           >
             Actualiser
           </button>
@@ -346,8 +364,16 @@ function MarketplaceOrders() {
                           {subOrder.shipping.trackingNumber}
                         </p>
                       )}
+                      {subOrder.invoiceNumber && (
+                        <a href={`${import.meta.env.REACT_API_URL}marketplace/orders/${order._id}/suborders/${subOrder._id}/invoice`} download={`facture-${subOrder.invoiceNumber}.html`} className="text-xs font-semibold text-emerald-800 underline">Télécharger la facture {subOrder.invoiceNumber} · émise le {new Date(subOrder.invoiceIssuedAt ?? "").toLocaleDateString("fr-FR")}</a>
+                      )}
                       {canSellerAct && (
                         <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
+                          {subOrder.paymentStatus === "confirme" && (
+                            <button type="button" disabled={!!busyId || !!subOrder.invoiceNumber} onClick={() => void issueInvoice(order._id, subOrder)} className="admin-button-secondary min-h-10 px-3 text-xs">
+                              {subOrder.invoiceNumber ? `Facture émise · ${subOrder.invoiceNumber}` : "Émettre la facture client"}
+                            </button>
+                          )}
                           {subOrder.status === "en_attente_vendeur" && (
                             <>
                               {subOrder.paymentMethod ===

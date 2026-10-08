@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import React, { useState } from "react";
-import { LiaArrowLeftSolid, LiaUserSolid } from "react-icons/lia";
+import { LiaChevronLeftSolid, LiaUserSolid } from "react-icons/lia";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
 import { useAuth } from "../helper/useAuth";
@@ -17,6 +17,10 @@ function Login() {
 
   const from = location.state?.from || "/profil";
   const handleBack = () => {
+    if (location.state?.fromLogout) {
+      navigate("/", { replace: true });
+      return;
+    }
     if (
       typeof window.history.state?.idx === "number" &&
       window.history.state.idx > 0
@@ -104,14 +108,14 @@ function Login() {
         <img src="/src/assets/logo.png" alt="" className="object-contain" />
       </Link>
       <div className="relative w-full max-w-md">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="auth-back-button mb-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white/90 px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-emerald-200 hover:text-emerald-800"
-        >
-          <LiaArrowLeftSolid size={18} /> {t("auth.back")}
-        </button>
         <div className="auth-panel auth-card rounded-3xl border border-gray-100 bg-white p-7 sm:p-10">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="auth-back-button mb-6 inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-gray-200 bg-white/90 pr-4 pl-2 text-sm font-semibold text-gray-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+          >
+            <LiaChevronLeftSolid size={20} aria-hidden="true" /> {t("auth.back")}
+          </button>
           <h1 className="mb-2 flex flex-col items-center text-center font-bold text-gray-900">
             <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
               <LiaUserSolid size={28} />
@@ -199,7 +203,7 @@ function Login() {
             <div className="flex justify-between items-center">
               <span className="mt-3 flex w-full justify-center gap-2 text-sm text-gray-600">
                 {t("auth.noAccount")}
-                <Link to="/register" className="font-semibold text-emerald-800">
+                <Link to="/register" state={{ fromLogout: Boolean(location.state?.fromLogout) }} className="font-semibold text-emerald-800">
                   {t("auth.register")}
                 </Link>
               </span>

@@ -1,8 +1,8 @@
 import { useReducer, ChangeEvent, useState, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Iuser from "../Interface/UserInterface";
 import validator from "../helper/Reg";
-import { LiaArrowLeftSolid, LiaUser } from "react-icons/lia";
+import { LiaChevronLeftSolid, LiaUser } from "react-icons/lia";
 import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
 import Preloader from "./loading/Preloader";
@@ -52,8 +52,13 @@ function Register() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const csrf = useCSRF();
   const handleBack = () => {
+    if (location.state?.fromLogout) {
+      navigate("/", { replace: true });
+      return;
+    }
     if (
       typeof window.history.state?.idx === "number" &&
       window.history.state.idx > 0
@@ -124,14 +129,14 @@ function Register() {
   ) : (
     <div className="auth-page auth-register-page relative flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-lg">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="auth-back-button mb-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/20"
-        >
-          <LiaArrowLeftSolid size={18} /> {t("auth.back")}
-        </button>
         <div className="auth-panel auth-card w-full max-w-lg">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="auth-back-button mb-6 inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-gray-200 bg-white/90 pr-4 pl-2 text-sm font-semibold text-gray-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+          >
+            <LiaChevronLeftSolid size={20} aria-hidden="true" /> {t("auth.back")}
+          </button>
           <h1 className="text-white flex flex-col justify-center items-center font-bold text-center mb-6 gap-3">
             <LiaUser size={60} />
             <strong className="text-2xl">{t("auth.registerTitle")}</strong>
@@ -185,7 +190,7 @@ function Register() {
             <div className="flex justify-between items-center">
               <span className="m-4 flex gap-10">
                 {t("auth.alreadyAccount")}
-                <Link to="/login" className="text-green-500">
+                <Link to="/login" state={{ fromLogout: Boolean(location.state?.fromLogout) }} className="text-green-500">
                   {t("auth.signIn")}
                 </Link>
               </span>

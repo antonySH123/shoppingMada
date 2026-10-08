@@ -17,13 +17,15 @@ type OrderItem = {
 };
 type SubOrder = {
   _id: string;
-  boutiks_id: { name?: string; phoneNumber?: string; ville?: string } | string;
+  boutiks_id: { name?: string; phoneNumber?: string; whatsappNumber?: string; ville?: string } | string;
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;
   payableTotal: number;
   paymentMethod: string;
   paymentStatus: string;
+  invoiceNumber?: string;
+  invoiceIssuedAt?: string;
   paymentInstructions: {
     recipientName: string;
     account?: string;
@@ -39,6 +41,7 @@ type SubOrder = {
     phone: string;
     city?: string;
   };
+  statusHistory?: Array<{ status: string; actor: string; note?: string; createdAt: string }>;
 };
 type MarketplaceOrder = {
   _id: string;
@@ -66,6 +69,10 @@ function OrderTracking() {
   const [busy, setBusy] = useState(false);
   const legacyToken = searchParams.get("token") ?? "";
   const token = sessionStorage.getItem(`shopinmada.order.${orderId}`) ?? legacyToken;
+  const whatsappHref = (value?: string) => {
+    const digits = value?.replace(/\D/g, "") ?? "";
+    return digits.length >= 7 && digits.length <= 15 ? `https://wa.me/${digits}` : undefined;
+  };
 
   useEffect(() => {
     if (!legacyToken) return;
@@ -265,6 +272,13 @@ function OrderTracking() {
                     </span>
                   </header>
                   <div className="space-y-4 p-5">
+                    {shop && (shop.phoneNumber || shop.whatsappNumber) && (
+                      <div className="flex flex-wrap items-center gap-3 text-xs">
+                        {shop.phoneNumber && <a href={`tel:${shop.phoneNumber}`} className="font-semibold text-gray-700">Appeler la boutique : {shop.phoneNumber}</a>}
+                        {whatsappHref(shop.whatsappNumber) && <a href={whatsappHref(shop.whatsappNumber)} target="_blank" rel="noopener noreferrer" className="rounded-full bg-[#25D366] px-3 py-2 font-bold text-white">Écrire sur WhatsApp</a>}
+                      </div>
+                    )}
+                    {subOrder.invoiceNumber && <div className="flex flex-wrap gap-2"><a className="inline-flex min-h-10 items-center rounded-lg border border-emerald-700 px-4 text-xs font-bold text-emerald-800" href={`${import.meta.env.REACT_API_URL}marketplace/orders/${orderId}/suborders/${subOrder._id}/invoice?view=1${token ? `&token=${encodeURIComponent(token)}` : ""}`} target="_blank" rel="noreferrer">Voir la facture</a><a className="inline-flex min-h-10 items-center rounded-lg bg-emerald-700 px-4 text-xs font-bold text-white" href={`${import.meta.env.REACT_API_URL}marketplace/orders/${orderId}/suborders/${subOrder._id}/invoice${token ? `?token=${encodeURIComponent(token)}` : ""}`} download={`facture-${subOrder.invoiceNumber}.html`}>Télécharger · {subOrder.invoiceNumber}</a></div>}
                     {subOrder.items.map((item) => (
                       <div
                         key={item.product_id}
@@ -321,6 +335,21 @@ function OrderTracking() {
                           : t("order.expiration")}
                         .
                       </p>
+                    )}
+                    {subOrder.statusHistory && subOrder.statusHistory.length > 0 && (
+                      <section className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                        <h3 className="text-sm font-bold text-gray-900">Suivi des étapes</h3>
+                        <ol className="mt-3 space-y-3 border-l-2 border-emerald-200 pl-4">
+                          {[...subOrder.statusHistory].reverse().map((entry, index) => (
+                            <li key={`${entry.createdAt}-${index}`} className="relative text-xs text-gray-600">
+                              <span className="absolute -left-[22px] top-1 h-2 w-2 rounded-full bg-emerald-600" />
+                              <strong className="block text-gray-900">{t(`order.status.${entry.status}`) === `order.status.${entry.status}` ? entry.status : t(`order.status.${entry.status}`)}</strong>
+                              <time>{new Date(entry.createdAt).toLocaleString(language === "fr" ? "fr-FR" : "en-US")}</time>
+                              {entry.note && <p className="mt-1">{entry.note}</p>}
+                            </li>
+                          ))}
+                        </ol>
+                      </section>
                     )}
                     {canDeclare && (
                       <section className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">

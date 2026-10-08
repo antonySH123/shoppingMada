@@ -23,7 +23,7 @@ function Logout() {
         });
         if (!response.ok) throw new Error("La déconnexion a échoué.");
         setUserInfo(null);
-        navigate("/login", { replace: true });
+        navigate("/login", { replace: true, state: { fromLogout: true } });
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Erreur réseau lors de la déconnexion.");
       }

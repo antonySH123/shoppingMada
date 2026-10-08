@@ -395,7 +395,7 @@
 .accounts-role-tab:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--admin-accent-solid) 55%, var(--admin-border)); color: var(--admin-text); }
 .accounts-role-tab.is-active { border-color: color-mix(in srgb, var(--admin-accent-solid) 65%, var(--admin-border)); background: color-mix(in srgb, var(--admin-accent-solid) 11%, var(--admin-surface)); color: var(--admin-text); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--admin-accent-solid) 16%, transparent), 0 6px 18px rgb(0 0 0 / 12%); }
 .accounts-role-tab.is-active strong { background: var(--admin-accent-solid); color: #071714; }
-.accounts-mobile-list { display: grid; gap: 0.75rem; padding: 0.85rem; }
+.accounts-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr)); gap: 0.85rem; padding: 1rem; }
 .accounts-mobile-card { display: grid; min-width: 0; gap: 0.85rem; border: 1px solid var(--admin-border); border-radius: 1rem; background: linear-gradient(145deg, color-mix(in srgb, var(--admin-surface-raised) 88%, var(--admin-accent-solid)), var(--admin-surface)); padding: 0.9rem; box-shadow: var(--admin-shadow-sm); }
 .accounts-mobile-card-heading { display: flex; min-width: 0; align-items: center; gap: 0.7rem; }
 .accounts-avatar { display: grid; width: 2.65rem; height: 2.65rem; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--admin-accent-solid) 38%, transparent); border-radius: 0.85rem; background: color-mix(in srgb, var(--admin-accent-solid) 13%, var(--admin-surface)); color: var(--admin-accent-solid); font-weight: 850; }
@@ -435,6 +435,14 @@
 .seller-360-activity .seller-360-card p { margin: 0.55rem 0 0; color: var(--admin-muted); font-size: var(--admin-font-xs); overflow-wrap: anywhere; }
 .seller-360-empty { margin: 0.8rem 0 0; color: var(--admin-muted); font-size: var(--admin-font-sm); }
 
+/* Marketplace order filters share a baseline and predictable control widths. */
+.admin-shell .admin-page .marketplace-orders-toolbar { align-items: flex-end; }
+.admin-shell .admin-page .marketplace-orders-toolbar > div:first-child { flex: 1 1 20rem; }
+.admin-shell .admin-page .marketplace-orders-filters { display: grid; flex: 0 1 42rem; grid-template-columns: minmax(14rem, 1fr) minmax(12rem, 0.58fr) auto; align-items: end; gap: 0.75rem; }
+.admin-shell .admin-page .marketplace-orders-filter-field { display: grid; min-width: 0; align-content: end; gap: 0.4rem; color: var(--admin-muted); font-size: var(--admin-font-xs); font-weight: 750; line-height: 1.2; }
+.admin-shell .admin-page .marketplace-orders-filter-field > :is(input, select) { width: 100%; min-width: 0; min-height: 2.85rem; }
+.admin-shell .admin-page .marketplace-orders-refresh { min-height: 2.85rem; align-self: end; white-space: nowrap; }
+
 @media (max-width: 640px) {
   .admin-shell .admin-content-gutter { padding-inline: 0.75rem; }
   .admin-shell .admin-page { width: 100%; }
@@ -450,7 +458,7 @@
   .admin-variant-submit { width: 100%; }
   .accounts-role-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-inline: 0.75rem; }
   .accounts-role-tab:first-child { grid-column: 1 / -1; }
-  .accounts-mobile-list { padding: 0.7rem; }
+  .accounts-card-grid { grid-template-columns: minmax(0, 1fr); padding: 0.7rem; }
   .seller-360-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .seller-360-columns { grid-template-columns: minmax(0, 1fr); }
   .seller-360-facts { grid-template-columns: minmax(0, 1fr); }
@@ -466,6 +474,12 @@
   .admin-mobile-table-card__label { color: var(--admin-muted); }
 }
 
+@media (max-width: 767px) {
+  .admin-shell .admin-page .marketplace-orders-filters { width: 100%; flex: 1 1 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-shell .admin-page .marketplace-orders-filter-field:first-child { grid-column: 1 / -1; }
+  .admin-shell .admin-page .marketplace-orders-refresh { width: 100%; }
+}
+
 @media (max-width: 420px) {
   .admin-shell .admin-content-gutter { padding-inline: 0.55rem; }
   .admin-page .admin-panel { padding-inline: 0.75rem; }
@@ -473,4 +487,6 @@
   .admin-page .admin-mobile-table-card__row { align-items: flex-start; flex-direction: column; gap: 0.15rem; }
   .admin-page .admin-mobile-table-card__row > :last-child { max-width: 100%; }
   .admin-page .admin-button { max-width: 100%; white-space: normal; }
+  .admin-shell .admin-page .marketplace-orders-filters { grid-template-columns: minmax(0, 1fr); }
+  .admin-shell .admin-page .marketplace-orders-filter-field:first-child { grid-column: auto; }
 }

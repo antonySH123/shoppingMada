@@ -13,6 +13,8 @@ interface MarketplaceOrderSummary {
     _id: string;
     status: string;
     paymentStatus: string;
+    invoiceNumber?: string;
+    invoiceIssuedAt?: string;
     payableTotal: number;
     refundedMGA?: number;
     refundHistory?: Array<{ amountMGA: number; createdAt: string }>;
@@ -235,6 +237,7 @@ function MarketplaceOrderHistory() {
                         {subOrder.shipping?.trackingNumber ? ` · ${t("order.trackingNumber")}: ${subOrder.shipping.trackingNumber}` : ""}
                       </p>
                       {subOrder.refundHistory && subOrder.refundHistory.length > 0 && <ul className="mt-2 text-xs text-gray-500">{subOrder.refundHistory.map((refund, index) => <li key={`${refund.createdAt}-${index}`}>{t("order.refunded")} · {new Date(refund.createdAt).toLocaleDateString(language === "fr" ? "fr-FR" : "en-US")}: {priceInArriary(refund.amountMGA)}</li>)}</ul>}
+                      {subOrder.invoiceNumber && <div className="mt-3 flex flex-wrap gap-2"><a className="inline-flex min-h-10 items-center rounded-lg border border-emerald-700 px-4 text-xs font-bold text-emerald-800" href={`${import.meta.env.REACT_API_URL}marketplace/orders/${order._id}/suborders/${subOrder._id}/invoice?view=1`} target="_blank" rel="noreferrer">Voir la facture</a><a className="inline-flex min-h-10 items-center rounded-lg bg-emerald-700 px-4 text-xs font-bold text-white" href={`${import.meta.env.REACT_API_URL}marketplace/orders/${order._id}/suborders/${subOrder._id}/invoice`} download={`facture-${subOrder.invoiceNumber}.html`}>Télécharger · {subOrder.invoiceNumber}</a></div>}
                       {subOrder.statusHistory && subOrder.statusHistory.length > 0 && (
                         <details className="mt-2 text-xs text-gray-600">
                           <summary className="cursor-pointer font-semibold">{t("order.statusHistory")}</summary>
