@@ -22,7 +22,7 @@ interface IState {
   loading: boolean;
   error: string | null;
   pagination: { page: number; pages: number; total: number };
-  stats: { total: number; sellers: number; clients: number; active: number };
+  stats: { total: number; sellers: number; clients: number; admins: number; disabled: number; active: number };
 }
 
 type Action =
@@ -59,7 +59,7 @@ const initialState: IState = {
   loading: false,
   error: null,
   pagination: { page: 1, pages: 1, total: 0 },
-  stats: { total: 0, sellers: 0, clients: 0, active: 0 },
+  stats: { total: 0, sellers: 0, clients: 0, admins: 0, disabled: 0, active: 0 },
 };
 
 function Compte() {
@@ -113,10 +113,17 @@ function Compte() {
       const searchMatches = !query || [username, email, phone, shopName, role].some((value) => value.includes(query));
       return roleMatches && statusMatches && searchMatches;
     });
-  }, [state.users]);
+  }, [state.users, search, roleFilter, statusFilter]);
   const activeCount = state.stats.active;
   const sellerCount = state.stats.sellers;
   const clientCount = state.stats.clients;
+  const roleSegments = [
+    { id: "all", label: "Tous les comptes", count: state.stats.total },
+    { id: "Boutiks", label: "Boutiques", count: sellerCount },
+    { id: "Client", label: "Clients", count: clientCount },
+    { id: "Super Admin", label: "Administrateurs", count: state.stats.admins },
+    { id: "disabled", label: "Sans rôle actif", count: state.stats.disabled },
+  ];
 
   const closeModal = () => dispatch({ type: "TOGGLE_MODAL", payload: false });
 
@@ -217,13 +224,6 @@ function Compte() {
                   placeholder="Rechercher ..."
                 />
               </label>
-              <select aria-label="Filtrer par profil" className="admin-search-input" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-                <option value="all">Tous les profils</option>
-                <option value="Boutiks">Vendeurs</option>
-                <option value="Client">Clients</option>
-                <option value="Super Admin">Administrateurs</option>
-                <option value="disabled">Sans profil actif</option>
-              </select>
               <select aria-label="Filtrer par état du compte" className="admin-search-input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
                 <option value="all">Tous les états</option>
                 <option value="active">Actifs</option>
@@ -240,6 +240,21 @@ function Compte() {
               </button>
             </div>
           </div>
+
+          <nav className="accounts-role-tabs" aria-label="Filtrer les comptes par rôle">
+            {roleSegments.map((segment) => (
+              <button
+                key={segment.id}
+                type="button"
+                className={`accounts-role-tab ${roleFilter === segment.id ? "is-active" : ""}`}
+                aria-pressed={roleFilter === segment.id}
+                onClick={() => setRoleFilter(segment.id)}
+              >
+                <span>{segment.label}</span>
+                <strong>{segment.count}</strong>
+              </button>
+            ))}
+          </nav>
 
           <div className="admin-quick-stats">
             <article className="admin-stat-card">
@@ -274,7 +289,7 @@ function Compte() {
             </div>
           )}
 
-          <div className="overflow-x-auto">
+          <div className="accounts-desktop-table hidden md:block overflow-x-auto">
             <table>
               <thead>
                 <tr>
@@ -357,6 +372,54 @@ function Compte() {
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="accounts-mobile-list md:hidden">
+            {state.loading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <article className="accounts-mobile-card" key={`account-loading-${index}`}>
+                  <Skeleton height={18} width="55%" />
+                  <Skeleton height={14} width="85%" />
+                  <Skeleton height={38} />
+                </article>
+              ))
+            ) : filteredUsers.length ? (
+              filteredUsers.map((account) => {
+                const accountRole = account.userGroupMember_id?.usergroup_id?.name;
+                const isShop = accountRole === "Boutiks";
+                const shop = account.boutiks_id;
+                const subscription = shop?.subscription_id;
+                return (
+                  <article className="accounts-mobile-card" key={account._id}>
+                    <div className="accounts-mobile-card-heading">
+                      <span className="accounts-avatar" aria-hidden="true">
+                        {(shop?.name || account.username || "?").slice(0, 1).toUpperCase()}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <strong className="block truncate">{shop?.name || account.username}</strong>
+                        <span className="block truncate text-xs text-[var(--admin-muted)]">{account.username}</span>
+                      </div>
+                      <span className={`accounts-role-badge ${isShop ? "is-shop" : ""}`}>
+                        {accountRole || "Sans rôle"}
+                      </span>
+                    </div>
+                    <div className="accounts-mobile-card-details">
+                      <span>{account.email || "E-mail non renseigné"}</span>
+                      <span>{account.phonenumber || "Téléphone non renseigné"}</span>
+                      {isShop && <span>Forfait {subscription?.plan || shop?.plan || "Gratuit"}{subscription?.endDate ? ` · fin ${new Date(subscription.endDate).toLocaleDateString("fr-FR")}` : ""}</span>}
+                      <span className={account.userGroupMember_id ? "is-active" : "is-disabled"}>
+                        {account.userGroupMember_id ? "Compte actif" : "Compte désactivé"}
+                      </span>
+                    </div>
+                    <div className="accounts-mobile-card-actions">
+                      <Link to={`/espace_vendeur/accountsSettings/${account._id}`} className="admin-table-action">Voir le compte</Link>
+                      {isShop && <button type="button" className="admin-table-action" onClick={() => void impersonate(account)}>Assister</button>}
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="admin-empty-state">Aucun compte ne correspond à cette recherche.</div>
+            )}
           </div>
         </div>
       </div>

@@ -388,6 +388,53 @@
 .admin-variant-picker-empty { padding: 0.7rem; color: var(--admin-muted); font-size: var(--admin-font-sm); }
 .admin-variant-submit { min-height: 2.75rem !important; white-space: nowrap; }
 
+/* Account role workspaces and the seller 360 profile. */
+.accounts-role-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.65rem; padding: 0 1rem 1rem; }
+.accounts-role-tab { display: flex; min-width: 0; min-height: 4rem; align-items: center; justify-content: space-between; gap: 0.5rem; border: 1px solid var(--admin-border); border-radius: 0.85rem; background: var(--admin-surface-raised); padding: 0.7rem 0.8rem; color: var(--admin-muted); font: inherit; font-size: var(--admin-font-sm); font-weight: 700; text-align: left; cursor: pointer; transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 140ms ease; }
+.accounts-role-tab strong { display: grid; min-width: 1.8rem; min-height: 1.8rem; place-items: center; border-radius: 999px; background: var(--admin-surface-hover); color: var(--admin-text); font-variant-numeric: tabular-nums; }
+.accounts-role-tab:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--admin-accent-solid) 55%, var(--admin-border)); color: var(--admin-text); }
+.accounts-role-tab.is-active { border-color: color-mix(in srgb, var(--admin-accent-solid) 65%, var(--admin-border)); background: color-mix(in srgb, var(--admin-accent-solid) 11%, var(--admin-surface)); color: var(--admin-text); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--admin-accent-solid) 16%, transparent), 0 6px 18px rgb(0 0 0 / 12%); }
+.accounts-role-tab.is-active strong { background: var(--admin-accent-solid); color: #071714; }
+.accounts-mobile-list { display: grid; gap: 0.75rem; padding: 0.85rem; }
+.accounts-mobile-card { display: grid; min-width: 0; gap: 0.85rem; border: 1px solid var(--admin-border); border-radius: 1rem; background: linear-gradient(145deg, color-mix(in srgb, var(--admin-surface-raised) 88%, var(--admin-accent-solid)), var(--admin-surface)); padding: 0.9rem; box-shadow: var(--admin-shadow-sm); }
+.accounts-mobile-card-heading { display: flex; min-width: 0; align-items: center; gap: 0.7rem; }
+.accounts-avatar { display: grid; width: 2.65rem; height: 2.65rem; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--admin-accent-solid) 38%, transparent); border-radius: 0.85rem; background: color-mix(in srgb, var(--admin-accent-solid) 13%, var(--admin-surface)); color: var(--admin-accent-solid); font-weight: 850; }
+.accounts-role-badge { max-width: 7rem; border: 1px solid var(--admin-border); border-radius: 999px; background: var(--admin-surface-raised); padding: 0.3rem 0.55rem; color: var(--admin-muted); font-size: 0.65rem; font-weight: 800; text-align: center; }
+.accounts-role-badge.is-shop { border-color: color-mix(in srgb, var(--admin-accent-solid) 38%, transparent); background: color-mix(in srgb, var(--admin-accent-solid) 10%, var(--admin-surface)); color: var(--admin-accent-solid); }
+.accounts-mobile-card-details { display: grid; gap: 0.4rem; color: var(--admin-muted); font-size: var(--admin-font-xs); overflow-wrap: anywhere; }
+.accounts-mobile-card-details .is-active { color: var(--admin-success); font-weight: 750; }
+.accounts-mobile-card-details .is-disabled { color: var(--admin-warning); font-weight: 750; }
+.accounts-mobile-card-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; border-top: 1px solid var(--admin-border); padding-top: 0.75rem; }
+.accounts-mobile-card-actions > * { flex: 1 1 auto; }
+.seller-360-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7rem; }
+.seller-360-metric { display: grid; min-width: 0; gap: 0.25rem; border: 1px solid var(--admin-border); border-radius: 0.85rem; background: color-mix(in srgb, var(--admin-surface-raised) 88%, transparent); padding: 0.85rem; }
+.seller-360-metric > span { color: var(--admin-muted); font-size: var(--admin-font-xs); font-weight: 750; }
+.seller-360-metric > strong { color: var(--admin-text); font-size: 1.45rem; font-variant-numeric: tabular-nums; }
+.seller-360-metric > small { color: var(--admin-muted); font-size: 0.68rem; }
+.seller-360-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; margin-top: 0.85rem; }
+.seller-360-card { min-width: 0; border: 1px solid var(--admin-border); border-radius: 0.9rem; background: color-mix(in srgb, var(--admin-surface-raised) 52%, var(--admin-surface)); padding: 1rem; }
+.seller-360-card h3 { margin: 0; color: var(--admin-text); font-size: var(--admin-font-md); font-weight: 800; }
+.seller-360-section-heading { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+.seller-360-section-heading p { margin: 0.2rem 0 0; color: var(--admin-muted); font-size: var(--admin-font-xs); }
+.seller-360-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin: 1rem 0 0; }
+.seller-360-facts > div { min-width: 0; border-top: 1px solid var(--admin-border); padding-top: 0.65rem; }
+.seller-360-facts dt { color: var(--admin-muted); font-size: var(--admin-font-xs); }
+.seller-360-facts dd { margin: 0.2rem 0 0; color: var(--admin-text); font-size: var(--admin-font-sm); font-weight: 750; overflow-wrap: anywhere; }
+.seller-360-products { display: grid; margin-top: 0.75rem; }
+.seller-360-products article { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 0.65rem; border-top: 1px solid var(--admin-border); padding: 0.65rem 0; }
+.seller-360-products article > div { display: grid; min-width: 0; gap: 0.2rem; }
+.seller-360-products small { color: var(--admin-muted); font-size: var(--admin-font-xs); }
+.seller-360-product-name { overflow: hidden; color: var(--admin-text); font-size: var(--admin-font-sm); font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.seller-360-history { display: grid; gap: 0.5rem; margin-top: 1rem; border-top: 1px solid var(--admin-border); padding-top: 0.75rem; color: var(--admin-text); font-size: var(--admin-font-xs); }
+.seller-360-history > div { display: flex; justify-content: space-between; gap: 0.5rem; color: var(--admin-muted); }
+.seller-360-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.85rem; margin-top: 0.85rem; border: 1px solid var(--admin-border); border-radius: 0.9rem; background: var(--admin-surface-raised); padding: 0.8rem 1rem; }
+.seller-360-footer > div { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem; color: var(--admin-muted); font-size: var(--admin-font-sm); }
+.seller-360-footer strong { color: var(--admin-text); }
+.seller-360-footer label { display: inline-flex; align-items: center; gap: 0.35rem; }
+.seller-360-footer input { width: 6.5rem; min-height: 2.4rem; }
+.seller-360-activity .seller-360-card p { margin: 0.55rem 0 0; color: var(--admin-muted); font-size: var(--admin-font-xs); overflow-wrap: anywhere; }
+.seller-360-empty { margin: 0.8rem 0 0; color: var(--admin-muted); font-size: var(--admin-font-sm); }
+
 @media (max-width: 640px) {
   .admin-shell .admin-content-gutter { padding-inline: 0.75rem; }
   .admin-shell .admin-page { width: 100%; }
@@ -401,6 +448,15 @@
   .admin-variant-value-row { grid-template-columns: minmax(0, 1fr); }
   .admin-variant-value-row { gap: 0.7rem; }
   .admin-variant-submit { width: 100%; }
+  .accounts-role-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-inline: 0.75rem; }
+  .accounts-role-tab:first-child { grid-column: 1 / -1; }
+  .accounts-mobile-list { padding: 0.7rem; }
+  .seller-360-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .seller-360-columns { grid-template-columns: minmax(0, 1fr); }
+  .seller-360-facts { grid-template-columns: minmax(0, 1fr); }
+  .seller-360-products article { align-items: flex-start; }
+  .seller-360-footer { align-items: stretch; }
+  .seller-360-footer > div { width: 100%; }
   .admin-design-page-header { align-items: stretch; flex-direction: column; }
   .admin-design-page-header > :last-child { width: 100%; }
   .admin-stat-card { padding: 0.8rem; }

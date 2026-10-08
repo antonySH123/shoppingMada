@@ -1,4 +1,4 @@
-import { Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import Iuser from "../../../Interface/UserInterface";
 import { useCallback, useEffect, useReducer, useState } from "react";
 import { toast } from "react-toastify";
@@ -379,7 +379,34 @@ function AccountsDetails() {
           </div>
         </section>
       )}
-      {seller360 && <section className="admin-panel p-5"><div className="admin-panel-heading"><div><p className="admin-panel-kicker">Vue consolidée vendeur</p><h2 className="admin-panel-title">Fiche vendeur 360°</h2><p className="admin-panel-subtitle">KYC, quota, abonnement, activité récente et historique administratif.</p></div></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-lg bg-white/5 p-3">KYC<strong className="block">{seller360.kyc?.verificationStatus ?? "Non soumis"}</strong></div><div className="rounded-lg bg-white/5 p-3">Produits<strong className="block">{seller360.productCount}</strong></div><div className="rounded-lg bg-white/5 p-3">Forfait<strong className="block">{seller360.shop.subscription_id?.plan ?? seller360.shop.plan}</strong></div><div className="rounded-lg bg-white/5 p-3">Commandes récentes<strong className="block">{seller360.orders.length}</strong></div></div><div className="mt-4 flex flex-wrap items-end gap-3"><label className="admin-field"><span>Commission marketplace (%)</span><input className="admin-field__control" type="number" min="0" max="50" step="0.1" value={commission} onChange={(event) => setCommission(event.target.value)} /></label><button type="button" className="admin-button admin-button--primary admin-button--md" onClick={() => void saveCommission()}>Enregistrer le taux</button></div><div className="mt-5 grid gap-5 lg:grid-cols-2"><div><h3 className="font-bold">Commandes récentes</h3>{seller360.orders.map((order: any) => <p className="mt-2 text-sm text-[var(--admin-muted)]" key={order._id}>{new Date(order.createdAt).toLocaleDateString("fr-FR")} · {order.customer?.name} · {order.subOrders.map((line: any) => line.status).join(", ")}</p>)}</div><div><h3 className="font-bold">Actions administratives</h3>{seller360.audit.map((entry: any) => <p className="mt-2 text-sm text-[var(--admin-muted)]" key={entry._id}>{new Date(entry.createdAt).toLocaleString("fr-FR")} · {entry.actorName} · {entry.action}</p>)}</div></div></section>}
+      {seller360 && <section className="admin-panel seller-360-overview p-5">
+        <div className="admin-panel-heading"><div><p className="admin-panel-kicker">Vue consolidée vendeur</p><h2 className="admin-panel-title">Activité de la boutique</h2><p className="admin-panel-subtitle">Publications, conformité, activité commerciale et cycle d’abonnement.</p></div><Link className="admin-button admin-button--outline admin-button--sm" to="/espace_vendeur/products">Catalogue</Link></div>
+        <div className="seller-360-metrics">
+          <article className="seller-360-metric"><span>Publications</span><strong>{seller360.publications?.total ?? seller360.productCount ?? 0}</strong><small>{seller360.publications?.approved ?? 0} publiées</small></article>
+          <article className="seller-360-metric"><span>En modération</span><strong>{seller360.publications?.pending ?? 0}</strong><small>À examiner</small></article>
+          <article className="seller-360-metric"><span>Refusées</span><strong>{seller360.publications?.rejected ?? 0}</strong><small>Statut de publication</small></article>
+          <article className="seller-360-metric"><span>Commandes récentes</span><strong>{seller360.orders.length}</strong><small>Sur les dernières commandes</small></article>
+        </div>
+        <div className="seller-360-columns">
+          <section className="seller-360-card">
+            <div className="seller-360-section-heading"><div><h3>Forfait et abonnement</h3><p>État actuel et échéances connus</p></div><span className="admin-status-badge admin-status-badge--primary">{seller360.shop.subscription_id?.plan ?? seller360.shop.plan ?? "Gratuit"}</span></div>
+            {seller360.shop.subscription_id ? <dl className="seller-360-facts">
+              <div><dt>Statut</dt><dd>{seller360.shop.subscription_id.lifecycleStatus ?? seller360.shop.subscription_id.payementStatus ?? "—"}</dd></div>
+              <div><dt>Période payée jusqu’au</dt><dd>{seller360.shop.subscription_id.endDate ? new Date(seller360.shop.subscription_id.endDate).toLocaleDateString("fr-FR") : "—"}</dd></div>
+              <div><dt>Renouvellement automatique</dt><dd>{seller360.shop.subscription_id.autoRenew ? "Activé" : "Désactivé"}</dd></div>
+              <div><dt>Résiliation programmée</dt><dd>{seller360.shop.subscription_id.cancelAtPeriodEnd ? "Oui" : "Non"}</dd></div>
+              {seller360.shop.subscription_id.graceUntil && <div><dt>Fin de période de grâce</dt><dd>{new Date(seller360.shop.subscription_id.graceUntil).toLocaleDateString("fr-FR")}</dd></div>}
+            </dl> : <p className="seller-360-empty">Aucun abonnement lié à cette boutique.</p>}
+            {seller360.subscriptionHistory?.length > 0 && <div className="seller-360-history"><strong>Historique récent</strong>{seller360.subscriptionHistory.map((subscription: any) => <div key={subscription._id}><span>{subscription.plan} · {subscription.payementStatus}</span><time>{new Date(subscription.createdAt).toLocaleDateString("fr-FR")}</time></div>)}</div>}
+          </section>
+          <section className="seller-360-card">
+            <div className="seller-360-section-heading"><div><h3>Publications récentes</h3><p>Derniers produits ajoutés à la boutique</p></div></div>
+            {seller360.recentProducts?.length ? <div className="seller-360-products">{seller360.recentProducts.map((product: any) => <article key={product._id}><div className="min-w-0"><Link to={`/espace_vendeur/products/${product._id}`} className="seller-360-product-name">{product.name}</Link><small>{new Date(product.createdAt).toLocaleDateString("fr-FR")} · Stock {product.stock}</small></div><span className={`admin-status-badge ${product.publicationStatus === "Approved" ? "admin-status-badge--success" : product.publicationStatus === "Rejected" ? "admin-status-badge--danger" : "admin-status-badge--pending"}`}>{product.publicationStatus === "Approved" ? "Publiée" : product.publicationStatus === "Rejected" ? "Refusée" : "En attente"}</span></article>)}</div> : <p className="seller-360-empty">Aucune publication enregistrée.</p>}
+          </section>
+        </div>
+        <div className="seller-360-footer"><div><strong>KYC</strong><span>{seller360.kyc?.verificationStatus ?? "Non soumis"}</span></div><div><strong>Commission marketplace</strong><label><input type="number" min="0" max="50" step="0.1" value={commission} onChange={(event) => setCommission(event.target.value)} aria-label="Commission marketplace en pourcentage" /><span>%</span></label><button type="button" className="admin-button admin-button--primary admin-button--sm" onClick={() => void saveCommission()}>Enregistrer le taux</button></div></div>
+        <div className="seller-360-columns seller-360-activity"><section className="seller-360-card"><h3>Commandes récentes</h3>{seller360.orders.length ? seller360.orders.map((order: any) => <p key={order._id}>{new Date(order.createdAt).toLocaleDateString("fr-FR")} · {order.customer?.name} · {order.subOrders.map((line: any) => line.status).join(", ")}</p>) : <p className="seller-360-empty">Aucune commande récente.</p>}</section><section className="seller-360-card"><h3>Actions administratives</h3>{seller360.audit.length ? seller360.audit.map((entry: any) => <p key={entry._id}>{new Date(entry.createdAt).toLocaleString("fr-FR")} · {entry.actorName} · {entry.action}</p>) : <p className="seller-360-empty">Aucune action récente.</p>}</section></div>
+      </section>}
     </div>
   );
 }
