@@ -314,73 +314,96 @@ function Show() {
       </section>
 
       <section className="admin-panel space-y-4 p-4 sm:p-5">
-        <div>
-          <h2 className="admin-subsection-title">Variantes du produit</h2>
+        <div className="admin-variant-heading">
+          <span className="admin-variant-heading-icon" aria-hidden="true">
+            <LiaPlusSolid />
+          </span>
+          <div>
+            <h2 className="admin-subsection-title">Variantes du produit</h2>
           <p className="admin-helper-text">
             Ajoutez une valeur et son éventuel supplément de prix.
           </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmitNewVariant} className="admin-variant-form">
-          <AdminInput
-            label="Nom de la variante"
-            value={variant.name}
-            onChange={(event) =>
-              setVariant((prev) => ({ ...prev, name: event.target.value }))
-            }
-          />
+          <div className="admin-variant-group-row">
+            <AdminInput
+              label="Nom du groupe"
+              placeholder="Ex. Taille, couleur, matière"
+              value={variant.name}
+              onChange={(event) =>
+                setVariant((prev) => ({ ...prev, name: event.target.value }))
+              }
+              required
+              maxLength={60}
+            />
 
-          <div className="relative" onMouseLeave={() => setIsOpen(false)}>
+          <div className="admin-variant-template">
             <AdminButton
               type="button"
               variant="outline"
               aria-expanded={isOpen}
               aria-controls="existing-variants"
               onClick={handleIsOpen}
+              className="admin-variant-template-trigger"
             >
-              Choisir un groupe existant
-              <span aria-hidden="true" className={isOpen ? "rotate-90" : ""}>
-                <LiaAngleRightSolid size={16} />
+              <span className="admin-variant-template-copy">
+                <small>Réutiliser</small>
+                <strong>Un groupe existant</strong>
               </span>
+              <LiaAngleRightSolid aria-hidden="true" className={isOpen ? "rotate-90" : ""} />
             </AdminButton>
 
             <ul
               id="existing-variants"
               className={`admin-variant-picker ${isOpen ? "is-open" : ""}`}
+              aria-label="Groupes de variantes existants"
+              hidden={!isOpen}
             >
-              {Array.isArray(product?.variant) &&
+              {Array.isArray(product?.variant) && product.variant.length > 0 ?
                 product.variant.map((productVariant) => (
                   <li key={productVariant._id}>
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
                         setVariant((prev) => ({
                           ...prev,
                           name: productVariant.name,
-                        }))
-                      }
+                        }));
+                        setIsOpen(false);
+                      }}
                     >
                       {productVariant.name}
                     </button>
                   </li>
-                ))}
+                )) : <li className="admin-variant-picker-empty">Aucun groupe existant</li>}
             </ul>
           </div>
+          </div>
 
-          <AdminInput
-            label="Valeur"
-            name="value"
-            onChange={handleVariantChange}
-          />
-          <AdminInput
-            label="Supplément (Ar)"
-            type="number"
-            name="additionalPrice"
-            onChange={handleVariantChange}
-          />
-          <AdminButton type="submit" variant="primary" size="md">
-            <LiaPlusSolid /> Ajouter
-          </AdminButton>
+          <div className="admin-variant-value-row">
+            <AdminInput
+              label="Valeur de l’option"
+              name="value"
+              placeholder="Ex. Rouge, XL, Cuir"
+              onChange={handleVariantChange}
+              required
+              maxLength={80}
+            />
+            <AdminInput
+              label="Supplément de prix (Ar)"
+              type="number"
+              name="additionalPrice"
+              min={0}
+              step={1}
+              placeholder="0"
+              onChange={handleVariantChange}
+            />
+            <AdminButton type="submit" variant="primary" size="md" className="admin-variant-submit">
+              <LiaPlusSolid aria-hidden="true" /> Ajouter l’option
+            </AdminButton>
+          </div>
         </form>
 
         <DataTable

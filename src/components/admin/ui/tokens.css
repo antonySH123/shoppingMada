@@ -229,7 +229,178 @@
 .admin-shell .cin-info-modal { background: var(--admin-surface); color: var(--admin-text); }
 .admin-shell .cin-info-modal input { border-color: var(--admin-border); background: var(--admin-surface-raised); color: var(--admin-text); }
 
+/* Shared admin layout primitives: keep every route inside the viewport. */
+.admin-shell,
+.admin-shell-main,
+.admin-content-gutter,
+.admin-page,
+.admin-page > *,
+.admin-page :is(section, article, form, fieldset) { min-width: 0; max-width: 100%; }
+.admin-shell { width: 100%; max-width: 100vw; overflow-x: clip; }
+.admin-shell-main { width: 0; overflow-x: clip; }
+.admin-content-gutter { width: 100%; }
+.admin-page { width: 100%; overflow-wrap: anywhere; }
+.admin-page :is(h1, h2, h3, p, a, button, label, small, strong, code) { overflow-wrap: anywhere; }
+
+/* Consistent controls and form rhythm across legacy and newer admin pages. */
+.admin-page form { gap: 0.85rem; }
+.admin-page :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  max-width: 100%;
+  min-width: 0;
+  border-radius: var(--admin-radius-md);
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+.admin-page :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus-visible {
+  border-color: var(--admin-accent-solid);
+  outline: none;
+  box-shadow: var(--admin-focus);
+}
+.admin-page :is(input[type="checkbox"], input[type="radio"]) { accent-color: var(--admin-accent-solid); }
+.admin-page textarea { min-height: 6rem; resize: vertical; }
+.admin-page :is(.admin-field, label) { min-width: 0; }
+
+/* Give tables a shared high-contrast surface while confining wide data locally. */
+.admin-page .overflow-x-auto,
+.admin-page .admin-table-scroll { width: 100%; max-width: 100%; min-width: 0; overscroll-behavior-inline: contain; }
+.admin-page table:not(.admin-data-table) { width: 100%; border-collapse: separate; border-spacing: 0; color: var(--admin-text); font-size: var(--admin-font-sm); }
+.admin-page table:not(.admin-data-table) thead { background: var(--admin-surface-raised); color: var(--admin-muted); }
+.admin-page table:not(.admin-data-table) th { font-size: var(--admin-font-xs); font-weight: 750; letter-spacing: 0.035em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+.admin-page table:not(.admin-data-table) :is(th, td) { border-bottom: 1px solid var(--admin-border); padding: 0.75rem 0.85rem; vertical-align: middle; }
+.admin-page table:not(.admin-data-table) tbody tr { background: var(--admin-surface); transition: background-color 140ms ease; }
+.admin-page table:not(.admin-data-table) tbody tr:hover { background: var(--admin-surface-hover); }
+.admin-page table:not(.admin-data-table) tbody tr:last-child td { border-bottom: 0; }
+.admin-page table:not(.admin-data-table) td { overflow-wrap: anywhere; }
+.admin-page .admin-data-table { min-width: 40rem; }
+.admin-page .admin-panel { min-width: 0; }
+.admin-page .admin-panel-heading { min-width: 0; flex-wrap: wrap; gap: 0.75rem; }
+.admin-page .admin-panel-heading > * { min-width: 0; }
+.admin-page .admin-table-pagination { min-width: 0; }
+.admin-page .admin-table-pagination > span { overflow-wrap: anywhere; }
+
+/* Refined SaaS panel treatment with restrained Web3 color and glass accents. */
+.admin-shell .admin-page .admin-panel {
+  border: 1px solid color-mix(in srgb, var(--admin-border) 88%, var(--admin-accent-solid));
+  background-image: linear-gradient(145deg, color-mix(in srgb, var(--admin-surface) 96%, var(--admin-accent-solid)), var(--admin-surface) 42%);
+  box-shadow: var(--admin-shadow-sm), inset 0 1px rgb(255 255 255 / 2%);
+}
+.admin-shell .admin-page .admin-panel-heading { background: color-mix(in srgb, var(--admin-surface-raised) 92%, transparent); }
+.admin-shell .admin-page .admin-button { min-height: 2.5rem; }
+
+/* Premium controls used by both Tailwind pages and older admin forms. */
+.admin-shell .admin-page :is(.admin-button, .admin-button-primary, .admin-button-secondary, .admin-button-danger, .admin-link-button, .admin-table-action) {
+  min-height: 2.55rem;
+  border-radius: 0.8rem;
+  font-weight: 750;
+  line-height: 1.25;
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+.admin-shell .admin-page :is(.admin-button, .admin-button-primary, .admin-button-secondary, .admin-button-danger, .admin-link-button, .admin-table-action):not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 18px rgb(0 0 0 / 16%);
+}
+.admin-shell .admin-page .admin-button--primary,
+.admin-shell .admin-page .admin-button-primary { border-color: transparent; background: var(--admin-accent); color: #071714; }
+.admin-shell .admin-page .admin-button--secondary,
+.admin-shell .admin-page .admin-button-secondary { border-color: var(--admin-border); background: var(--admin-surface-raised); color: var(--admin-text); }
+.admin-shell .admin-page .admin-button--outline { border-color: var(--admin-border); background: color-mix(in srgb, var(--admin-surface) 84%, transparent); color: var(--admin-text); }
+.admin-shell .admin-page .admin-button--danger,
+.admin-shell .admin-page .admin-button-danger { border-color: color-mix(in srgb, var(--admin-danger) 45%, transparent); background: color-mix(in srgb, var(--admin-danger) 14%, var(--admin-surface)); color: var(--admin-danger); }
+.admin-shell .admin-page .admin-link-button,
+.admin-shell .admin-page .admin-table-action { border: 1px solid color-mix(in srgb, var(--admin-accent-solid) 35%, transparent); background: color-mix(in srgb, var(--admin-accent-solid) 11%, var(--admin-surface)); color: var(--admin-accent-solid); padding: 0.45rem 0.75rem; text-decoration: none; }
+.admin-shell .admin-page :is(.admin-search-input, .admin-input, .admin-field__control) {
+  min-width: 0;
+  min-height: 2.75rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 0.8rem;
+  background-color: var(--admin-surface-raised);
+  color: var(--admin-text);
+  box-shadow: inset 0 1px rgb(255 255 255 / 3%);
+}
+.admin-shell .admin-page :is(.admin-search-input, .admin-input, .admin-field__control)::placeholder { color: var(--admin-muted); opacity: 0.78; }
+.admin-shell .admin-page :is(.admin-search-input, .admin-input, .admin-field__control):focus-visible { border-color: var(--admin-accent-solid); outline: none; box-shadow: var(--admin-focus); }
+.admin-shell .admin-page select:not([multiple]) {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a5b4b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+}
+.admin-shell[data-admin-theme="light"] .admin-page select:not([multiple]) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235e7167' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+}
+.admin-shell .admin-page select option { background: var(--admin-surface-raised); color: var(--admin-text); }
+.admin-shell .admin-page input[type="file"] {
+  width: 100%;
+  min-width: 0;
+  min-height: 3.25rem;
+  border: 1px dashed color-mix(in srgb, var(--admin-accent-solid) 52%, var(--admin-border));
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--admin-accent-solid) 5%, var(--admin-surface-raised));
+  padding: 0.45rem;
+  color: var(--admin-muted);
+  cursor: pointer;
+}
+.admin-shell .admin-page input[type="file"]::file-selector-button {
+  min-height: 2.25rem;
+  margin-right: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--admin-accent-solid) 35%, transparent);
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--admin-accent-solid) 14%, var(--admin-surface));
+  padding: 0.4rem 0.75rem;
+  color: var(--admin-accent-solid);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.admin-shell .admin-page input[type="file"]:hover::file-selector-button { border-color: var(--admin-accent-solid); background: color-mix(in srgb, var(--admin-accent-solid) 22%, var(--admin-surface)); }
+
+/* Tables retain their data density on desktop and use a clearer hierarchy. */
+.admin-shell .admin-page :is(.admin-data-table, table:not(.admin-data-table)) thead th { box-shadow: inset 0 -1px var(--admin-border); }
+.admin-shell .admin-page :is(.admin-data-table, table:not(.admin-data-table)) tbody tr:nth-child(even) { background: color-mix(in srgb, var(--admin-surface-raised) 38%, var(--admin-surface)); }
+.admin-shell .admin-page :is(.admin-data-table, table:not(.admin-data-table)) tbody tr:hover { background: color-mix(in srgb, var(--admin-accent-solid) 8%, var(--admin-surface-hover)); }
+.admin-shell .admin-page :is(.admin-data-table, table:not(.admin-data-table)) tbody td { max-width: 22rem; }
+.admin-shell .admin-page .admin-data-table th { padding-block: 0.8rem; text-transform: uppercase; letter-spacing: 0.045em; }
+.admin-shell .admin-page .admin-table-sort { display: inline-flex; align-items: center; gap: 0.35rem; border-radius: 0.4rem; }
+.admin-shell .admin-page .admin-table-scroll,
+.admin-shell .admin-page .overflow-x-auto:has(> table) { border: 1px solid var(--admin-border); border-radius: var(--admin-radius-lg); background: var(--admin-surface); }
+.admin-shell[data-admin-theme="dark"] .admin-page { color-scheme: dark; }
+.admin-shell[data-admin-theme="light"] .admin-page { color-scheme: light; }
+
+/* Product variant editor: a compact group picker plus a clear value action. */
+.admin-variant-heading { display: flex; align-items: flex-start; gap: 0.85rem; }
+.admin-variant-heading-icon { display: grid; width: 2.65rem; height: 2.65rem; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--admin-accent-solid) 35%, transparent); border-radius: 0.85rem; background: color-mix(in srgb, var(--admin-accent-solid) 12%, var(--admin-surface)); color: var(--admin-accent-solid); font-size: 1.2rem; box-shadow: inset 0 1px rgb(255 255 255 / 5%); }
+.admin-variant-form { display: grid; gap: 1rem !important; border: 1px solid var(--admin-border); border-radius: 1rem; background: color-mix(in srgb, var(--admin-surface-raised) 72%, transparent); padding: 1rem; }
+.admin-variant-group-row { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) minmax(13rem, 0.42fr); align-items: end; gap: 0.8rem; }
+.admin-variant-value-row { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.42fr) auto; align-items: end; gap: 0.8rem; border-top: 1px solid var(--admin-border); padding-top: 1rem; }
+.admin-variant-template { position: relative; min-width: 0; }
+.admin-variant-template-trigger { display: flex; width: 100%; min-height: 2.75rem !important; align-items: center; justify-content: space-between; gap: 0.7rem; padding: 0.45rem 0.75rem; text-align: left; }
+.admin-variant-template-copy { display: grid; gap: 0.1rem; }
+.admin-variant-template-copy small { color: var(--admin-muted); font-size: 0.65rem; font-weight: 650; }
+.admin-variant-template-copy strong { color: var(--admin-text); font-size: var(--admin-font-sm); }
+.admin-variant-picker { position: absolute; z-index: 30; top: calc(100% + 0.45rem); right: 0; left: 0; display: grid; max-height: 15rem; overflow-y: auto; border: 1px solid var(--admin-border); border-radius: 0.85rem; background: var(--admin-surface-raised); padding: 0.35rem; box-shadow: var(--admin-shadow-md); list-style: none; }
+.admin-variant-picker[hidden] { display: none; }
+.admin-variant-picker li + li { border-top: 1px solid color-mix(in srgb, var(--admin-border) 65%, transparent); }
+.admin-variant-picker button { width: 100%; border: 0; border-radius: 0.55rem; background: transparent; padding: 0.65rem 0.7rem; color: var(--admin-text); font: inherit; font-size: var(--admin-font-sm); text-align: left; cursor: pointer; }
+.admin-variant-picker button:hover,
+.admin-variant-picker button:focus-visible { background: color-mix(in srgb, var(--admin-accent-solid) 12%, var(--admin-surface)); color: var(--admin-accent-solid); outline: none; }
+.admin-variant-picker-empty { padding: 0.7rem; color: var(--admin-muted); font-size: var(--admin-font-sm); }
+.admin-variant-submit { min-height: 2.75rem !important; white-space: nowrap; }
+
 @media (max-width: 640px) {
+  .admin-shell .admin-content-gutter { padding-inline: 0.75rem; }
+  .admin-shell .admin-page { width: 100%; }
+  .admin-page form.admin-panel { grid-template-columns: minmax(0, 1fr) !important; padding: 0.9rem; }
+  .admin-page .admin-panel { border-radius: 0.9rem; }
+  .admin-page table:not(.admin-data-table) :is(th, td) { padding: 0.65rem 0.7rem; }
+  .admin-page .admin-table-pagination { align-items: stretch; }
+  .admin-page .admin-table-pagination > div { flex-wrap: wrap; }
+  .admin-variant-form { padding: 0.8rem; }
+  .admin-variant-group-row,
+  .admin-variant-value-row { grid-template-columns: minmax(0, 1fr); }
+  .admin-variant-value-row { gap: 0.7rem; }
+  .admin-variant-submit { width: 100%; }
   .admin-design-page-header { align-items: stretch; flex-direction: column; }
   .admin-design-page-header > :last-child { width: 100%; }
   .admin-stat-card { padding: 0.8rem; }
@@ -237,4 +408,13 @@
   .admin-mobile-table-card { display: grid; gap: 0.5rem; border: 1px solid var(--admin-border); border-radius: var(--admin-radius-md); background: var(--admin-surface); padding: 0.75rem; }
   .admin-mobile-table-card__row { display: flex; min-width: 0; justify-content: space-between; gap: 0.75rem; font-size: var(--admin-font-sm); }
   .admin-mobile-table-card__label { color: var(--admin-muted); }
+}
+
+@media (max-width: 420px) {
+  .admin-shell .admin-content-gutter { padding-inline: 0.55rem; }
+  .admin-page .admin-panel { padding-inline: 0.75rem; }
+  .admin-page .admin-mobile-table-card { padding: 0.65rem; }
+  .admin-page .admin-mobile-table-card__row { align-items: flex-start; flex-direction: column; gap: 0.15rem; }
+  .admin-page .admin-mobile-table-card__row > :last-child { max-width: 100%; }
+  .admin-page .admin-button { max-width: 100%; white-space: normal; }
 }

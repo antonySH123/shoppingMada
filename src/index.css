@@ -710,29 +710,32 @@ select:focus-visible {
   .admin-page-header h1 { line-height: 1.2; }
 }
 .admin-page .min-h-screen > form {
-  border: 1px solid var(--market-line);
+  border: 1px solid var(--admin-border, var(--market-line));
   border-radius: 1.25rem;
-  box-shadow: 0 10px 32px rgb(23 35 28 / 6%);
+  background: var(--admin-surface, #fff);
+  color: var(--admin-text, var(--market-ink));
+  box-shadow: var(--admin-shadow-sm, 0 10px 32px rgb(23 35 28 / 6%));
 }
 .admin-page h1 { letter-spacing: -0.035em; }
 .admin-page form input:not([type="checkbox"]),
 .admin-page form textarea,
 .admin-page form select {
-  border-color: #dce5de;
+  border-color: var(--admin-border, #dce5de);
   border-radius: 0.75rem;
-  background-color: white;
+  background-color: var(--admin-surface-raised, white);
+  color: var(--admin-text, var(--market-ink));
   padding: 0.7rem 0.85rem;
 }
 .admin-page form input:focus,
 .admin-page form textarea:focus,
 .admin-page form select:focus {
-  border-color: #16834b;
-  box-shadow: 0 0 0 3px rgb(22 131 75 / 12%);
+  border-color: var(--admin-accent-solid, #16834b);
+  box-shadow: var(--admin-focus, 0 0 0 3px rgb(22 131 75 / 12%));
   outline: none;
 }
 .admin-page .rounded-lg.border,
 .admin-page .rounded-xl.border {
-  border-color: var(--market-line);
+  border-color: var(--admin-border, var(--market-line));
 }
 
 .upgrade-pro-page { overflow: hidden; border: 1px solid #e4ece6; border-radius: 1.6rem; background: #f7faf8; box-shadow: 0 18px 55px rgb(23 35 28 / 6%); }
