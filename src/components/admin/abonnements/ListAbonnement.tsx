@@ -3,15 +3,12 @@ import IAction from "../../../Interface/action.interface";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
-import { LiaEye } from "react-icons/lia";
-import UserInfo from "../../modals/UserInfo";
 import { useAuth } from "../../../helper/useAuth";
 import useCSRF from "../../../helper/useCSRF";
 import { formatStatus } from "../../../helper/locale";
 
 interface IState {
   subscription: Isubscription[] | [];
-  isOpen: boolean;
   selectedId: string | null;
   subscribeinfo: Isubscription | null;
   rejected: boolean;
@@ -25,7 +22,6 @@ interface IState {
 
 const initialState: IState = {
   subscription: [],
-  isOpen: false,
   selectedId: null,
   subscribeinfo: null,
   rejected: false,
@@ -48,8 +44,8 @@ const reducer = (state: IState, action: IAction): IState => {
       };
     case "SELECT_ID":
       return { ...state, selectedId: action.payload as string, subscribeinfo: null, detailLoading: true, detailError: null, rejected: false, motif: null };
-    case "TOGGLE_MODAL":
-      return { ...state, isOpen: action.payload as boolean, rejected: false, ...(action.payload ? {} : { selectedId: null, subscribeinfo: null, detailLoading: false, detailError: null, motif: null }) };
+    case "CLEAR_DETAILS":
+      return { ...state, rejected: false, selectedId: null, subscribeinfo: null, detailLoading: false, detailError: null, motif: null };
     case "GET_INFO":
       return { ...state, subscribeinfo: action.payload as Isubscription, detailLoading: false, detailError: null };
     case "REJECTED":
@@ -60,6 +56,8 @@ const reducer = (state: IState, action: IAction): IState => {
       return { ...state, loading: action.payload as boolean };
     case "DETAIL_ERROR":
       return { ...state, detailLoading: false, detailError: action.payload as string | null };
+    case "LIST_ERROR":
+      return { ...state, loading: false, error: action.payload as string | null };
     case "SAVING":
       return { ...state, saving: action.payload as boolean };
     default:
@@ -103,8 +101,7 @@ function ListAbonnement() {
       setStatusCounts(result.stats ?? {});
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible de charger les abonnements.";
-      dispatch({ type: "DETAIL_ERROR", payload: message });
-      dispatch({ type: "LOADING", payload: false });
+      dispatch({ type: "LIST_ERROR", payload: message });
       toast.error(message);
     }
   }, [page, searchTerm, statusFilter]);
@@ -200,7 +197,7 @@ function ListAbonnement() {
         if (response.ok) {
           const result = await response.json();
           toast.success(result.message);
-          dispatch({ type: "TOGGLE_MODAL", payload: false });
+          dispatch({ type: "CLEAR_DETAILS" });
           fetchData();
         } else {
           const result = await response.json().catch(() => null);
@@ -227,7 +224,7 @@ function ListAbonnement() {
       const response = await fetch(`${import.meta.env.REACT_API_URL}subscription/${id}/cancel`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf }, body: JSON.stringify({}) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Résiliation impossible.");
-      toast.success(result.message); dispatch({ type: "TOGGLE_MODAL", payload: false }); void fetchData();
+      toast.success(result.message); dispatch({ type: "CLEAR_DETAILS" }); void fetchData();
     } catch (error) { toast.error(error instanceof Error ? error.message : "Résiliation impossible."); }
     finally { dispatch({ type: "SAVING", payload: false }); }
   };
@@ -307,150 +304,33 @@ function ListAbonnement() {
         )}
 
         <div className="overflow-x-auto">
-          <table>
-            <thead>
-              <tr>
-                <th>Boutique</th>
-                <th>Plan</th>
-                <th>Référence</th>
-                <th>Statut</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.loading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-[var(--admin-muted)]">Chargement des demandes…</td></tr>
-              ) : filteredSubscriptions.length > 0 ? (
-                filteredSubscriptions.map((item, index) => (
-                  <tr key={item._id || index}>
-                    <td className="font-semibold text-[var(--admin-text)]">
-                      {item.owner_id?.boutiks_id?.name || "Boutique inconnue"}
-                    </td>
-                    <td>{item.plan}</td>
-                    <td className="font-mono text-xs">{item.refTransaction}</td>
-                    <td>
-                      <span
-                        className={`admin-status-badge ${item.payementStatus === "Completed" ? "admin-status-success" : item.payementStatus === "Rejected" ? "admin-status-danger" : item.payementStatus === "Canceled" ? "admin-status-neutral" : "admin-status-info"}`}
-                      >
-                        {formatStatus(item.payementStatus)}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className="admin-link-button"
-                        type="button"
-                        aria-label={`Voir la demande de ${item.owner_id?.boutiks_id?.name || "la boutique"}`}
-                        onClick={() => {
-                          dispatch({ type: "SELECT_ID", payload: item._id });
-                          dispatch({ type: "TOGGLE_MODAL", payload: true });
-                        }}
-                      >
-                        <LiaEye />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="admin-empty-state">
-                    Aucune demande d’abonnement ne correspond à la recherche.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          {state.loading ? <div className="p-8 text-center text-[var(--admin-muted)]">Chargement des abonnements…</div> : filteredSubscriptions.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
+              {filteredSubscriptions.map((item) => {
+                const isSelected = state.selectedId === item._id;
+                const shopName = item.owner_id?.boutiks_id?.name || item.owner_id?.username || "Boutique inconnue";
+                return <article key={item._id} className="overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] shadow-sm">
+                  <div className="space-y-4 p-5">
+                    <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-[var(--admin-muted)]">Boutique</p><h3 className="mt-1 truncate text-lg font-bold text-[var(--admin-text)]">{shopName}</h3><p className="mt-1 truncate text-xs text-[var(--admin-muted)]">{item.owner_id?.email ?? "Coordonnées indisponibles"}</p></div><span className={`admin-status-badge shrink-0 ${item.payementStatus === "Completed" ? "admin-status-success" : item.payementStatus === "Rejected" ? "admin-status-danger" : item.payementStatus === "Canceled" ? "admin-status-neutral" : "admin-status-info"}`}>{formatStatus(item.payementStatus)}</span></div>
+                    <div className="grid grid-cols-2 gap-3 border-y border-[var(--admin-border)] py-3 text-sm"><div><span className="block text-xs text-[var(--admin-muted)]">Forfait</span><strong className="text-[var(--admin-text)]">{item.plan}</strong></div><div><span className="block text-xs text-[var(--admin-muted)]">Montant</span><strong className="text-[var(--admin-text)]">{item.priceMGA?.toLocaleString("fr-FR") ?? "—"} MGA</strong></div><div className="col-span-2 min-w-0"><span className="block text-xs text-[var(--admin-muted)]">Référence de paiement</span><strong className="block break-all font-mono text-xs text-[var(--admin-text)]">{item.refTransaction || "—"}</strong></div></div>
+                    <button type="button" className="admin-button admin-button--secondary admin-button--sm w-full justify-center" aria-expanded={isSelected} onClick={() => { if (isSelected) dispatch({ type: "CLEAR_DETAILS" }); else dispatch({ type: "SELECT_ID", payload: item._id }); }}>{isSelected ? "Masquer les détails" : "Voir les détails et gérer"}</button>
+                  </div>
+                  {isSelected && <div className="space-y-4 border-t border-[var(--admin-border)] bg-[var(--admin-surface-raised)] p-5" aria-label={`Détails ${shopName}`}>
+                    {state.detailLoading ? <p role="status" className="text-sm text-[var(--admin-muted)]">Chargement des détails…</p> : state.detailError ? <div className="text-sm text-rose-600">{state.detailError}<button type="button" className="ml-2 underline" onClick={() => void getData()}>Réessayer</button></div> : state.subscribeinfo && <>
+                      <div className="space-y-2 text-sm text-[var(--admin-muted)]"><p><strong className="text-[var(--admin-text)]">Téléphone payeur :</strong> {state.subscribeinfo.transactionPhoneNumber || "—"}</p><p><strong className="text-[var(--admin-text)]">Moyen :</strong> {state.subscribeinfo.paymentMethodName ?? "—"}</p><p><strong className="text-[var(--admin-text)]">Compte destinataire :</strong> {state.subscribeinfo.paymentAccountName ?? "—"} · {state.subscribeinfo.paymentAccountNumber ?? state.subscribeinfo.selectedPhoneNumber ?? "—"}</p>{state.subscribeinfo.paymentInstructions && <p><strong className="text-[var(--admin-text)]">Instructions :</strong> {state.subscribeinfo.paymentInstructions}</p>}{state.subscribeinfo.lifecycleStatus && <p><strong className="text-[var(--admin-text)]">Cycle :</strong> {state.subscribeinfo.lifecycleStatus === "active" ? "Actif" : state.subscribeinfo.lifecycleStatus === "grace" ? `Période de grâce jusqu’au ${new Date(state.subscribeinfo.graceUntil ?? "").toLocaleDateString("fr-FR")}` : state.subscribeinfo.lifecycleStatus === "canceled" ? "Résiliation effectuée" : "Expiré"}</p>}{state.subscribeinfo.endDate && <p><strong className="text-[var(--admin-text)]">Fin de période :</strong> {new Date(state.subscribeinfo.endDate).toLocaleDateString("fr-FR")}{state.subscribeinfo.cancelAtPeriodEnd ? " · résiliation programmée" : ""}</p>}</div>
+                      {state.subscribeinfo.payementStatus === "Pending" && user?.userGroupMember_id?.usergroup_id?.name !== "Boutiks" && <div className="space-y-3 border-t border-[var(--admin-border)] pt-4">{state.rejected && <div><label htmlFor={`reject-${item._id}`} className="mb-1 block text-xs font-semibold text-[var(--admin-muted)]">Motif du rejet</label><input id={`reject-${item._id}`} className="admin-field__control w-full" value={state.motif ?? ""} maxLength={500} onChange={(event) => dispatch({ type: "HANDLE_MOTIF", payload: event.target.value })} placeholder="Expliquez la raison du rejet" /></div>}<div className="flex flex-wrap gap-2">{state.rejected ? <><button className="admin-button-danger admin-button--sm" disabled={state.saving || !state.motif?.trim()} onClick={() => void updateData("Rejected")}>Confirmer le rejet</button><button className="admin-button admin-button--secondary admin-button--sm" onClick={() => dispatch({ type: "REJECTED", payload: false })}>Retour</button></> : <><button className="admin-button-primary admin-button--sm" disabled={state.saving} onClick={() => void updateData("Completed")}>Valider l’abonnement</button><button className="admin-button-danger admin-button--sm" disabled={state.saving} onClick={() => dispatch({ type: "REJECTED", payload: true })}>Rejeter</button></>}</div></div>}
+                      {user?.userGroupMember_id?.usergroup_id?.name === "Boutiks" && state.subscribeinfo.payementStatus === "Pending" && <button className="admin-button-danger admin-button--sm" disabled={state.saving} onClick={() => void updateData("Canceled")}>Annuler la demande</button>}
+                      {user?.userGroupMember_id?.usergroup_id?.name === "Boutiks" && state.subscribeinfo.payementStatus === "Completed" && !state.subscribeinfo.cancelAtPeriodEnd && <button className="admin-button-danger admin-button--sm" disabled={state.saving} onClick={() => void cancelRenewal()}>Résilier à la fin de la période</button>}
+                    </>}
+                  </div>}
+                </article>;
+              })}
+            </div>
+          ) : <p className="p-8 text-center text-sm text-[var(--admin-muted)]">Aucun abonnement ne correspond à ces filtres.</p>}
         </div>
         <div className="flex items-center justify-between gap-3 border-t p-4 text-sm text-[var(--admin-muted)]"><span>{total} demande(s) · page {page} / {Math.max(1,pages)}</span><div className="flex gap-2"><button className="admin-button admin-button--secondary admin-button--sm" disabled={page<=1||state.loading} onClick={()=>setPage(page-1)}>Précédent</button><button className="admin-button admin-button--secondary admin-button--sm" disabled={page>=pages||state.loading} onClick={()=>setPage(page+1)}>Suivant</button></div></div>
       </div>
 
-      <UserInfo
-        isOpen={state.isOpen}
-        onClose={() => dispatch({ type: "TOGGLE_MODAL", payload: false })}
-      >
-        <h1 className="text-xl font-bold mb-4">Détails de l’abonnement</h1>
-        <hr />
-        <div className="px-2 py-3 rounded w-full border border-emerald-200 bg-emerald-50/70">
-          {!state.rejected ? (
-            <>
-              <h2 className="mb-3 text-lg font-bold text-[var(--admin-text)]">
-                {state.subscribeinfo?.owner_id?.boutiks_id?.name || "Boutique"}
-              </h2>
-              <div className="flex flex-col gap-2 text-sm text-[var(--admin-muted)]">
-                <strong>Plan : {state.subscribeinfo?.plan}</strong>
-                <strong>
-                  Statut : {formatStatus(state.subscribeinfo?.payementStatus)}
-                </strong>
-                {state.subscribeinfo?.lifecycleStatus && <strong>Cycle : {state.subscribeinfo.lifecycleStatus === "active" ? "Actif" : state.subscribeinfo.lifecycleStatus === "grace" ? `Période de grâce jusqu’au ${new Date(state.subscribeinfo.graceUntil ?? "").toLocaleDateString("fr-FR")}` : state.subscribeinfo.lifecycleStatus === "canceled" ? "Résiliation effectuée" : "Expiré"}</strong>}
-                {state.subscribeinfo?.endDate && <strong>Fin de période payée : {new Date(state.subscribeinfo.endDate).toLocaleDateString("fr-FR")}{state.subscribeinfo.cancelAtPeriodEnd ? " · résiliation programmée" : ""}</strong>}
-                <strong>
-                  Référence : {state.subscribeinfo?.refTransaction}
-                </strong>
-                <strong>
-                  Téléphone : {state.subscribeinfo?.transactionPhoneNumber}
-                </strong>
-                <strong>
-                  Moyen : {state.subscribeinfo?.paymentMethodName ?? "—"}
-                </strong>
-                <strong>
-                  Compte destinataire :{" "}
-                  {state.subscribeinfo?.paymentAccountName ?? "—"} ·{" "}
-                  {state.subscribeinfo?.paymentAccountNumber ??
-                    state.subscribeinfo?.selectedPhoneNumber ??
-                    "—"}
-                </strong>
-                <strong>
-                  Montant attendu :{" "}
-                  {state.subscribeinfo?.priceMGA?.toLocaleString("fr-FR") ??
-                    "—"}{" "}
-                  MGA
-                </strong>
-                {state.subscribeinfo?.paymentInstructions && (
-                  <span>
-                    Instructions : {state.subscribeinfo.paymentInstructions}
-                  </span>
-                )}
-              </div>
-            </>
-          ) : (
-            <div>
-              <h2 className="mb-2 text-base font-semibold text-[var(--admin-text)]">
-                Confirmez-vous le rejet de cette demande ?
-              </h2>
-              <input
-                type="text"
-                name="motif"
-                className="admin-field__control w-full"
-                placeholder="Motif du rejet"
-                value={state.motif ?? ""}
-                onChange={(e) =>
-                  dispatch({ type: "HANDLE_MOTIF", payload: e.target.value })
-                }
-              />
-            </div>
-          )}
-        </div>
-        <hr />
-        <div className="flex gap-3 py-3 justify-end">
-          {state.detailLoading ? (
-            <span role="status" className="text-sm text-[var(--admin-muted)]">Chargement…</span>
-          ) : state.detailError ? (
-            <button type="button" className="admin-button-secondary" onClick={() => void getData()}>Réessayer</button>
-          ) : state.subscribeinfo && user?.userGroupMember_id?.usergroup_id?.name !== "Boutiks" && state.subscribeinfo.payementStatus === "Pending" ? (
-            state.rejected ? (
-              <button className="admin-button-primary" disabled={state.saving || !state.motif?.trim()} onClick={() => void updateData("Rejected")}>Envoyer le rejet</button>
-            ) : (
-              <>
-                <button className="admin-button-primary" disabled={state.saving} onClick={() => void updateData("Completed")}>Accepter</button>
-                <button className="admin-button-danger" disabled={state.saving} onClick={() => dispatch({ type: "REJECTED", payload: true })}>Rejeter</button>
-              </>
-            )
-          ) : user?.userGroupMember_id?.usergroup_id?.name === "Boutiks" && state.subscribeinfo?.payementStatus === "Pending" ? (
-            <button className="admin-button-danger" disabled={state.saving} onClick={() => void updateData("Canceled")}>Annuler</button>
-          ) : user?.userGroupMember_id?.usergroup_id?.name === "Boutiks" && state.subscribeinfo?.payementStatus === "Completed" && !state.subscribeinfo.cancelAtPeriodEnd ? (
-            <button className="admin-button-danger" disabled={state.saving} onClick={() => void cancelRenewal()}>Résilier à la fin de la période</button>
-          ) : null}
-        </div>
-      </UserInfo>
     </div>
   );
 }
