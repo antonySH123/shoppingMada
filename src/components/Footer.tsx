@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useLanguage } from "../context/useLanguage";
 
 function Footer() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   return (
     <footer className="bg-[#10271b] text-white">
       <div className="market-container flex flex-col items-center justify-between gap-5 py-8 sm:flex-row">
@@ -14,6 +14,7 @@ function Footer() {
           <Link to="/#about" className="transition hover:text-white">{t("footer.about")}</Link>
           <Link to="/#contact" className="transition hover:text-white">{t("footer.contact")}</Link>
           <Link to="/#abonnements" className="transition hover:text-white">{t("footer.pro")}</Link>
+          <a href="/privacy-policy.html" className="transition hover:text-white">{language === "en" ? "Privacy policy" : "Confidentialité"}</a>
         </nav>
         <p className="text-xs text-white/55">© {new Date().getFullYear()} ShopInMada. {t("footer.rights")}</p>
       </div>

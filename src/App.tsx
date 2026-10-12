@@ -72,6 +72,7 @@ const AuditLog = lazy(() => import("./components/admin/operations/AuditLog"));
 const CategoryManagement = lazy(() => import("./components/admin/operations/CategoryManagement"));
 const PlanManagement = lazy(() => import("./components/admin/operations/PlanManagement"));
 const FinancialDashboard = lazy(() => import("./components/admin/operations/FinancialDashboard"));
+const FacebookPublishing = lazy(() => import("./components/admin/operations/FacebookPublishing"));
 
 function GlobalLanguageSelector() {
   const location = useLocation();
@@ -157,6 +158,7 @@ function App() {
               <Route path="categories-admin" Component={CategoryManagement}></Route>
               <Route path="forfaits" Component={PlanManagement}></Route>
               <Route path="finances" Component={FinancialDashboard}></Route>
+              <Route path="facebook" Component={FacebookPublishing}></Route>
               <Route path="upgrade-pro" Component={UpgradePro}></Route>
               <Route
                 path="abonnementsDetails/:id"

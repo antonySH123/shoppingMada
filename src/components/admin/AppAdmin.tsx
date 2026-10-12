@@ -48,6 +48,7 @@ function AppAdmin() {
     "categories-admin": t("admin.categories"),
     finances: t("admin.finance"),
     forfaits: t("admin.plansPermissions"),
+    facebook: "Facebook",
   };
   const pageKey = location.pathname.split("/").filter(Boolean).pop() || "dash";
 

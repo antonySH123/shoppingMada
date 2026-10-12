@@ -17,6 +17,7 @@ import {
   FaLayerGroup,
   FaChartLine,
   FaSlidersH,
+  FaFacebook,
 } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../../helper/useAuth";
@@ -205,6 +206,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                     {!isCollapsed && <span className="text-[14px] leading-[20px]">{t("admin.categories")}</span>}
                   </Link>
                   <Link to="/espace_vendeur/forfaits" className={navClass("/espace_vendeur/forfaits")}><FaSlidersH />{!isCollapsed && <span className="text-[14px] leading-[20px]">{t("admin.plansPermissions")}</span>}</Link>
+                  <Link to="/espace_vendeur/facebook" className={navClass("/espace_vendeur/facebook")}><FaFacebook />{!isCollapsed && <span className="text-[14px] leading-[20px]">Facebook</span>}</Link>
                   </>}
                 </>
               )}
