@@ -238,7 +238,7 @@ function AccountsDetails() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "La suppression definitive a echoue.");
       toast.success(result.message);
-      navigate("/espace_vendeur/comptes", { replace: true });
+      navigate("/espace_vendeur/shopaccounts", { replace: true });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "La suppression definitive a echoue.");
     } finally {
