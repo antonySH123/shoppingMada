@@ -4,14 +4,20 @@ import { toast } from "react-toastify";
 import useCSRF from "../helper/useCSRF";
 import { useLanguage } from "../context/useLanguage";
 
-function Contact() {
+interface ContactProps {
+  initialName?: string;
+  initialEmail?: string;
+  initialSubject?: string;
+}
+
+function Contact({ initialName = "", initialEmail = "", initialSubject = "" }: ContactProps) {
   const { t } = useLanguage();
   const csrf = useCSRF();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
-    name: "",
-    email: "",
-    subject: "",
+    name: initialName,
+    email: initialEmail,
+    subject: initialSubject,
     message: "",
   });
 
@@ -30,7 +36,7 @@ function Contact() {
       if (!response.ok)
         throw new Error(result.message || t("contact.sendError"));
       toast.success(result.message);
-      setForm({ name: "", email: "", subject: "", message: "" });
+      setForm({ name: initialName, email: initialEmail, subject: "", message: "" });
     } catch (error) {
       toast.error(
         error instanceof Error
