@@ -79,7 +79,7 @@ function Add() {
     [],
   );
   const { productId } = useParams();
-  const quotaReached = Boolean(!productId && quota?.quota && quota.remaining === 0);
+  const quotaReached = Boolean(!productId && quota && quota.remaining !== null && quota.remaining <= 0);
 
   const csrf = useCSRF();
   const handleFileRemove = (index: number) => {

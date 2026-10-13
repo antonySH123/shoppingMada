@@ -41,6 +41,7 @@ function AccountsDetails() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const csrf = useCSRF();
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [seller360, setSeller360] = useState<any>(null);
   const [commission, setCommission] = useState("0");
 
@@ -108,7 +109,9 @@ function AccountsDetails() {
 
   const handleRoleChange = useCallback(async () => {
     try {
-      if (csrf) {
+      if (csrf && id) {
+        const stepUp = await requestAdminStepUp(csrf);
+        if (!stepUp) return;
         const response = await fetch(
           `${import.meta.env.REACT_API_URL}account/${id}/admin`,
           {
@@ -116,30 +119,20 @@ function AccountsDetails() {
             credentials: "include",
             headers: {
               "xsrf-token": csrf,
+              "x-admin-step-up": stepUp,
             },
           },
         );
 
-        if (!response.ok) {
-          toast.error("Une erreur est survenue!");
-        }
-
-        if (response.status === 201) {
-          const result = await response.json();
-          toast.success(result.message);
-        }
-
-        if (response.status === 403) {
-          const result = await response.json();
-          toast.warning(result.message);
-        }
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "Impossible d’attribuer le rôle Admin.");
+        toast.success(result.message);
+        await fetchData();
       }
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      }
+      toast.error(error instanceof Error ? error.message : "Impossible d’attribuer le rôle Admin.");
     }
-  }, [csrf, id]);
+  }, [csrf, fetchData, id]);
 
   const handleAccountStatus = useCallback(async () => {
     if (!csrf || !id || state.isActive === null || isUpdatingStatus) return;
@@ -186,6 +179,35 @@ function AccountsDetails() {
     }
   }, [csrf, fetchData, id, isUpdatingStatus, state.isActive]);
 
+  const handlePermanentDelete = useCallback(async () => {
+    if (!csrf || !id || !state.user || isDeletingAccount) return;
+    const confirmation = window.prompt(`Cette action est irréversible. Les données du compte seront supprimées et les commandes conservées anonymisées. Saisissez l’adresse e-mail exacte pour confirmer :\n\n${state.user.email}`);
+    if (confirmation === null) return;
+    if (confirmation.trim() !== state.user.email) {
+      toast.error("L’adresse e-mail saisie ne correspond pas au compte.");
+      return;
+    }
+    setIsDeletingAccount(true);
+    try {
+      const stepUp = await requestAdminStepUp(csrf);
+      if (!stepUp) return;
+      const response = await fetch(`${import.meta.env.REACT_API_URL}account/${id}/permanent`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp },
+        body: JSON.stringify({ confirmation: state.user.email }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "La suppression définitive a échoué.");
+      toast.success(result.message);
+      window.location.assign("/espace_vendeur/comptes");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "La suppression définitive a échoué.");
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  }, [csrf, id, isDeletingAccount, state.user]);
+
   if (user?.userGroupMember_id.usergroup_id.name !== "Super Admin") {
     return <Navigate to="/espace_vendeur/dash" />;
   }
@@ -225,8 +247,7 @@ function AccountsDetails() {
                 "Compte désactivé"}
             </strong>
             <div className="flex flex-wrap gap-2 sm:justify-end">
-              {state.user?.userGroupMember_id?.usergroup_id?.name !==
-                "Super Admin" && (
+              {state.user?.userGroupMember_id?.usergroup_id?.name !== "Super Admin" && (
                 <>
                   <AdminButton
                     variant={state.isActive ? "danger" : "primary"}
@@ -240,13 +261,21 @@ function AccountsDetails() {
                         ? "Désactiver le compte"
                         : "Activer le compte"}
                   </AdminButton>
-                  <AdminButton
+                  {state.user?.userGroupMember_id?.usergroup_id?.name !== "Admin" && <AdminButton
                     variant="secondary"
                     size="sm"
                     onClick={handleRoleChange}
                   >
-                    Définir comme admin
-                  </AdminButton>
+                    Définir comme Admin
+                  </AdminButton>}
+                  {(user?.userGroupMember_id?.usergroup_id?.name === "Super Admin" || user?.adminPermissions?.includes("accounts.delete")) && <AdminButton
+                    variant="danger"
+                    size="sm"
+                    onClick={() => void handlePermanentDelete()}
+                    disabled={isDeletingAccount}
+                  >
+                    {isDeletingAccount ? "Suppression…" : "Supprimer définitivement"}
+                  </AdminButton>}
                 </>
               )}
             </div>

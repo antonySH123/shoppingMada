@@ -25,7 +25,7 @@ function UpgradePro() {
   const [paymentMethods, setPaymentMethods] = useState<
     SubscriptionPaymentMethod[]
   >([]);
-  const [monthlyPriceMGA, setMonthlyPriceMGA] = useState(50000);
+  const [monthlyPriceMGA, setMonthlyPriceMGA] = useState(0);
   const [selectedMethodId, setSelectedMethodId] = useState<string | null>(null);
   const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true);
   const [transactionPhoneNumber, setTransactionPhoneNumber] = useState("");
@@ -36,6 +36,11 @@ function UpgradePro() {
     const controller = new AbortController();
     const fetchPaymentMethods = async () => {
       try {
+        const plansResponse = await fetch(`${import.meta.env.REACT_API_URL}subscription/plans`, { signal: controller.signal });
+        const plansResult = await plansResponse.json();
+        if (!plansResponse.ok) throw new Error(plansResult.message || "Impossible de charger les forfaits.");
+        const proPlan = Array.isArray(plansResult.data) ? plansResult.data.find((plan: any) => plan.key === "pro") : null;
+        if (!proPlan) throw new Error("Le forfait Pro est indisponible pour le moment.");
         const response = await fetch(
           `${import.meta.env.REACT_API_URL}subscription/payment-methods`,
           { credentials: "include", signal: controller.signal },
@@ -48,7 +53,7 @@ function UpgradePro() {
         setPaymentMethods(
           Array.isArray(result.data?.methods) ? result.data.methods : [],
         );
-        setMonthlyPriceMGA(Number(result.data?.monthlyPriceMGA ?? 50000));
+        setMonthlyPriceMGA(Number(proPlan.monthlyPriceMGA ?? result.data?.monthlyPriceMGA ?? 0));
       } catch (error) {
         if (!controller.signal.aborted)
           toast.error(
@@ -144,7 +149,7 @@ function UpgradePro() {
               <span>
                 <FaStore />
               </span>
-              <h3>Catalogue sans limite</h3>
+              <h3>Jusqu’à 500 produits</h3>
               <p>
                 Publiez tous vos produits et faites évoluer votre vitrine à
                 votre rythme.
@@ -192,8 +197,8 @@ function UpgradePro() {
               <span> / mois</span>
             </p>
             <p className="upgrade-pro-plan-note">
-              Sans engagement annuel. Votre demande sera traitée par notre
-              équipe.
+              Forfait de 30 jours. Votre demande sera vérifiée manuellement après
+              paiement. Le renouvellement est manuel.
             </p>
           </div>
           <form onSubmit={handleSubmit} className="upgrade-pro-payment-form">

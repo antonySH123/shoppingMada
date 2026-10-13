@@ -108,7 +108,7 @@ function Compte() {
       const role =
         account.userGroupMember_id?.usergroup_id?.name?.toLowerCase() ?? "";
 
-      const roleMatches = roleFilter === "all" || role === roleFilter.toLowerCase() || (roleFilter === "disabled" && !role);
+      const roleMatches = roleFilter === "all" || (roleFilter === "Admin" ? ["admin", "super admin", "support", "moderator", "finance", "read only"].includes(role) : role === roleFilter.toLowerCase()) || (roleFilter === "disabled" && !role);
       const statusMatches = statusFilter === "all" || (statusFilter === "active" ? Boolean(account.userGroupMember_id) : !account.userGroupMember_id);
       const searchMatches = !query || [username, email, phone, shopName, role].some((value) => value.includes(query));
       return roleMatches && statusMatches && searchMatches;
@@ -121,7 +121,7 @@ function Compte() {
     { id: "all", label: "Tous les comptes", count: state.stats.total },
     { id: "Boutiks", label: "Boutiques", count: sellerCount },
     { id: "Client", label: "Clients", count: clientCount },
-    { id: "Super Admin", label: "Administrateurs", count: state.stats.admins },
+    { id: "Admin", label: "Administrateurs", count: state.stats.admins },
     { id: "disabled", label: "Sans rôle actif", count: state.stats.disabled },
   ];
 
