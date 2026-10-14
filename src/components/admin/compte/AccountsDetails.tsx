@@ -1,4 +1,4 @@
-﻿import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import Iuser from "../../../Interface/UserInterface";
 import { useCallback, useEffect, useReducer, useState } from "react";
 import { toast } from "react-toastify";
@@ -14,6 +14,17 @@ interface IState {
   user: Iuser | null;
   isActive: boolean | null;
 }
+
+const adminPermissionOptions = [
+  ["support.read", "Consulter les tickets support"],
+  ["support.reply", "Répondre aux tickets"],
+  ["support.manage", "Gérer les tickets"],
+  ["moderation.review", "Modérer les contenus"],
+  ["finance.read", "Consulter les finances"],
+  ["finance.refund", "Enregistrer les remboursements"],
+  ["finance.payout", "Consigner les reversements"],
+  ["accounts.delete", "Supprimer définitivement des comptes"],
+] as const;
 
 type Action =
   | { type: "FETCH_START"; payload: Iuser }
@@ -49,6 +60,8 @@ function AccountsDetails() {
   const [isRequestingDeleteCode, setIsRequestingDeleteCode] = useState(false);
   const [seller360, setSeller360] = useState<any>(null);
   const [commission, setCommission] = useState("0");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+  const [savingAdminPermissions, setSavingAdminPermissions] = useState(false);
   const navigate = useNavigate();
 
   const checkAccount = useCallback(async () => {
@@ -105,6 +118,32 @@ function AccountsDetails() {
     fetchData();
   }, [checkAccount, fetchData, id]);
   useEffect(() => { void loadSeller360(); }, [loadSeller360]);
+  useEffect(() => {
+    setAdminPermissions(state.user?.userGroupMember_id?.adminPermissions ?? []);
+  }, [state.user]);
+
+  const saveAdminPermissions = async () => {
+    if (!csrf || !id || savingAdminPermissions) return;
+    setSavingAdminPermissions(true);
+    try {
+      const stepUp = await requestAdminStepUp(csrf);
+      if (!stepUp) return;
+      const response = await fetch(`${import.meta.env.REACT_API_URL}admin/staff/${id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp },
+        body: JSON.stringify({ permissions: adminPermissions }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Impossible d’enregistrer les accès.");
+      toast.success("Accès administrateur enregistrés.");
+      await fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible d’enregistrer les accès.");
+    } finally {
+      setSavingAdminPermissions(false);
+    }
+  };
 
   const saveCommission = async () => {
     if (!csrf || !state.user?.boutiks_id) return;
@@ -124,9 +163,11 @@ function AccountsDetails() {
             method: "PUT",
             credentials: "include",
             headers: {
+              "Content-Type": "application/json",
               "xsrf-token": csrf,
               "x-admin-step-up": stepUp,
             },
+            body: JSON.stringify({ permissions: adminPermissions }),
           },
         );
 
@@ -138,7 +179,7 @@ function AccountsDetails() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Impossible dâ€™attribuer le rÃ´le Admin.");
     }
-  }, [csrf, fetchData, id]);
+  }, [adminPermissions, csrf, fetchData, id]);
 
   const handleAccountStatus = useCallback(async () => {
     if (!csrf || !id || state.isActive === null || isUpdatingStatus) return;
@@ -302,7 +343,7 @@ function AccountsDetails() {
                   {state.user?.userGroupMember_id?.usergroup_id?.name !== "Admin" && <AdminButton
                     variant="secondary"
                     size="sm"
-                    onClick={handleRoleChange}
+                    onClick={() => document.getElementById("admin-access-panel")?.scrollIntoView({ behavior: "smooth", block: "center" })}
                   >
                     DÃ©finir comme Admin
                   </AdminButton>}
@@ -378,6 +419,37 @@ function AccountsDetails() {
           </div>
         </div>
       </section>
+
+      {user?.userGroupMember_id?.usergroup_id?.name === "Super Admin" && state.user?.userGroupMember_id?.usergroup_id?.name !== "Super Admin" && (
+        <section id="admin-access-panel" className="admin-panel p-5">
+          <div className="admin-panel-heading -mx-5 -mt-5 mb-4">
+            <div>
+              <p className="admin-panel-kicker">Gestion des comptes</p>
+              <h2 className="admin-panel-title">Accès administrateur</h2>
+              <p className="admin-panel-subtitle">Attribuez uniquement les permissions nécessaires à ce compte. Le rôle Admin sans permission ne donne pas accès aux modules protégés.</p>
+            </div>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {adminPermissionOptions.map(([permission, label]) => (
+              <label key={permission} className="flex items-start gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface-raised)] p-3 text-sm">
+                <input type="checkbox" checked={adminPermissions.includes(permission)} onChange={(event) => setAdminPermissions((current) => event.target.checked ? [...current, permission] : current.filter((item) => item !== permission))} />
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
+          <div className="mt-4 flex justify-end">
+            {state.user?.userGroupMember_id?.usergroup_id?.name === "Admin" ? (
+              <AdminButton variant="primary" size="md" onClick={() => void saveAdminPermissions()} disabled={savingAdminPermissions}>
+                {savingAdminPermissions ? "Enregistrement…" : "Enregistrer les accès"}
+              </AdminButton>
+            ) : (
+              <AdminButton variant="primary" size="md" onClick={() => void handleRoleChange()}>
+                Définir comme Admin avec ces accès
+              </AdminButton>
+            )}
+          </div>
+        </section>
+      )}
 
       {state.user?.boutiks_id && (
         <section className="admin-panel p-5">

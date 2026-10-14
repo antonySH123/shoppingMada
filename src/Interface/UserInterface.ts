@@ -42,7 +42,8 @@ interface IPersonnalInfo{
 
 interface Iusergroupmember{
     user_id:string,
-    usergroup_id:Iusergroup
+    usergroup_id:Iusergroup,
+    adminPermissions?: string[]
 }
 
 interface Iusergroup{
