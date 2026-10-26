@@ -15,6 +15,7 @@ import Comment from "./comment/Comment";
 import Preloader from "./loading/Preloader";
 import { useCart } from "../context/useCart";
 import { useLanguage } from "../context/useLanguage";
+import { productImageUrl } from "../helper/productImageUrl";
 import { useAuth } from "../helper/useAuth";
 import { Link } from "react-router-dom";
 
@@ -577,7 +578,7 @@ function ProductDetails() {
       <div className="product-comments-container market-container pb-10 sm:pb-14">
         <Comment product_id={id as string} csrf={csrf as string} />
       </div>
-      {recentlyViewed.length > 0 && <section className="market-container pb-12"><h2 className="mb-4 text-xl font-bold">{t("product.recentlyViewed")}</h2><div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{recentlyViewed.map((product)=><Link key={product._id} to={`/product/${product._id}/details`} className="market-card overflow-hidden"><img src={product.photos?.[0]} alt={product.name} className="h-36 w-full object-cover" /><div className="p-4"><p className="font-medium">{product.name}</p><p className="mt-1 text-sm">{priceInArriary(product.price)}</p></div></Link>)}</div></section>}
+      {recentlyViewed.length > 0 && <section className="market-container pb-12"><h2 className="mb-4 text-xl font-bold">{t("product.recentlyViewed")}</h2><div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{recentlyViewed.map((product)=><Link key={product._id} to={`/product/${product._id}/details`} className="market-card overflow-hidden"><img src={productImageUrl(product.photos?.[0]) || "/logo.png"} alt={product.name} className="h-36 w-full object-cover" loading="lazy" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/logo.png"; }} /><div className="p-4"><p className="font-medium">{product.name}</p><p className="mt-1 text-sm">{priceInArriary(product.price)}</p></div></Link>)}</div></section>}
     </>
   );
 }

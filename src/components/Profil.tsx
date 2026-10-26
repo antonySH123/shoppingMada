@@ -21,6 +21,7 @@ import useCSRF from "../helper/useCSRF";
 import { toast } from "react-toastify";
 import Preloader from "./loading/Preloader";
 import { useLanguage } from "../context/useLanguage";
+import { productImageUrl } from "../helper/productImageUrl";
 
 function Profil() {
   const { user, setUserInfo, currencyRates } = useAuth();
@@ -34,7 +35,7 @@ function Profil() {
   const [currency, setCurrency] = useState<"MGA" | "EUR" | "USD">("MGA");
   const [addresses, setAddresses] = useState<Array<{ _id: string; label?: string; recipientName: string; phone: string; address: string; city?: string }>>([]);
   const [savedProducts, setSavedProducts] = useState<Array<{ _id: string; name: string }>>([]);
-  const [recentProducts, setRecentProducts] = useState<Array<{ _id: string; name: string }>>([]);
+  const [recentProducts, setRecentProducts] = useState<Array<{ _id: string; name: string; photos?: string[]; price?: number }>>([]);
   const [newAddress, setNewAddress] = useState({ label: "", recipientName: "", phone: "", address: "", city: "" });
   const [savingAddress, setSavingAddress] = useState(false);
   const [isRequestingPasswordReset, setIsRequestingPasswordReset] =
@@ -92,12 +93,12 @@ function Profil() {
           const response = await fetch(`${import.meta.env.REACT_API_URL}shop/product/${encodeURIComponent(id)}`);
           if (!response.ok) return null;
           const result = await response.json();
-          return result.data as { _id: string; name: string } | undefined;
+          return result.data as { _id: string; name: string; photos?: string[]; price?: number } | undefined;
         } catch {
           return null;
         }
       }));
-      if (active) setRecentProducts(products.filter((product): product is { _id: string; name: string } => Boolean(product)));
+      if (active) setRecentProducts(products.filter((product): product is { _id: string; name: string; photos?: string[]; price?: number } => Boolean(product)));
     };
     void loadSavedProducts();
     return () => { active = false; };
@@ -576,7 +577,7 @@ function Profil() {
                   <div className="profile-section-title"><span className="profile-section-icon"><LiaAtSolid size={18} /></span><div><h3>{t("profile.products")}</h3><p>{t("profile.productsHint")}</p></div></div>
                   <div className="profile-section-body grid gap-5 md:grid-cols-2">
                     <div><h4 className="mb-2 font-semibold">{t("profile.favorites")}</h4>{savedProducts.length ? savedProducts.map((product) => <div className="profile-inline-row" key={product._id}><Link to={`/product/${product._id}/details`} className="profile-text-button">{product.name}</Link><button type="button" className="profile-text-button danger-text" onClick={() => void removeSavedProduct(product._id)}>{t("profile.remove")}</button></div>) : <p className="text-sm text-gray-500">{t("profile.noFavorites")}</p>}</div>
-                    <div><h4 className="mb-2 font-semibold">{t("profile.recentlyViewed")}</h4>{recentProducts.length ? recentProducts.map((product) => <div className="profile-inline-row" key={product._id}><Link to={`/product/${product._id}/details`} className="profile-text-button">{product.name}</Link></div>) : <p className="text-sm text-gray-500">{t("profile.noRecentlyViewed")}</p>}</div>
+                    <div><h4 className="mb-2 font-semibold">{t("profile.recentlyViewed")}</h4>{recentProducts.length ? recentProducts.map((product) => <Link to={`/product/${product._id}/details`} className="profile-inline-row gap-3" key={product._id}><img src={productImageUrl(product.photos?.[0]) || "/logo.png"} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/logo.png"; }} /><span className="min-w-0"><span className="profile-text-button block truncate">{product.name}</span>{product.price !== undefined && <span className="text-xs text-gray-500">{Number(product.price).toLocaleString(language === "en" ? "en-US" : "fr-FR")} MGA</span>}</span></Link>) : <p className="text-sm text-gray-500">{t("profile.noRecentlyViewed")}</p>}</div>
                   </div>
                 </section>}
                 <AccountActivity />
