@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import AdminButton from "./Button";
+import { useDialog } from "../../../context/useDialog";
 
 export type RowActionId =
   | "view"
@@ -34,20 +35,20 @@ export interface RowActionsProps {
 }
 
 function RowActions({ actions, label = "Actions de ligne" }: RowActionsProps) {
+  const dialog = useDialog();
   const ordered = [...actions].sort(
     (left, right) => actionOrder[left.id] - actionOrder[right.id],
   );
   const visible = ordered.length > 3 ? ordered.slice(0, 2) : ordered;
   const overflow = ordered.length > 3 ? ordered.slice(2) : [];
-  const runAction = (action: RowAction) => {
-    if (
-      action.destructive &&
-      action.confirmBeforeAction !== false &&
-      !window.confirm(
+  const runAction = async (action: RowAction) => {
+    if (action.destructive && action.confirmBeforeAction !== false) {
+      const confirmed = await dialog.confirm(
         action.confirmationMessage ?? `Confirmer « ${action.label} » ?`,
-      )
-    )
-      return;
+        { title: "Confirmer l’action", confirmLabel: action.label, destructive: true },
+      );
+      if (!confirmed) return;
+    }
     action.onSelect();
   };
 

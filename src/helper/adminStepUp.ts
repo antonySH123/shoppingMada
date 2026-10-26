@@ -1,3 +1,5 @@
+import { useDialog } from "../context/useDialog";
+
 const stepUpHeaders = (csrf: string) => ({ "Content-Type": "application/json", "xsrf-token": csrf });
 
 export const requestAdminStepUpChallenge = async (csrf: string): Promise<void> => {
@@ -23,9 +25,16 @@ export const verifyAdminStepUpCode = async (csrf: string, code: string): Promise
   return result.token;
 };
 
-export const requestAdminStepUp = async (csrf: string): Promise<string | null> => {
-  await requestAdminStepUpChallenge(csrf);
-  const code = window.prompt("Saisissez le code à 6 chiffres envoyé à votre adresse e-mail.");
-  if (!code) return null;
-  return verifyAdminStepUpCode(csrf, code);
+export const useAdminStepUp = () => {
+  const dialog = useDialog();
+  return async (csrf: string): Promise<string | null> => {
+    await requestAdminStepUpChallenge(csrf);
+    const code = await dialog.prompt("Saisissez le code à 6 chiffres envoyé à votre adresse e-mail.", {
+      title: "Confirmation de sécurité",
+      input: { label: "Code de confirmation", placeholder: "000000", required: true, minLength: 6, maxLength: 6, pattern: "\\d{6}" },
+      confirmLabel: "Vérifier le code",
+    });
+    if (!code) return null;
+    return verifyAdminStepUpCode(csrf, code);
+  };
 };

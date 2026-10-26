@@ -8,15 +8,18 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { SkeletonTheme } from "react-loading-skeleton";
 import { LanguageProvider } from "./context/LanguageContext";
+import { DialogProvider } from "./context/DialogContext";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider>
       <LanguageProvider>
-        <SkeletonTheme>
-          <App />
-        </SkeletonTheme>
-        <ToastContainer />
+        <DialogProvider>
+          <SkeletonTheme>
+            <App />
+          </SkeletonTheme>
+          <ToastContainer />
+        </DialogProvider>
       </LanguageProvider>
     </AuthProvider>
   </StrictMode>,

@@ -3,15 +3,17 @@ import { Navigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../../helper/useAuth";
 import useCSRF from "../../../helper/useCSRF";
-import { requestAdminStepUp } from "../../../helper/adminStepUp";
+import { useAdminStepUp } from "../../../helper/adminStepUp";
 import { PageHeader } from "../ui";
 
 type Report = { subscriptionRevenueMGA: number; marketplacePaymentsMGA: number; grossRevenueMGA: number; refundsMGA: number; netRevenueMGA: number; paymentCount: number; forecastNext30DaysMGA: number; byDay: { date: string; amountMGA: number }[]; reconciliationNote: string };
+type SellerPayout = { _id: string; name: string; grossMGA: number; commissionPercent?: number; netDueMGA: number; paidMGA: number; balanceMGA: number };
 const money = (amount: number) => `${Number(amount || 0).toLocaleString("fr-FR")} MGA`;
 
 export default function FinancialDashboard() {
   const { user } = useAuth();
   const csrf = useCSRF();
+  const adminStepUp = useAdminStepUp();
   const isSuperAdmin = user?.userGroupMember_id?.usergroup_id?.name === "Super Admin";
   const canReadFinance = isSuperAdmin || user?.adminPermissions?.includes("finance.read") === true;
   const canRefund = isSuperAdmin || user?.adminPermissions?.includes("finance.refund") === true;
@@ -22,7 +24,7 @@ export default function FinancialDashboard() {
   const [report, setReport] = useState<Report | null>(null);
   const [rates, setRates] = useState({ EUR: "", USD: "", updatedAt: "" });
   const [refundForm, setRefundForm] = useState({ sourceType: "subscription", sourceId: "", amount: "", note: "" });
-  const [payouts, setPayouts] = useState<any[]>([]);
+  const [payouts, setPayouts] = useState<SellerPayout[]>([]);
   const [payoutDraft, setPayoutDraft] = useState<Record<string, { amount: string; reference: string }>>({});
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -42,9 +44,9 @@ export default function FinancialDashboard() {
     if (isSuperAdmin) void loadRates();
   }, [canReadFinance, isSuperAdmin, loadReport, loadRates, loadPayouts]);
 
-  const saveRates = async (event: FormEvent) => { if (!isSuperAdmin) return; event.preventDefault(); if (!csrf) return; setBusy(true); try { const stepUp = await requestAdminStepUp(csrf); if (!stepUp) return; const response = await fetch(`${import.meta.env.REACT_API_URL}admin/currency-rates`, { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ EUR: Number(rates.EUR), USD: Number(rates.USD) }) }); const result = await response.json(); if (!response.ok) throw new Error(result.message); toast.success(result.message); void loadRates(); } catch (error) { toast.error(error instanceof Error ? error.message : "Enregistrement impossible."); } finally { setBusy(false); } };
-  const saveRefund = async (event: FormEvent) => { event.preventDefault(); if (!csrf) return; setBusy(true); try { const stepUp = await requestAdminStepUp(csrf); if (!stepUp) return; const response = await fetch(`${import.meta.env.REACT_API_URL}admin/finance/refunds`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ sourceType: refundForm.sourceType, sourceId: refundForm.sourceId, amountMGA: Number(refundForm.amount), note: refundForm.note }) }); const result = await response.json(); if (!response.ok) throw new Error(result.message); toast.success(result.message); setRefundForm({ ...refundForm, sourceId: "", amount: "", note: "" }); void loadReport(); } catch (error) { toast.error(error instanceof Error ? error.message : "Remboursement impossible."); } finally { setBusy(false); } };
-  const savePayout = async (event: FormEvent, shopId: string) => { event.preventDefault(); if (!csrf) return; const draft = payoutDraft[shopId]; try { const stepUp = await requestAdminStepUp(csrf); if (!stepUp) return; const response = await fetch(`${import.meta.env.REACT_API_URL}admin/finance/seller-payouts/${shopId}`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ amountMGA: Number(draft?.amount), reference: draft?.reference }) }); const result = await response.json(); if (!response.ok) throw new Error(result.message); toast.success(result.message); void loadPayouts(); } catch (error) { toast.error(error instanceof Error ? error.message : "Versement impossible."); } };
+  const saveRates = async (event: FormEvent) => { if (!isSuperAdmin) return; event.preventDefault(); if (!csrf) return; setBusy(true); try { const stepUp = await adminStepUp(csrf); if (!stepUp) return; const response = await fetch(`${import.meta.env.REACT_API_URL}admin/currency-rates`, { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ EUR: Number(rates.EUR), USD: Number(rates.USD) }) }); const result = await response.json(); if (!response.ok) throw new Error(result.message); toast.success(result.message); void loadRates(); } catch (error) { toast.error(error instanceof Error ? error.message : "Enregistrement impossible."); } finally { setBusy(false); } };
+  const saveRefund = async (event: FormEvent) => { event.preventDefault(); if (!csrf) return; setBusy(true); try { const stepUp = await adminStepUp(csrf); if (!stepUp) return; const response = await fetch(`${import.meta.env.REACT_API_URL}admin/finance/refunds`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ sourceType: refundForm.sourceType, sourceId: refundForm.sourceId, amountMGA: Number(refundForm.amount), note: refundForm.note }) }); const result = await response.json(); if (!response.ok) throw new Error(result.message); toast.success(result.message); setRefundForm({ ...refundForm, sourceId: "", amount: "", note: "" }); void loadReport(); } catch (error) { toast.error(error instanceof Error ? error.message : "Remboursement impossible."); } finally { setBusy(false); } };
+  const savePayout = async (event: FormEvent, shopId: string) => { event.preventDefault(); if (!csrf) return; const draft = payoutDraft[shopId]; try { const stepUp = await adminStepUp(csrf); if (!stepUp) return; const response = await fetch(`${import.meta.env.REACT_API_URL}admin/finance/seller-payouts/${shopId}`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ amountMGA: Number(draft?.amount), reference: draft?.reference }) }); const result = await response.json(); if (!response.ok) throw new Error(result.message); toast.success(result.message); void loadPayouts(); } catch (error) { toast.error(error instanceof Error ? error.message : "Versement impossible."); } };
   if (!canReadFinance) return <Navigate to="/espace_vendeur/dash" replace />;
 
   const cards: Array<[string, number]> = [["Encaissements", report?.grossRevenueMGA ?? 0], ["Abonnements", report?.subscriptionRevenueMGA ?? 0], ["Volume marketplace", report?.marketplacePaymentsMGA ?? 0], ["Remboursements consignés", report?.refundsMGA ?? 0], ["Net après remboursements", report?.netRevenueMGA ?? 0], ["Échéances estimées · 30 jours", report?.forecastNext30DaysMGA ?? 0]];

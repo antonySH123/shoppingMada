@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import useCSRF from "../../helper/useCSRF";
-import { requestAdminStepUp } from "../../helper/adminStepUp";
+import { useAdminStepUp } from "../../helper/adminStepUp";
 import { useAuth } from "../../helper/useAuth";
 import { AdminButton, PageHeader, StatusBadge } from "./ui";
 
@@ -45,6 +45,7 @@ const displayName = (value?: { name?: string; username?: string } | string) =>
 function Moderation() {
   const { user } = useAuth();
   const csrf = useCSRF();
+  const adminStepUp = useAdminStepUp();
   const [products, setProducts] = useState<ModerationProduct[]>([]);
   const [comments, setComments] = useState<ModerationComment[]>([]);
   const [filter, setFilter] = useState<QueueFilter>("Pending");
@@ -167,7 +168,7 @@ function Moderation() {
     }
     setUpdatingId(id);
     try {
-      const stepUp = await requestAdminStepUp(csrf);
+      const stepUp = await adminStepUp(csrf);
       if (!stepUp) return;
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}admin/${kind}/${id}/moderation`,
@@ -241,7 +242,7 @@ function Moderation() {
     }
     setUpdatingId("bulk");
     try {
-      const stepUp = await requestAdminStepUp(csrf);
+      const stepUp = await adminStepUp(csrf);
       if (!stepUp) return;
       const response = await fetch(`${import.meta.env.REACT_API_URL}admin/${kind}/moderation/bulk`, {
         method: "PUT",

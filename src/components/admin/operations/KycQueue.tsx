@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../../../helper/useAuth";
 import useCSRF from "../../../helper/useCSRF";
 import { PageHeader, StatusBadge } from "../ui";
-import { requestAdminStepUp } from "../../../helper/adminStepUp";
+import { useAdminStepUp } from "../../../helper/adminStepUp";
 
 interface KycRecord {
   _id: string; cin: string; frontImage: string; backImage: string;
@@ -15,6 +15,7 @@ interface KycRecord {
 function KycQueue() {
   const { user } = useAuth();
   const csrf = useCSRF();
+  const adminStepUp = useAdminStepUp();
   const [records, setRecords] = useState<KycRecord[]>([]);
   const [status, setStatus] = useState("pending");
   const [reasons, setReasons] = useState<Record<string, string>>({});
@@ -45,7 +46,7 @@ function KycQueue() {
     if (decision === "rejected" && reason.length < 3) { toast.warning("Indiquez un motif de refus."); return; }
     setBusy(record._id);
     try {
-      const stepUp = await requestAdminStepUp(csrf);
+      const stepUp = await adminStepUp(csrf);
       if (!stepUp) return;
       const response = await fetch(`${import.meta.env.REACT_API_URL}admin/kyc/${record._id}`, {
         method: "PUT", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp },

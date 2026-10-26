@@ -11,6 +11,7 @@ export default interface Iuser{
     userGroupMember_id:Iusergroupmember
     adminPermissions?: string[]
     preferences?: { language?: "fr" | "en"; currency?: "MGA" | "EUR" | "USD"; notifications?: { orders?: boolean; support?: boolean; promotions?: boolean } }
+    impersonation?: { active?: boolean };
 }
 
 interface IBoutiks{

@@ -266,7 +266,7 @@ function ProductDetails() {
       })).then((products) => setRecentlyViewed(products.filter((product): product is IProduct => Boolean(product))));
       if (user) void fetch(`${import.meta.env.REACT_API_URL}wishlist?page=1&limit=50`, { credentials: "include" }).then((response) => response.ok ? response.json() : null).then((result) => { if (result) setIsFavorite(result.data.some((product: IProduct) => product._id === id)); });
     }
-  }, [id, user?._id]);
+  }, [id, user, t]);
 
   useEffect(() => {
     dispatch({ type: "FETCH_START" });
@@ -310,7 +310,7 @@ function ProductDetails() {
       }
     };
     void fetchProduct();
-  }, [id]);
+  }, [id, t]);
   if (state.loading) return <Preloader />;
   if (state.error || !state.product)
     return (

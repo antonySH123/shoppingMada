@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import useCSRF from "../../../helper/useCSRF";
-import { requestAdminStepUp } from "../../../helper/adminStepUp";
+import { useAdminStepUp } from "../../../helper/adminStepUp";
 import useFormatter from "../../../helper/useFormatter";
 import Preloader from "../../loading/Preloader";
 
@@ -37,6 +37,7 @@ const resolutions = [
 
 function MarketplaceDisputes() {
   const csrf = useCSRF();
+  const adminStepUp = useAdminStepUp();
   const { priceInArriary } = useFormatter();
   const [orders, setOrders] = useState<DisputedOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +88,7 @@ function MarketplaceDisputes() {
     const status = resolutionsById[subOrder._id] || "annulee";
     setBusyId(subOrder._id);
     try {
-      const stepUp = await requestAdminStepUp(csrf);
+      const stepUp = await adminStepUp(csrf);
       if (!stepUp) return;
       const response = await fetch(
         `${import.meta.env.REACT_API_URL}marketplace/orders/${orderId}/suborders/${subOrder._id}/resolve`,

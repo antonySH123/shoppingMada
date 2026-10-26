@@ -75,9 +75,9 @@ function CartPage() {
       email: current.email || user.email || "",
       address: current.address || profile?.adresse || "",
     }));
-  }, [user]);
+  }, [user, t]);
 
-  useEffect(() => { if (!user) return; void fetch(`${import.meta.env.REACT_API_URL}user/addresses`, { credentials: "include" }).then((response) => response.ok ? response.json() : null).then((result) => { if (result) setSavedAddresses(result.data ?? []); }); }, [user?._id]);
+  useEffect(() => { if (!user) { setSavedAddresses([]); return; } let active = true; void fetch(`${import.meta.env.REACT_API_URL}user/addresses`, { credentials: "include" }).then((response) => response.ok ? response.json() : null).then((result) => { if (active && result) setSavedAddresses(result.data ?? []); }).catch(() => { if (active) toast.error(t("cart.addressesUnavailable")); }); return () => { active = false; }; }, [user, t]);
 
   useEffect(() => {
     let active = true;

@@ -3,8 +3,9 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../../helper/useAuth";
 import useCSRF from "../../../helper/useCSRF";
-import { requestAdminStepUp } from "../../../helper/adminStepUp";
+import { useAdminStepUp } from "../../../helper/adminStepUp";
 import { productImageUrl } from "../../../helper/productImageUrl";
+import { useDialog } from "../../../context/useDialog";
 import { PageHeader } from "../ui";
 
 type FacebookPage = { pageId: string; pageName: string; connectedAt: string };
@@ -19,7 +20,16 @@ type Product = {
   boutiks_id?: { name: string; isActive: boolean };
   publication?: Publication | null;
 };
-type ApiResult<T> = { status?: string; message?: string; data?: T; [key: string]: any };
+type ApiResult<T> = {
+  status?: string;
+  message?: string;
+  data?: T;
+  page?: FacebookPage;
+  configured?: boolean;
+  publishedCount?: number;
+  url?: string;
+  pagination?: { pages?: number };
+};
 
 const api = `${import.meta.env.REACT_API_URL}admin/facebook`;
 
@@ -39,6 +49,8 @@ function getPublicationLabel(publication?: Publication | null) {
 export default function FacebookPublishing() {
   const { user } = useAuth();
   const csrf = useCSRF();
+  const adminStepUp = useAdminStepUp();
+  const dialog = useDialog();
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = user?.userGroupMember_id?.usergroup_id?.name === "Super Admin";
@@ -128,6 +140,7 @@ export default function FacebookPublishing() {
     try {
       const response = await fetch(`${api}/connect/start`, { credentials: "include" });
       const result = await readApiResponse<{ url: string }>(response);
+      if (!result.url) throw new Error("Meta n’a pas renvoyé d’adresse de connexion.");
       window.location.assign(result.url);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Connexion impossible.");
@@ -139,7 +152,7 @@ export default function FacebookPublishing() {
     if (!csrf || !flow) return;
     setBusy(pageId);
     try {
-      const stepUp = await requestAdminStepUp(csrf);
+      const stepUp = await adminStepUp(csrf);
       if (!stepUp) return;
       const response = await fetch(`${api}/connect/flow/${encodeURIComponent(flow)}/select`, {
         method: "POST",
@@ -160,10 +173,16 @@ export default function FacebookPublishing() {
   };
 
   const disconnect = async () => {
-    if (!csrf || !window.confirm("Déconnecter la Page Facebook ? Les publications déjà en ligne ne seront pas supprimées.")) return;
+    if (!csrf) return;
+    const confirmed = await dialog.confirm("Les publications déjà en ligne ne seront pas supprimées.", {
+      title: "Déconnecter la Page Facebook",
+      confirmLabel: "Déconnecter",
+      destructive: true,
+    });
+    if (!confirmed) return;
     setBusy("disconnect");
     try {
-      const stepUp = await requestAdminStepUp(csrf);
+      const stepUp = await adminStepUp(csrf);
       if (!stepUp) return;
       const response = await fetch(`${api}/connect`, {
         method: "DELETE",
@@ -187,7 +206,7 @@ export default function FacebookPublishing() {
     }
     setBusy(product._id);
     try {
-      const stepUp = await requestAdminStepUp(csrf);
+      const stepUp = await adminStepUp(csrf);
       if (!stepUp) return;
       const response = await fetch(`${api}/products/${product._id}/publish`, {
         method: "POST",

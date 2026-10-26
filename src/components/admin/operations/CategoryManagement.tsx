@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../../helper/useAuth";
 import useCSRF from "../../../helper/useCSRF";
-import { requestAdminStepUp } from "../../../helper/adminStepUp";
+import { useAdminStepUp } from "../../../helper/adminStepUp";
 import { PageHeader } from "../ui";
 
 interface Category { _id: string; name: string; slug: string; translations?: { fr?: string }; level?: number; children?: Category[] }
@@ -14,6 +14,7 @@ const makeSlug = (value: string) => value.normalize("NFD").replace(/[\u0300-\u03
 
 function CategoryManagement() {
   const { user } = useAuth(); const csrf = useCSRF();
+  const adminStepUp = useAdminStepUp();
   const [categories, setCategories] = useState<Category[]>([]); const [translationDrafts, setTranslationDrafts] = useState<Record<string, string>>({}); const [translationSaving, setTranslationSaving] = useState<string | null>(null); const [name, setName] = useState(""); const [frenchName, setFrenchName] = useState(""); const [slug, setSlug] = useState(""); const [parentSlug, setParentSlug] = useState(""); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false);
   const isAdmin = user?.userGroupMember_id?.usergroup_id?.name === "Super Admin";
   const flat = useMemo(() => flatten(categories), [categories]);
@@ -22,7 +23,7 @@ function CategoryManagement() {
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); if (!csrf || saving) return; setSaving(true);
     try {
-      const stepUp = await requestAdminStepUp(csrf); if (!stepUp) return;
+      const stepUp = await adminStepUp(csrf); if (!stepUp) return;
       const response = await fetch(`${import.meta.env.REACT_API_URL}admin/categories`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ name, slug: makeSlug(slug || name), ...(frenchName.trim() ? { translations: { fr: frenchName.trim() } } : {}), ...(parentSlug ? { parentSlug } : {}) }) });
       const result = await response.json(); if (!response.ok) throw new Error(result.message || "Création impossible.");
       toast.success(result.message); setName(""); setFrenchName(""); setSlug(""); await load();
@@ -34,7 +35,7 @@ function CategoryManagement() {
     if (!frenchLabel) { toast.error("Saisissez un libellé français."); return; }
     setTranslationSaving(categorySlug);
     try {
-      const stepUp = await requestAdminStepUp(csrf); if (!stepUp) return;
+      const stepUp = await adminStepUp(csrf); if (!stepUp) return;
       const response = await fetch(`${import.meta.env.REACT_API_URL}admin/categories/${encodeURIComponent(categorySlug)}/translations`, { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ fr: frenchLabel }) });
       const result = await response.json(); if (!response.ok) throw new Error(result.message || "Enregistrement impossible.");
       toast.success(result.message || "Traduction enregistrée."); await load();

@@ -13,7 +13,8 @@ import { toast } from "react-toastify";
 import useCSRF from "../../../helper/useCSRF";
 import Skeleton from "react-loading-skeleton";
 import Preloader from "../../loading/Preloader";
-import { requestAdminStepUp } from "../../../helper/adminStepUp";
+import { useAdminStepUp } from "../../../helper/adminStepUp";
+import { useDialog } from "../../../context/useDialog";
 
 interface IState {
   users: Iuser[] | [];
@@ -70,6 +71,8 @@ function Compte() {
   const [page, setPage] = useState(1);
   const { user } = useAuth();
   const csrf = useCSRF();
+  const adminStepUp = useAdminStepUp();
+  const dialog = useDialog();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -128,10 +131,15 @@ function Compte() {
   const closeModal = () => dispatch({ type: "TOGGLE_MODAL", payload: false });
 
   const impersonate = async (account: Iuser) => {
-    const reason = window.prompt(`Motif obligatoire pour accéder temporairement au compte vendeur ${account.username} (8 caractères minimum) :`);
-    if (!reason?.trim() || reason.trim().length < 8 || !csrf) return;
+    if (!csrf) return;
+    const reason = await dialog.prompt(`Motif obligatoire pour accéder temporairement au compte vendeur ${account.username}.`, {
+      title: "Justifier l’assistance vendeur",
+      input: { label: "Motif (8 caractères minimum)", required: true, minLength: 8, maxLength: 500 },
+      confirmLabel: "Continuer",
+    });
+    if (!reason?.trim() || reason.trim().length < 8) return;
     try {
-      const stepUp = await requestAdminStepUp(csrf);
+      const stepUp = await adminStepUp(csrf);
       if (!stepUp) return;
       const response = await fetch(`${import.meta.env.REACT_API_URL}admin/impersonation/${account._id}`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ reason }) });
       const result = await response.json();

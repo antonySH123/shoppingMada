@@ -19,6 +19,11 @@ interface SubscriptionPaymentMethod {
   instructions: string;
 }
 
+interface SubscriptionPlan {
+  key: string;
+  monthlyPriceMGA?: number;
+}
+
 function UpgradePro() {
   const csrf = useCSRF();
   const { priceInArriary } = useFormatter();
@@ -39,7 +44,8 @@ function UpgradePro() {
         const plansResponse = await fetch(`${import.meta.env.REACT_API_URL}subscription/plans`, { signal: controller.signal });
         const plansResult = await plansResponse.json();
         if (!plansResponse.ok) throw new Error(plansResult.message || "Impossible de charger les forfaits.");
-        const proPlan = Array.isArray(plansResult.data) ? plansResult.data.find((plan: any) => plan.key === "pro") : null;
+        const plans: SubscriptionPlan[] = Array.isArray(plansResult.data) ? plansResult.data : [];
+        const proPlan = plans.find((plan) => plan.key === "pro");
         if (!proPlan) throw new Error("Le forfait Pro est indisponible pour le moment.");
         const response = await fetch(
           `${import.meta.env.REACT_API_URL}subscription/payment-methods`,

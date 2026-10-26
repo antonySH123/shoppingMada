@@ -90,9 +90,12 @@ function createFormDataFromObject(data: Record<string, unknown>): FormData {
   return formData;
 }
 
-function getProductSaveError(status: number, payload: any, responseText: string): string[] {
+interface ProductSaveErrorItem { msg?: unknown; message?: unknown }
+interface ProductSaveErrorPayload { errors?: ProductSaveErrorItem[]; message?: string }
+
+function getProductSaveError(status: number, payload: ProductSaveErrorPayload | null, responseText: string): string[] {
   const details = Array.isArray(payload?.errors)
-    ? payload.errors.map((error: any) => String(error?.msg ?? error?.message ?? "").trim()).filter(Boolean)
+    ? payload.errors.map((error) => String(error?.msg ?? error?.message ?? "").trim()).filter(Boolean)
     : [];
   const message = typeof payload?.message === "string" ? payload.message.trim() : "";
   if (message || details.length) return [...new Set([message, ...details].filter(Boolean))];
@@ -263,7 +266,7 @@ function Add() {
         });
 
         const responseText = await response.text();
-        let result: any = null;
+        let result: ProductSaveErrorPayload | null = null;
         try {
           result = responseText ? JSON.parse(responseText) : null;
         } catch {

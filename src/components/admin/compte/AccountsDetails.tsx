@@ -6,24 +6,39 @@ import { LiaAtSolid, LiaPhoneAltSolid, LiaUser } from "react-icons/lia";
 import useCSRF from "../../../helper/useCSRF";
 import { useAuth } from "../../../helper/useAuth";
 import Preloader from "../../loading/Preloader";
-import { requestAdminStepUp, requestAdminStepUpChallenge, verifyAdminStepUpCode } from "../../../helper/adminStepUp";
+import { requestAdminStepUpChallenge, verifyAdminStepUpCode, useAdminStepUp } from "../../../helper/adminStepUp";
+import { useDialog } from "../../../context/useDialog";
 import { AdminButton, AdminModal, PageHeader } from "../ui";
-import { useCallback as useCallbackData } from "react";
 
 interface IState {
   user: Iuser | null;
   isActive: boolean | null;
 }
 
+type Seller360Subscription = { _id: string; plan?: string; payementStatus?: string; lifecycleStatus?: string; endDate?: string; autoRenew?: boolean; cancelAtPeriodEnd?: boolean; graceUntil?: string; createdAt: string };
+type Seller360Product = { _id: string; name: string; stock: number; publicationStatus?: string; createdAt: string };
+type Seller360Order = { _id: string; createdAt: string; customer?: { name?: string }; subOrders: Array<{ status: string }> };
+type Seller360Data = {
+  productCount?: number;
+  publications?: { total?: number; approved?: number; pending?: number; rejected?: number };
+  shop: { plan?: string; commissionPercent?: number; subscription_id?: (Seller360Subscription & { refundedMGA?: number; priceMGA?: number; startDate?: string; canceledAt?: string; paymentCompletedAt?: string }) | null };
+  kyc?: { verificationStatus?: string };
+  subscriptionHistory: Seller360Subscription[];
+  recentProducts: Seller360Product[];
+  orders: Seller360Order[];
+  audit: Array<{ _id: string; createdAt: string; actorName?: string; action: string }>;
+  role?: string;
+};
+
 const adminPermissionOptions = [
   ["support.read", "Consulter les tickets support"],
-  ["support.reply", "Répondre aux tickets"],
-  ["support.manage", "Gérer les tickets"],
-  ["moderation.review", "Modérer les contenus"],
+  ["support.reply", "RÃ©pondre aux tickets"],
+  ["support.manage", "GÃ©rer les tickets"],
+  ["moderation.review", "ModÃ©rer les contenus"],
   ["finance.read", "Consulter les finances"],
   ["finance.refund", "Enregistrer les remboursements"],
   ["finance.payout", "Consigner les reversements"],
-  ["accounts.delete", "Supprimer définitivement des comptes"],
+  ["accounts.delete", "Supprimer dÃ©finitivement des comptes"],
 ] as const;
 
 type Action =
@@ -51,6 +66,8 @@ function AccountsDetails() {
   const { id } = useParams();
   const [state, dispatch] = useReducer(reducer, initialState);
   const csrf = useCSRF();
+  const adminStepUp = useAdminStepUp();
+  const dialog = useDialog();
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -58,7 +75,7 @@ function AccountsDetails() {
   const [deleteStepUpCode, setDeleteStepUpCode] = useState("");
   const [deleteStep, setDeleteStep] = useState<"email" | "code">("email");
   const [isRequestingDeleteCode, setIsRequestingDeleteCode] = useState(false);
-  const [seller360, setSeller360] = useState<any>(null);
+  const [seller360, setSeller360] = useState<Seller360Data | null>(null);
   const [commission, setCommission] = useState("0");
   const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
   const [savingAdminPermissions, setSavingAdminPermissions] = useState(false);
@@ -106,11 +123,11 @@ function AccountsDetails() {
     }
   }, [id]);
 
-  const loadSeller360 = useCallbackData(async () => {
+  const loadSeller360 = useCallback(async () => {
     if (!state.user?.boutiks_id) return;
     const shopId = typeof state.user.boutiks_id === "string" ? state.user.boutiks_id : state.user.boutiks_id._id;
     try { const response = await fetch(`${import.meta.env.REACT_API_URL}admin/sellers/${shopId}/360`, { credentials: "include" }); const result = await response.json(); if (response.ok) { setSeller360(result.data); setCommission(String(result.data.shop.commissionPercent ?? 0)); } }
-    catch { toast.error("Impossible de charger la fiche vendeur 360Â°."); }
+    catch { toast.error("Impossible de charger la fiche vendeur 360Ã‚Â°."); }
   }, [state.user?.boutiks_id]);
 
   useEffect(() => {
@@ -126,7 +143,7 @@ function AccountsDetails() {
     if (!csrf || !id || savingAdminPermissions) return;
     setSavingAdminPermissions(true);
     try {
-      const stepUp = await requestAdminStepUp(csrf);
+      const stepUp = await adminStepUp(csrf);
       if (!stepUp) return;
       const response = await fetch(`${import.meta.env.REACT_API_URL}admin/staff/${id}`, {
         method: "PUT",
@@ -135,11 +152,11 @@ function AccountsDetails() {
         body: JSON.stringify({ permissions: adminPermissions }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Impossible d’enregistrer les accès.");
-      toast.success("Accès administrateur enregistrés.");
+      if (!response.ok) throw new Error(result.message || "Impossible dâ€™enregistrer les accÃ¨s.");
+      toast.success("AccÃ¨s administrateur enregistrÃ©s.");
       await fetchData();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Impossible d’enregistrer les accès.");
+      toast.error(error instanceof Error ? error.message : "Impossible dâ€™enregistrer les accÃ¨s.");
     } finally {
       setSavingAdminPermissions(false);
     }
@@ -148,14 +165,14 @@ function AccountsDetails() {
   const saveCommission = async () => {
     if (!csrf || !state.user?.boutiks_id) return;
     const shopId = typeof state.user.boutiks_id === "string" ? state.user.boutiks_id : state.user.boutiks_id._id;
-    try { const stepUp = await requestAdminStepUp(csrf); if (!stepUp) return; const response = await fetch(`${import.meta.env.REACT_API_URL}admin/sellers/${shopId}/commission`, { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ commissionPercent: Number(commission) }) }); const result = await response.json(); if (!response.ok) throw new Error(result.message); toast.success("Commission enregistrÃ©e."); void loadSeller360(); }
+    try { const stepUp = await adminStepUp(csrf); if (!stepUp) return; const response = await fetch(`${import.meta.env.REACT_API_URL}admin/sellers/${shopId}/commission`, { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf, "x-admin-step-up": stepUp }, body: JSON.stringify({ commissionPercent: Number(commission) }) }); const result = await response.json(); if (!response.ok) throw new Error(result.message); toast.success("Commission enregistrÃƒÂ©e."); void loadSeller360(); }
     catch (error) { toast.error(error instanceof Error ? error.message : "Enregistrement impossible."); }
   };
 
   const handleRoleChange = useCallback(async () => {
     try {
       if (csrf && id) {
-        const stepUp = await requestAdminStepUp(csrf);
+        const stepUp = await adminStepUp(csrf);
         if (!stepUp) return;
         const response = await fetch(
           `${import.meta.env.REACT_API_URL}account/${id}/admin`,
@@ -172,29 +189,33 @@ function AccountsDetails() {
         );
 
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || "Impossible dâ€™attribuer le rÃ´le Admin.");
+        if (!response.ok) throw new Error(result.message || "Impossible dÃ¢â‚¬â„¢attribuer le rÃƒÂ´le Admin.");
         toast.success(result.message);
         await fetchData();
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Impossible dâ€™attribuer le rÃ´le Admin.");
+      toast.error(error instanceof Error ? error.message : "Impossible dÃ¢â‚¬â„¢attribuer le rÃƒÂ´le Admin.");
     }
-  }, [adminPermissions, csrf, fetchData, id]);
+  }, [adminPermissions, adminStepUp, csrf, fetchData, id]);
 
   const handleAccountStatus = useCallback(async () => {
     if (!csrf || !id || state.isActive === null || isUpdatingStatus) return;
     const activate = !state.isActive;
-    if (
-      !activate &&
-      !window.confirm(
-        "DÃ©sactiver ce compte ? Lâ€™utilisateur ne pourra plus se connecter.",
-      )
-    )
-      return;
+    if (!activate) {
+      const confirmed = await dialog.confirm(
+        "La connexion sera bloquée pour ce compte.",
+        { title: "Désactiver ce compte", confirmLabel: "Désactiver", destructive: true },
+      );
+      if (!confirmed) return;
+    }
     const reason = !activate
-      ? window.prompt("Motif de dÃ©sactivation (facultatif)") ?? undefined
+      ? await dialog.prompt("Vous pouvez ajouter un motif pour le journal administratif.", {
+          title: "Motif de désactivation",
+          input: { label: "Motif facultatif", required: false, maxLength: 500 },
+          confirmLabel: "Continuer",
+        })
       : undefined;
-    if (!activate && reason === undefined) return;
+    if (!activate && reason === null) return;
 
     setIsUpdatingStatus(true);
     try {
@@ -224,7 +245,7 @@ function AccountsDetails() {
     } finally {
       setIsUpdatingStatus(false);
     }
-  }, [csrf, fetchData, id, isUpdatingStatus, state.isActive]);
+  }, [csrf, dialog, fetchData, id, isUpdatingStatus, state.isActive]);
 
   const openDeleteDialog = () => {
     setDeleteConfirmationEmail("");
@@ -298,7 +319,7 @@ function AccountsDetails() {
       <PageHeader
         eyebrow="Comptes"
         title="Informations du compte"
-        description="Consultez le profil, le rÃ´le et les informations de contact de lâ€™utilisateur."
+        description="Consultez le profil, le rÃƒÂ´le et les informations de contact de lÃ¢â‚¬â„¢utilisateur."
       />
 
       <section className="admin-panel p-5">
@@ -323,7 +344,7 @@ function AccountsDetails() {
           <div className="flex flex-col items-start gap-2 sm:items-end">
             <strong className="text-sm uppercase tracking-[0.08em] text-[var(--admin-muted)]">
               {state.user?.userGroupMember_id?.usergroup_id?.name ??
-                "Compte dÃ©sactivÃ©"}
+                "Compte dÃƒÂ©sactivÃƒÂ©"}
             </strong>
             <div className="flex flex-wrap gap-2 sm:justify-end">
               {state.user?.userGroupMember_id?.usergroup_id?.name !== "Super Admin" && (
@@ -335,9 +356,9 @@ function AccountsDetails() {
                     disabled={isUpdatingStatus || state.isActive === null}
                   >
                     {isUpdatingStatus
-                      ? "Mise Ã  jourâ€¦"
+                      ? "Mise ÃƒÂ  jourÃ¢â‚¬Â¦"
                       : state.isActive
-                        ? "DÃ©sactiver le compte"
+                        ? "DÃƒÂ©sactiver le compte"
                         : "Activer le compte"}
                   </AdminButton>
                   {state.user?.userGroupMember_id?.usergroup_id?.name !== "Admin" && <AdminButton
@@ -345,7 +366,7 @@ function AccountsDetails() {
                     size="sm"
                     onClick={() => document.getElementById("admin-access-panel")?.scrollIntoView({ behavior: "smooth", block: "center" })}
                   >
-                    DÃ©finir comme Admin
+                    DÃƒÂ©finir comme Admin
                   </AdminButton>}
                   {(user?.userGroupMember_id?.usergroup_id?.name === "Super Admin" || user?.adminPermissions?.includes("accounts.delete")) && <AdminButton
                     variant="danger"
@@ -353,7 +374,7 @@ function AccountsDetails() {
                     onClick={openDeleteDialog}
                     disabled={isDeletingAccount}
                   >
-                    {isDeletingAccount ? "Suppressionâ€¦" : "Supprimer dÃ©finitivement"}
+                    {isDeletingAccount ? "SuppressionÃ¢â‚¬Â¦" : "Supprimer dÃƒÂ©finitivement"}
                   </AdminButton>}
                 </>
               )}
@@ -373,7 +394,7 @@ function AccountsDetails() {
           </div>
 
           <div className="admin-field">
-            <label>PrÃ©noms</label>
+            <label>PrÃƒÂ©noms</label>
             <input
               type="text"
               className="admin-field__control cursor-not-allowed"
@@ -393,7 +414,7 @@ function AccountsDetails() {
           </div>
 
           <div className="admin-field">
-            <label>TÃ©lÃ©phone</label>
+            <label>TÃƒÂ©lÃƒÂ©phone</label>
             <input
               type="text"
               className="admin-field__control cursor-not-allowed"
@@ -409,10 +430,10 @@ function AccountsDetails() {
               className="admin-field__control cursor-not-allowed"
               value={
                 state.isActive === null
-                  ? "VÃ©rification en coursâ€¦"
+                  ? "VÃƒÂ©rification en coursÃ¢â‚¬Â¦"
                   : state.isActive
                     ? "Actif"
-                    : "DÃ©sactivÃ©"
+                    : "DÃƒÂ©sactivÃƒÂ©"
               }
               readOnly
             />
@@ -425,8 +446,8 @@ function AccountsDetails() {
           <div className="admin-panel-heading -mx-5 -mt-5 mb-4">
             <div>
               <p className="admin-panel-kicker">Gestion des comptes</p>
-              <h2 className="admin-panel-title">Accès administrateur</h2>
-              <p className="admin-panel-subtitle">Attribuez uniquement les permissions nécessaires à ce compte. Le rôle Admin sans permission ne donne pas accès aux modules protégés.</p>
+              <h2 className="admin-panel-title">AccÃ¨s administrateur</h2>
+              <p className="admin-panel-subtitle">Attribuez uniquement les permissions nÃ©cessaires Ã  ce compte. Le rÃ´le Admin sans permission ne donne pas accÃ¨s aux modules protÃ©gÃ©s.</p>
             </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -440,11 +461,11 @@ function AccountsDetails() {
           <div className="mt-4 flex justify-end">
             {state.user?.userGroupMember_id?.usergroup_id?.name === "Admin" ? (
               <AdminButton variant="primary" size="md" onClick={() => void saveAdminPermissions()} disabled={savingAdminPermissions}>
-                {savingAdminPermissions ? "Enregistrement…" : "Enregistrer les accès"}
+                {savingAdminPermissions ? "Enregistrementâ€¦" : "Enregistrer les accÃ¨s"}
               </AdminButton>
             ) : (
               <AdminButton variant="primary" size="md" onClick={() => void handleRoleChange()}>
-                Définir comme Admin avec ces accès
+                DÃ©finir comme Admin avec ces accÃ¨s
               </AdminButton>
             )}
           </div>
@@ -455,38 +476,38 @@ function AccountsDetails() {
         <section className="admin-panel p-5">
           <div className="admin-panel-heading -mx-5 -mt-5 mb-5">
             <div>
-              <p className="admin-panel-kicker">Boutique associÃ©e</p>
+              <p className="admin-panel-kicker">Boutique associÃƒÂ©e</p>
               <h2 className="admin-panel-title">
                 {state.user.boutiks_id.name}
               </h2>
               <p className="admin-panel-subtitle">
-                CoordonnÃ©es et liens publics gÃ©rÃ©s par ce vendeur.
+                CoordonnÃƒÂ©es et liens publics gÃƒÂ©rÃƒÂ©s par ce vendeur.
               </p>
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <p className="text-sm text-[var(--admin-muted)]">
-              TÃ©lÃ©phone :{" "}
+              TÃƒÂ©lÃƒÂ©phone :{" "}
               <strong className="text-[var(--admin-text)]">
-                {state.user.boutiks_id.phoneNumber || "â€”"}
+                {state.user.boutiks_id.phoneNumber || "Ã¢â‚¬â€"}
               </strong>
             </p>
             <p className="text-sm text-[var(--admin-muted)]">
               E-mail :{" "}
               <strong className="text-[var(--admin-text)]">
-                {state.user.boutiks_id.email || "â€”"}
+                {state.user.boutiks_id.email || "Ã¢â‚¬â€"}
               </strong>
             </p>
             <p className="text-sm text-[var(--admin-muted)]">
               Adresse :{" "}
               <strong className="text-[var(--admin-text)]">
-                {state.user.boutiks_id.adresse || "â€”"}
+                {state.user.boutiks_id.adresse || "Ã¢â‚¬â€"}
               </strong>
             </p>
             <p className="text-sm text-[var(--admin-muted)]">
               Plan :{" "}
               <strong className="text-[var(--admin-text)]">
-                {state.user.boutiks_id.plan || "â€”"}
+                {state.user.boutiks_id.plan || "Ã¢â‚¬â€"}
               </strong>
             </p>
             {[
@@ -519,32 +540,32 @@ function AccountsDetails() {
         </section>
       )}
       {seller360 && <section className="admin-panel seller-360-overview p-5">
-        <div className="admin-panel-heading"><div><p className="admin-panel-kicker">Vue consolidÃ©e vendeur</p><h2 className="admin-panel-title">ActivitÃ© de la boutique</h2><p className="admin-panel-subtitle">Publications, conformitÃ©, activitÃ© commerciale et cycle dâ€™abonnement.</p></div><Link className="admin-button admin-button--outline admin-button--sm" to="/espace_vendeur/products">Catalogue</Link></div>
+        <div className="admin-panel-heading"><div><p className="admin-panel-kicker">Vue consolidÃƒÂ©e vendeur</p><h2 className="admin-panel-title">ActivitÃƒÂ© de la boutique</h2><p className="admin-panel-subtitle">Publications, conformitÃƒÂ©, activitÃƒÂ© commerciale et cycle dÃ¢â‚¬â„¢abonnement.</p></div><Link className="admin-button admin-button--outline admin-button--sm" to="/espace_vendeur/products">Catalogue</Link></div>
         <div className="seller-360-metrics">
-          <article className="seller-360-metric"><span>Publications</span><strong>{seller360.publications?.total ?? seller360.productCount ?? 0}</strong><small>{seller360.publications?.approved ?? 0} publiÃ©es</small></article>
-          <article className="seller-360-metric"><span>En modÃ©ration</span><strong>{seller360.publications?.pending ?? 0}</strong><small>Ã€ examiner</small></article>
-          <article className="seller-360-metric"><span>RefusÃ©es</span><strong>{seller360.publications?.rejected ?? 0}</strong><small>Statut de publication</small></article>
-          <article className="seller-360-metric"><span>Commandes rÃ©centes</span><strong>{seller360.orders.length}</strong><small>Sur les derniÃ¨res commandes</small></article>
+          <article className="seller-360-metric"><span>Publications</span><strong>{seller360.publications?.total ?? seller360.productCount ?? 0}</strong><small>{seller360.publications?.approved ?? 0} publiÃƒÂ©es</small></article>
+          <article className="seller-360-metric"><span>En modÃƒÂ©ration</span><strong>{seller360.publications?.pending ?? 0}</strong><small>Ãƒâ‚¬ examiner</small></article>
+          <article className="seller-360-metric"><span>RefusÃƒÂ©es</span><strong>{seller360.publications?.rejected ?? 0}</strong><small>Statut de publication</small></article>
+          <article className="seller-360-metric"><span>Commandes rÃƒÂ©centes</span><strong>{seller360.orders.length}</strong><small>Sur les derniÃƒÂ¨res commandes</small></article>
         </div>
         <div className="seller-360-columns">
           <section className="seller-360-card">
-            <div className="seller-360-section-heading"><div><h3>Forfait et abonnement</h3><p>Ã‰tat actuel et Ã©chÃ©ances connus</p></div><span className="admin-status-badge admin-status-badge--primary">{seller360.shop.subscription_id?.plan ?? seller360.shop.plan ?? "Gratuit"}</span></div>
+            <div className="seller-360-section-heading"><div><h3>Forfait et abonnement</h3><p>Ãƒâ€°tat actuel et ÃƒÂ©chÃƒÂ©ances connus</p></div><span className="admin-status-badge admin-status-badge--primary">{seller360.shop.subscription_id?.plan ?? seller360.shop.plan ?? "Gratuit"}</span></div>
             {seller360.shop.subscription_id ? <dl className="seller-360-facts">
-              <div><dt>Statut</dt><dd>{seller360.shop.subscription_id.lifecycleStatus ?? seller360.shop.subscription_id.payementStatus ?? "â€”"}</dd></div>
-              <div><dt>PÃ©riode payÃ©e jusquâ€™au</dt><dd>{seller360.shop.subscription_id.endDate ? new Date(seller360.shop.subscription_id.endDate).toLocaleDateString("fr-FR") : "â€”"}</dd></div>
-              <div><dt>Renouvellement automatique</dt><dd>{seller360.shop.subscription_id.autoRenew ? "ActivÃ©" : "DÃ©sactivÃ©"}</dd></div>
-              <div><dt>RÃ©siliation programmÃ©e</dt><dd>{seller360.shop.subscription_id.cancelAtPeriodEnd ? "Oui" : "Non"}</dd></div>
-              {seller360.shop.subscription_id.graceUntil && <div><dt>Fin de pÃ©riode de grÃ¢ce</dt><dd>{new Date(seller360.shop.subscription_id.graceUntil).toLocaleDateString("fr-FR")}</dd></div>}
-            </dl> : <p className="seller-360-empty">Aucun abonnement liÃ© Ã  cette boutique.</p>}
-            {seller360.subscriptionHistory?.length > 0 && <div className="seller-360-history"><strong>Historique rÃ©cent</strong>{seller360.subscriptionHistory.map((subscription: any) => <div key={subscription._id}><span>{subscription.plan} Â· {subscription.payementStatus}</span><time>{new Date(subscription.createdAt).toLocaleDateString("fr-FR")}</time></div>)}</div>}
+              <div><dt>Statut</dt><dd>{seller360.shop.subscription_id.lifecycleStatus ?? seller360.shop.subscription_id.payementStatus ?? "Ã¢â‚¬â€"}</dd></div>
+              <div><dt>PÃƒÂ©riode payÃƒÂ©e jusquÃ¢â‚¬â„¢au</dt><dd>{seller360.shop.subscription_id.endDate ? new Date(seller360.shop.subscription_id.endDate).toLocaleDateString("fr-FR") : "Ã¢â‚¬â€"}</dd></div>
+              <div><dt>Renouvellement automatique</dt><dd>{seller360.shop.subscription_id.autoRenew ? "ActivÃƒÂ©" : "DÃƒÂ©sactivÃƒÂ©"}</dd></div>
+              <div><dt>RÃƒÂ©siliation programmÃƒÂ©e</dt><dd>{seller360.shop.subscription_id.cancelAtPeriodEnd ? "Oui" : "Non"}</dd></div>
+              {seller360.shop.subscription_id.graceUntil && <div><dt>Fin de pÃƒÂ©riode de grÃƒÂ¢ce</dt><dd>{new Date(seller360.shop.subscription_id.graceUntil).toLocaleDateString("fr-FR")}</dd></div>}
+            </dl> : <p className="seller-360-empty">Aucun abonnement liÃƒÂ© ÃƒÂ  cette boutique.</p>}
+            {seller360.subscriptionHistory?.length > 0 && <div className="seller-360-history"><strong>Historique rÃƒÂ©cent</strong>{seller360.subscriptionHistory.map((subscription) => <div key={subscription._id}><span>{subscription.plan} Ã‚Â· {subscription.payementStatus}</span><time>{new Date(subscription.createdAt).toLocaleDateString("fr-FR")}</time></div>)}</div>}
           </section>
           <section className="seller-360-card">
-            <div className="seller-360-section-heading"><div><h3>Publications rÃ©centes</h3><p>Derniers produits ajoutÃ©s Ã  la boutique</p></div></div>
-            {seller360.recentProducts?.length ? <div className="seller-360-products">{seller360.recentProducts.map((product: any) => <article key={product._id}><div className="min-w-0"><Link to={`/espace_vendeur/products/${product._id}`} className="seller-360-product-name">{product.name}</Link><small>{new Date(product.createdAt).toLocaleDateString("fr-FR")} Â· Stock {product.stock}</small></div><span className={`admin-status-badge ${product.publicationStatus === "Approved" ? "admin-status-badge--success" : product.publicationStatus === "Rejected" ? "admin-status-badge--danger" : "admin-status-badge--pending"}`}>{product.publicationStatus === "Approved" ? "PubliÃ©e" : product.publicationStatus === "Rejected" ? "RefusÃ©e" : "En attente"}</span></article>)}</div> : <p className="seller-360-empty">Aucune publication enregistrÃ©e.</p>}
+            <div className="seller-360-section-heading"><div><h3>Publications rÃƒÂ©centes</h3><p>Derniers produits ajoutÃƒÂ©s ÃƒÂ  la boutique</p></div></div>
+            {seller360.recentProducts?.length ? <div className="seller-360-products">{seller360.recentProducts.map((product) => <article key={product._id}><div className="min-w-0"><Link to={`/espace_vendeur/products/${product._id}`} className="seller-360-product-name">{product.name}</Link><small>{new Date(product.createdAt).toLocaleDateString("fr-FR")} Ã‚Â· Stock {product.stock}</small></div><span className={`admin-status-badge ${product.publicationStatus === "Approved" ? "admin-status-badge--success" : product.publicationStatus === "Rejected" ? "admin-status-badge--danger" : "admin-status-badge--pending"}`}>{product.publicationStatus === "Approved" ? "PubliÃƒÂ©e" : product.publicationStatus === "Rejected" ? "RefusÃƒÂ©e" : "En attente"}</span></article>)}</div> : <p className="seller-360-empty">Aucune publication enregistrÃƒÂ©e.</p>}
           </section>
         </div>
         <div className="seller-360-footer"><div><strong>KYC</strong><span>{seller360.kyc?.verificationStatus ?? "Non soumis"}</span></div><div><strong>Commission marketplace</strong><label><input type="number" min="0" max="50" step="0.1" value={commission} onChange={(event) => setCommission(event.target.value)} aria-label="Commission marketplace en pourcentage" /><span>%</span></label><button type="button" className="admin-button admin-button--primary admin-button--sm" onClick={() => void saveCommission()}>Enregistrer le taux</button></div></div>
-        <div className="seller-360-columns seller-360-activity"><section className="seller-360-card"><h3>Commandes rÃ©centes</h3>{seller360.orders.length ? seller360.orders.map((order: any) => <p key={order._id}>{new Date(order.createdAt).toLocaleDateString("fr-FR")} Â· {order.customer?.name} Â· {order.subOrders.map((line: any) => line.status).join(", ")}</p>) : <p className="seller-360-empty">Aucune commande rÃ©cente.</p>}</section><section className="seller-360-card"><h3>Actions administratives</h3>{seller360.audit.length ? seller360.audit.map((entry: any) => <p key={entry._id}>{new Date(entry.createdAt).toLocaleString("fr-FR")} Â· {entry.actorName} Â· {entry.action}</p>) : <p className="seller-360-empty">Aucune action rÃ©cente.</p>}</section></div>
+        <div className="seller-360-columns seller-360-activity"><section className="seller-360-card"><h3>Commandes rÃƒÂ©centes</h3>{seller360.orders.length ? seller360.orders.map((order) => <p key={order._id}>{new Date(order.createdAt).toLocaleDateString("fr-FR")} Ã‚Â· {order.customer?.name} Ã‚Â· {order.subOrders.map((line) => line.status).join(", ")}</p>) : <p className="seller-360-empty">Aucune commande rÃƒÂ©cente.</p>}</section><section className="seller-360-card"><h3>Actions administratives</h3>{seller360.audit.length ? seller360.audit.map((entry) => <p key={entry._id}>{new Date(entry.createdAt).toLocaleString("fr-FR")} Ã‚Â· {entry.actorName} Ã‚Â· {entry.action}</p>) : <p className="seller-360-empty">Aucune action rÃƒÂ©cente.</p>}</section></div>
       </section>}
       <AdminModal
         open={isDeleteDialogOpen}
