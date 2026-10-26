@@ -90,6 +90,23 @@ function createFormDataFromObject(data: Record<string, unknown>): FormData {
   return formData;
 }
 
+function getProductSaveError(status: number, payload: any, responseText: string): string[] {
+  const details = Array.isArray(payload?.errors)
+    ? payload.errors.map((error: any) => String(error?.msg ?? error?.message ?? "").trim()).filter(Boolean)
+    : [];
+  const message = typeof payload?.message === "string" ? payload.message.trim() : "";
+  if (message || details.length) return [...new Set([message, ...details].filter(Boolean))];
+  if (status === 413) return ["La requête est trop volumineuse. Le serveur ou Nginx a refusé les images avant leur traitement.", "Réduisez la taille des images ou demandez à l’administrateur d’augmenter client_max_body_size dans Nginx (par exemple 110m), puis de recharger sa configuration."];
+  if (status === 415) return ["Le format d’une image n’est pas pris en charge ou le fichier est illisible. Utilisez JPEG, PNG, WebP, AVIF, HEIC/HEIF, GIF, TIFF ou SVG."];
+  if (status === 401) return ["Votre session a expiré. Reconnectez-vous puis réessayez."];
+  if (status === 403) return ["L’enregistrement a été refusé : votre session de sécurité a peut-être expiré, ou votre compte/forfait ne permet pas cette action. Actualisez la page et vérifiez votre forfait."];
+  if (status === 404) return ["L’adresse du service produit est introuvable. Actualisez l’application; si le problème persiste, contactez le support."];
+  if ([502, 503, 504].includes(status)) return ["Le serveur de l’API est momentanément indisponible ou n’a pas répondu à temps. Réessayez dans quelques instants; si l’erreur persiste, l’administrateur doit vérifier le backend et Nginx."];
+  if (status >= 500) return ["Le serveur n’a pas pu enregistrer le produit. Vos informations restent dans le formulaire. Réessayez; si l’erreur persiste, transmettez le code HTTP à l’administrateur pour vérifier les journaux du backend."];
+  if (/<html|<!doctype|nginx|bad gateway|request entity too large/i.test(responseText)) return ["Le serveur intermédiaire a refusé la requête sans fournir de détail. Vérifiez la limite d’envoi Nginx et l’état du backend."];
+  return [`L’enregistrement a échoué (HTTP ${status || "inconnu"}). Vérifiez les champs obligatoires et les images, puis réessayez.`];
+}
+
 function Add() {
   const { selectedCategoryId, setSelectedCategoryId } = useCategory();
   const inputFile = useRef<HTMLInputElement | null>(null);
@@ -109,6 +126,8 @@ function Add() {
     photos: [], // Initialiser les photos à un tableau vide
   });
   const [quota, setQuota] = useState<{ name: string; quota: number; used: number; remaining: number | null } | null>(null);
+  const [submitError, setSubmitError] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { content, setNewContent } = useContent();
 
@@ -195,6 +214,7 @@ function Add() {
   // Fonction pour envoyer le formulaire (ajouter ou éditer)
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setSubmitError([]);
     if (!selectedCategoryId) {
       toast.error("Choisissez une catégorie pour le produit.");
       return;
@@ -203,6 +223,17 @@ function Add() {
       toast.info("Votre forfait a atteint sa limite de produits. Passez à un forfait supérieur pour publier davantage.");
       return;
     }
+    if (validatingFiles) {
+      toast.info("Attendez la fin de la vérification des images avant de publier.");
+      return;
+    }
+    if (!csrf) {
+      const messages = ["Le jeton de sécurité n’est pas disponible. Actualisez la page et reconnectez-vous si nécessaire."];
+      setSubmitError(messages);
+      toast.error(messages[0]);
+      return;
+    }
+    setIsSubmitting(true);
     try {
       const formData = createFormDataFromObject(product);
       formData.set("details", content);
@@ -216,7 +247,7 @@ function Add() {
         ),
       );
 
-      if (csrf) {
+      {
         const method = productId ? "PUT" : "POST"; // Utiliser PUT si productId existe (modification)
         const url = productId
           ? `${import.meta.env.REACT_API_URL}product/${productId}`
@@ -231,9 +262,17 @@ function Add() {
           body: formData,
         });
 
-        const result = await response.json().catch(() => null);
+        const responseText = await response.text();
+        let result: any = null;
+        try {
+          result = responseText ? JSON.parse(responseText) : null;
+        } catch {
+          // Les proxys peuvent renvoyer une page HTML au lieu du JSON de l’API.
+        }
         if (!response.ok) {
-          toast.error(result?.message || "Une erreur s'est produite!");
+          const messages = getProductSaveError(response.status, result, responseText);
+          setSubmitError(messages);
+          toast.error(messages[0]);
           return;
         }
 
@@ -241,11 +280,13 @@ function Add() {
         resetForm();
       }
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Impossible d'enregistrer le produit.",
-      );
+      const message = error instanceof TypeError
+        ? "Connexion impossible au serveur. Vérifiez votre connexion Internet et l’adresse de l’API, puis réessayez."
+        : error instanceof Error ? error.message : "Impossible d’enregistrer le produit pour une raison inconnue.";
+      setSubmitError([message]);
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -332,6 +373,14 @@ function Add() {
         className="admin-panel grid gap-5 p-4 sm:p-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]"
         onSubmit={handleSubmit}
       >
+        {submitError.length > 0 && (
+          <div role="alert" className="rounded-2xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100 xl:col-span-2">
+            <p className="font-semibold">Le produit n’a pas été enregistré</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              {submitError.map((message, index) => <li key={`${index}-${message}`}>{message}</li>)}
+            </ul>
+          </div>
+        )}
         <div className="grid min-w-0 content-start gap-4">
           <section className="grid min-w-0 gap-4 sm:grid-cols-2">
             <AdminInput
@@ -474,9 +523,9 @@ function Add() {
           <p>
             Les modifications seront visibles sur la page de votre boutique.
           </p>
-          <AdminButton type="submit" variant="primary" size="lg" disabled={quotaReached}>
+          <AdminButton type="submit" variant="primary" size="lg" disabled={quotaReached || validatingFiles || isSubmitting}>
             <LiaDatabaseSolid size={18} />
-            {productId ? "Enregistrer les modifications" : "Publier le produit"}
+            {isSubmitting ? "Enregistrement…" : productId ? "Enregistrer les modifications" : "Publier le produit"}
           </AdminButton>
         </footer>
       </form>
