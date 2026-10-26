@@ -8,6 +8,7 @@ export interface AdminModalProps {
   children: ReactNode;
   footer?: ReactNode;
   size?: "sm" | "md" | "lg";
+  theme?: "light" | "dark";
 }
 
 function AdminModal({
@@ -17,6 +18,7 @@ function AdminModal({
   children,
   footer,
   size = "md",
+  theme,
 }: AdminModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -53,7 +55,7 @@ function AdminModal({
   if (!open) return null;
   return (
     <div
-      className="admin-dialog-backdrop"
+      className={`admin-dialog-backdrop${theme ? ` admin-dialog-backdrop--${theme}` : ""}`}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}

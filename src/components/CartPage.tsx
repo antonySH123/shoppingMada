@@ -1,4 +1,4 @@
-﻿import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LiaMinusSolid, LiaPlusSolid, LiaTimesSolid } from "react-icons/lia";
 import { toast } from "react-toastify";
@@ -136,7 +136,7 @@ function CartPage() {
     return () => {
       active = false;
     };
-  }, [shopIdsKey]);
+  }, [shopIdsKey, t]);
 
   const groupedItems = shopIds.map((shopId) => ({
     shopId,

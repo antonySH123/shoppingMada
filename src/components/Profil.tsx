@@ -22,15 +22,18 @@ import { toast } from "react-toastify";
 import Preloader from "./loading/Preloader";
 import { useLanguage } from "../context/useLanguage";
 import { productImageUrl } from "../helper/productImageUrl";
+import { useTheme } from "../context/useTheme";
 
 function Profil() {
   const { user, setUserInfo, currencyRates } = useAuth();
-  const { t, language } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
+  const { theme, persistTheme } = useTheme();
   const csrf = useCSRF();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savingPreferences, setSavingPreferences] = useState(false);
+  const [savingTheme, setSavingTheme] = useState(false);
   const [notifications, setNotifications] = useState({ orders: true, support: true, promotions: false });
   const [currency, setCurrency] = useState<"MGA" | "EUR" | "USD">("MGA");
   const [addresses, setAddresses] = useState<Array<{ _id: string; label?: string; recipientName: string; phone: string; address: string; city?: string }>>([]);
@@ -125,23 +128,44 @@ function Profil() {
 
   const deleteAddress = async (id: string) => { if (!csrf) return; try { const response = await fetch(`${import.meta.env.REACT_API_URL}user/addresses/${id}`, { method: "DELETE", credentials: "include", headers: { "xsrf-token": csrf } }); const result = await response.json(); if (!response.ok) throw new Error(result.message); setAddresses(result.data ?? []); } catch (error) { toast.error(error instanceof Error ? error.message : "Suppression impossible."); } };
 
-  const savePreferences = async (next: { currency: "MGA" | "EUR" | "USD"; notifications: { orders: boolean; support: boolean; promotions: boolean } }) => {
-    if (!csrf || !user || savingPreferences) return;
+  const savePreferences = async (next: { currency?: "MGA" | "EUR" | "USD"; language?: "fr" | "en"; notifications?: { orders: boolean; support: boolean; promotions: boolean } }): Promise<boolean> => {
+    if (!csrf || !user || savingPreferences) return false;
     setSavingPreferences(true);
     try {
       const response = await fetch(`${import.meta.env.REACT_API_URL}user/preferences`, { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf }, body: JSON.stringify(next) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Enregistrement impossible.");
       setUserInfo({ ...user, preferences: result.data });
+      if (result.data?.language) setLanguage(result.data.language);
       toast.success("Préférences enregistrées.");
+      return true;
     } catch (error) { toast.error(error instanceof Error ? error.message : "Enregistrement impossible."); }
     finally { setSavingPreferences(false); }
+    return false;
   };
 
   const saveNotification = (key: "orders" | "support" | "promotions", checked: boolean) => {
     const nextNotifications = { ...notifications, [key]: checked };
     setNotifications(nextNotifications);
     void savePreferences({ currency, notifications: nextNotifications });
+  };
+
+  const saveLanguage = (nextLanguage: "fr" | "en") => {
+    const previousLanguage = language;
+    setLanguage(nextLanguage);
+    void savePreferences({ language: nextLanguage }).then((saved) => { if (!saved) setLanguage(previousLanguage); });
+  };
+
+  const saveTheme = async (nextTheme: "light" | "dark") => {
+    if (savingTheme) return;
+    setSavingTheme(true);
+    try {
+      const saved = await persistTheme(nextTheme);
+      if (saved) toast.success(language === "fr" ? "Thème enregistré." : "Theme saved.");
+      else toast.error(language === "fr" ? "Impossible d’enregistrer le thème." : "Could not save the theme.");
+    } finally {
+      setSavingTheme(false);
+    }
   };
 
   const form = useRef(null);
@@ -474,13 +498,25 @@ function Profil() {
                   </span>
                   <div>
                     <h3>{t("profile.preferences")}</h3>
-                    <p>{t("profile.languageSpace")}</p>
+                    <p>{t("profile.languageSpace")} · {t("profile.appearance")}</p>
                   </div>
                 </div>
                 <div className="profile-section-body compact-grid">
                   <label className="profile-pref-field">
                     <span>{t("language.label")}</span>
                     <span className="text-xs text-gray-500">{language === "fr" ? "Ce choix s’applique à toutes les pages et est enregistré sur votre compte." : "This choice applies across the app and is saved to your account."}</span>
+                    <select value={language} disabled={savingPreferences} onChange={(event) => saveLanguage(event.target.value as "fr" | "en")}>
+                      <option value="fr">{t("language.french")}</option>
+                      <option value="en">{t("language.english")}</option>
+                    </select>
+                  </label>
+                  <label className="profile-pref-field">
+                    <span>{t("profile.appearance")}</span>
+                    <span className="text-xs text-gray-500">{language === "fr" ? "Ce choix s’applique aux interfaces client, vendeur, administrateur et aux fenêtres de dialogue." : "This choice applies to customer, seller and admin interfaces, including dialogs."}</span>
+                    <select value={theme} disabled={savingPreferences || savingTheme} onChange={(event) => void saveTheme(event.target.value as "light" | "dark")}>
+                      <option value="light">{t("theme.light")}</option>
+                      <option value="dark">{t("theme.dark")}</option>
+                    </select>
                   </label>
                   <label className="profile-pref-field">
                     <span>{t("profile.currency")}</span>

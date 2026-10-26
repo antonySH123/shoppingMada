@@ -15,9 +15,12 @@ import {
   type AdminDataColumn,
 } from "../ui";
 import useFormatter from "../../../helper/useFormatter";
+import { useAuth } from "../../../helper/useAuth";
 
 function Content() {
   const csrf = useCSRF();
+  const { user } = useAuth();
+  const userRoleIsSeller = user?.userGroupMember_id?.usergroup_id?.name === "Boutiks";
   const navigate = useNavigate();
   const { priceInArriary } = useFormatter();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
@@ -206,7 +209,7 @@ function Content() {
   return !csrf ? (
     <Preloader />
   ) : (
-    <div className="space-y-4 py-2">
+    <div className={`space-y-4 py-2 ${userRoleIsSeller ? "seller-page" : ""}`}>
       <PageHeader
         eyebrow="Catalogue boutique"
         title="Produits"

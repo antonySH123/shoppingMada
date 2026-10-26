@@ -1,4 +1,4 @@
-﻿import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   LiaBarsSolid,
   LiaSearchSolid,
@@ -7,6 +7,8 @@ import {
   LiaUser,
   LiaUserLockSolid,
   LiaUserPlusSolid,
+  LiaMoonSolid,
+  LiaSunSolid,
 } from "react-icons/lia";
 import {
   Link,
@@ -18,6 +20,7 @@ import { useAuth } from "../helper/useAuth";
 import CartHeaderLink from "./CartHeaderLink";
 import { useLanguage } from "../context/useLanguage";
 import LanguageSelector from "./LanguageSelector";
+import { useTheme } from "../context/useTheme";
 
 const Navbar = () => {
   const { t } = useLanguage();
@@ -28,6 +31,7 @@ const Navbar = () => {
     { href: "/#abonnements", label: t("nav.proOffer") },
   ];
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const isSeller = user?.userGroupMember_id?.usergroup_id?.name === "Boutiks";
   const visibleMenu = menu.filter(
     (item) => item.href !== "/vendeur" || !isSeller,
@@ -161,7 +165,8 @@ const Navbar = () => {
         </form>
 
         <div className="ml-auto hidden shrink-0 items-center gap-1 md:flex">
-          <LanguageSelector compact className="desktop-inline-language-selector" />
+          {!user && <LanguageSelector compact className="nav-language-selector" />}
+          {!user && <button type="button" className="global-theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Activer le thème clair" : "Activer le thème sombre"} title={theme === "dark" ? "Thème clair" : "Thème sombre"}>{theme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
           <CartHeaderLink />
           {accountLinks}
         </div>
@@ -207,6 +212,8 @@ const Navbar = () => {
       </div>
 
       <div className="market-container flex items-center gap-2 pb-3 md:hidden">
+        {!user && <LanguageSelector compact className="nav-language-selector" />}
+        {!user && <button type="button" className="global-theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Activer le thème clair" : "Activer le thème sombre"} title={theme === "dark" ? "Thème clair" : "Thème sombre"}>{theme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
         <form onSubmit={handleSearch} role="search" className="relative min-w-0 flex-1">
           <LiaSearchSolid
             aria-hidden="true"
@@ -229,7 +236,6 @@ const Navbar = () => {
             <LiaSearchSolid size={18} />
           </button>
         </form>
-        <LanguageSelector compact className="mobile-inline-language-selector" />
       </div>
 
       {open && (

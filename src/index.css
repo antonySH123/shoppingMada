@@ -44,6 +44,55 @@
   --market-canvas: #f8faf8;
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  color: #eef6f3;
+  background: #0b1113;
+  --market-ink: #eef6f3;
+  --market-muted: #a5b4b0;
+  --market-line: #29393b;
+  --market-surface: #111a1d;
+  --market-canvas: #0b1113;
+  --market-green: #43d9b3;
+  --market-green-dark: #168b72;
+}
+
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { --admin-canvas: #0b1113; --admin-surface: #111a1d; --admin-surface-raised: #172326; --admin-surface-hover: #1c2a2d; --admin-border: #29393b; --admin-text: #eef6f3; --admin-muted: #a5b4b0; --admin-accent-solid: #43d9b3; }
+
+body:has(.customer-app) { color: var(--market-ink); background: var(--market-canvas); }
+:root[data-theme="dark"] body:has(.customer-app) { background: #0b1113; }
+:root[data-theme="dark"] .customer-app { color: var(--market-ink); background: var(--market-canvas); }
+:root[data-theme="dark"] body:has(.admin-shell) { color: var(--market-ink); background: var(--market-canvas); }
+:root[data-theme="dark"] .admin-shell:not(.seller-page) { --admin-canvas: #0b1113; --admin-surface: #111a1d; --admin-surface-raised: #172326; --admin-surface-hover: #1c2a2d; --admin-border: #29393b; --admin-text: #eef6f3; --admin-muted: #a5b4b0; }
+:root[data-theme="dark"] .admin-shell:not(.seller-page) .admin-page { background: var(--admin-canvas); }
+:root[data-theme="dark"] .admin-shell.seller-page { --admin-canvas: #0b1113; --admin-surface: #111a1d; --admin-surface-raised: #172326; --admin-surface-hover: #1c2a2d; --admin-border: #29393b; --admin-text: #eef6f3; --admin-muted: #a5b4b0; --market-ink: #eef6f3; --market-muted: #a5b4b0; --market-line: #29393b; --market-surface: #111a1d; --market-canvas: #0b1113; }
+:root[data-theme="dark"] .admin-shell.seller-page .seller-page { color: var(--admin-text); background: transparent; }
+:root[data-theme="dark"] .admin-shell.seller-page .seller-page :is(label, p, h1, h2, h3, span, strong, small) { color: inherit; }
+:root[data-theme="dark"] .admin-shell.seller-page .seller-page .market-card { border-color: var(--admin-border); background: var(--admin-surface); }
+:root[data-theme="dark"] .admin-shell.seller-page .seller-page input:not([type="file"]),
+:root[data-theme="dark"] .admin-shell.seller-page .seller-page select,
+:root[data-theme="dark"] .admin-shell.seller-page .seller-page textarea { border-color: var(--admin-border); background: var(--admin-surface-raised); color: var(--admin-text); color-scheme: dark; }
+:root[data-theme="dark"] .admin-shell.seller-page .seller-page input::placeholder { color: var(--admin-muted); }
+:root[data-theme="dark"] .customer-app :is(.bg-white, .bg-\[\#f8faf8\], .bg-\[\#f6f8f6\]) { background-color: var(--market-surface) !important; }
+:root[data-theme="dark"] .customer-app :is(.text-gray-950, .text-gray-900, .text-gray-800, .text-gray-700) { color: var(--market-ink) !important; }
+:root[data-theme="dark"] .customer-app :is(.text-gray-600, .text-gray-500, .text-gray-400) { color: var(--market-muted) !important; }
+:root[data-theme="dark"] .customer-app :is(input, select, textarea) { border-color: var(--market-line); background-color: #172326; color: var(--market-ink); color-scheme: dark; }
+:root[data-theme="dark"] .customer-app :is(.market-card, .market-panel, article.bg-white) { border-color: var(--market-line); background-color: var(--market-surface); }
+:root[data-theme="dark"] .global-language-selector { border-color: var(--market-line); background: rgb(17 26 29 / 96%); }
+:root[data-theme="dark"] .global-language-selector select { border-color: var(--market-line); background: #172326; color: var(--market-ink); }
+:root[data-theme="dark"] .language-selector-control { border-color: var(--market-line) !important; background: #172326 !important; color: var(--market-ink) !important; color-scheme: dark; }
+:root[data-theme="dark"] .nav-language-selector { border-color: var(--market-line); background: var(--market-surface); }
+.global-theme-toggle { display: inline-grid; width: 2.25rem; height: 2.25rem; flex: 0 0 auto; place-items: center; border: 1px solid #dce7df; border-radius: 0.75rem; background: #fff; color: #315341; cursor: pointer; transition: background 140ms ease, border-color 140ms ease, color 140ms ease; }
+.global-theme-toggle:hover { border-color: #16834b; color: #16834b; }
+:root[data-theme="dark"] .global-theme-toggle { border-color: var(--market-line); background: var(--market-surface); color: var(--market-ink); }
+.global-theme-toggle--floating { position: fixed; z-index: 41; top: max(0.75rem, env(safe-area-inset-top)); right: max(4.15rem, calc(env(safe-area-inset-right) + 3.4rem)); }
+.global-theme-toggle--mobile { display: inline-grid; }
+.shop-mobile-control { display: inline-flex; }
+@media (min-width: 768px) { .global-theme-toggle--mobile, .shop-mobile-control { display: none !important; } }
+@media (max-width: 767px) { .global-theme-toggle--floating { top: max(0.5rem, env(safe-area-inset-top)); right: max(3.7rem, calc(env(safe-area-inset-right) + 3rem)); } }
+
+
 * {
   box-sizing: border-box;
 }
@@ -117,6 +166,7 @@ select:focus-visible {
   box-shadow: 0 8px 24px rgb(20 40 28 / 10%);
   backdrop-filter: blur(18px);
 }
+.admin-language-selector.global-language-selector { position: static; z-index: auto; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
 .mobile-inline-language-selector,
 .desktop-inline-language-selector {
   padding: 0.25rem;
@@ -2640,3 +2690,37 @@ select:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .disabled-access-actions a, .disabled-access-actions button { transition: none; }
 }
+
+/* Global dark theme: shared by customer, seller, admin and profile pages. */
+:root[data-theme="dark"] body { background: #0b1113 !important; color: #eef6f3; }
+:root[data-theme="dark"] :is(.customer-app, .admin-shell, .seller-page) { background-color: #0b1113; color: #eef6f3; }
+:root[data-theme="dark"] :is(header, footer, nav, aside, section, article, .market-card, .profile-section-card, .profile-orders, .upgrade-pro-page, .upgrade-pro-checkout) { border-color: #29393b; }
+:root[data-theme="dark"] :is(.customer-app, .seller-page, .profile-page-root, .upgrade-pro-page) :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-\[\#f8faf8\], .bg-\[\#f6f8f6\]) { background-color: #111a1d !important; }
+:root[data-theme="dark"] :is(.customer-app, .seller-page, .profile-page-root, .upgrade-pro-page) :is(.text-gray-950, .text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500) { color: #d2e0da !important; }
+:root[data-theme="dark"] :is(.customer-app, .seller-page, .profile-page-root, .upgrade-pro-page) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { border-color: #35484a !important; background-color: #172326 !important; color: #eef6f3 !important; color-scheme: dark; }
+:root[data-theme="dark"] :is(.customer-app, .seller-page, .profile-page-root, .upgrade-pro-page) :is(input, textarea)::placeholder { color: #a5b4b0; }
+:root[data-theme="dark"] .seller-page > section { border-color: #29393b; background: linear-gradient(145deg, #111a1d, #172326); }
+:root[data-theme="dark"] :is(.auth-page, .auth-panel, .auth-card) { border-color: #29393b; background-color: #111a1d; color: #eef6f3; }
+:root[data-theme="dark"] .auth-page :is(.text-gray-950, .text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500) { color: #d2e0da !important; }
+:root[data-theme="dark"] .auth-page :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { border-color: #35484a !important; background-color: #172326 !important; color: #eef6f3 !important; color-scheme: dark; }
+:root[data-theme="dark"] .auth-page :is(input, textarea)::placeholder { color: #a5b4b0; }
+:root[data-theme="dark"] .auth-page .auth-back-button { border-color: #35484a; background-color: #172326; color: #d2e0da; }
+:root[data-theme="dark"] .auth-page .auth-back-button:hover { background-color: #1c2a2d; }
+:root[data-theme="light"] .auth-page { color: #172b22; }
+:root[data-theme="dark"] .seller-page .market-card { border-color: #29393b; background: #111a1d; }
+:root[data-theme="dark"] .profile-summary { background: linear-gradient(145deg, #123d31, #102720); }
+:root[data-theme="dark"] .profile-information-item,
+:root[data-theme="dark"] .profile-section-body,
+:root[data-theme="dark"] .profile-orders table th { border-color: #29393b; background: #172326; }
+:root[data-theme="dark"] .profile-section-card,
+:root[data-theme="dark"] .profile-orders { border-color: #29393b; background: #111a1d; }
+:root[data-theme="dark"] .admin-shell .admin-page :is(.admin-panel, .market-card, .admin-toolbar) { border-color: var(--admin-border); background-color: var(--admin-surface); color: var(--admin-text); }
+:root[data-theme="dark"] .admin-shell .admin-page :is(.admin-panel-heading, .admin-data-table th) { background-color: var(--admin-surface-raised); }
+:root[data-theme="dark"] .admin-shell .admin-sidebar { background: #090f11; }
+:root[data-theme="dark"] .admin-dialog-backdrop:not(.admin-dialog-backdrop--light) .admin-dialog { background-color: #111a1d; color: #eef6f3; }
+:root[data-theme="dark"] .admin-dialog-backdrop:not(.admin-dialog-backdrop--light) .admin-dialog :is(h2, p, label) { color: #eef6f3; }
+:root[data-theme="light"] .admin-dialog-backdrop:not(.admin-dialog-backdrop--dark) { background: rgb(20 35 28 / 48%); }
+:root[data-theme="light"] .admin-dialog-backdrop:not(.admin-dialog-backdrop--dark) .admin-dialog { --admin-canvas: #f1f6f3; --admin-surface: #fff; --admin-surface-raised: #f3f7f4; --admin-surface-hover: #e8f0eb; --admin-border: #cbd9d0; --admin-text: #172b22; --admin-muted: #5e7167; --admin-accent-solid: #16834b; --admin-danger: #b8323b; --admin-shadow-md: 0 24px 80px rgb(20 55 37 / 20%); border-color: #cbd9d0; background-color: #fff; color: #172b22; }
+:root[data-theme="light"] .admin-dialog-backdrop:not(.admin-dialog-backdrop--dark) .admin-dialog :is(h1, h2, h3, p, label, span, strong) { color: #172b22; }
+:root[data-theme="light"] .admin-dialog-backdrop:not(.admin-dialog-backdrop--dark) .admin-dialog .admin-field__control { border-color: #cbd9d0; background-color: #fff; color: #172b22; }
+:root[data-theme="dark"] .admin-dialog-backdrop:not(.admin-dialog-backdrop--light) { background: rgb(3 8 9 / 76%); }

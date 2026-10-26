@@ -356,7 +356,7 @@ function AccountsDetails() {
                     disabled={isUpdatingStatus || state.isActive === null}
                   >
                     {isUpdatingStatus
-                      ? "Mise ÃƒÂ  jourÃ¢â‚¬Â¦"
+                      ? "Mise ÃƒÂ  jourÃ¢â‚¬Â¦"
                       : state.isActive
                         ? "DÃƒÂ©sactiver le compte"
                         : "Activer le compte"}
@@ -447,7 +447,7 @@ function AccountsDetails() {
             <div>
               <p className="admin-panel-kicker">Gestion des comptes</p>
               <h2 className="admin-panel-title">AccÃ¨s administrateur</h2>
-              <p className="admin-panel-subtitle">Attribuez uniquement les permissions nÃ©cessaires Ã  ce compte. Le rÃ´le Admin sans permission ne donne pas accÃ¨s aux modules protÃ©gÃ©s.</p>
+              <p className="admin-panel-subtitle">Attribuez uniquement les permissions nÃ©cessaires Ã  ce compte. Le rÃ´le Admin sans permission ne donne pas accÃ¨s aux modules protÃ©gÃ©s.</p>
             </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -556,11 +556,11 @@ function AccountsDetails() {
               <div><dt>Renouvellement automatique</dt><dd>{seller360.shop.subscription_id.autoRenew ? "ActivÃƒÂ©" : "DÃƒÂ©sactivÃƒÂ©"}</dd></div>
               <div><dt>RÃƒÂ©siliation programmÃƒÂ©e</dt><dd>{seller360.shop.subscription_id.cancelAtPeriodEnd ? "Oui" : "Non"}</dd></div>
               {seller360.shop.subscription_id.graceUntil && <div><dt>Fin de pÃƒÂ©riode de grÃƒÂ¢ce</dt><dd>{new Date(seller360.shop.subscription_id.graceUntil).toLocaleDateString("fr-FR")}</dd></div>}
-            </dl> : <p className="seller-360-empty">Aucun abonnement liÃƒÂ© ÃƒÂ  cette boutique.</p>}
+            </dl> : <p className="seller-360-empty">Aucun abonnement liÃƒÂ© ÃƒÂ  cette boutique.</p>}
             {seller360.subscriptionHistory?.length > 0 && <div className="seller-360-history"><strong>Historique rÃƒÂ©cent</strong>{seller360.subscriptionHistory.map((subscription) => <div key={subscription._id}><span>{subscription.plan} Ã‚Â· {subscription.payementStatus}</span><time>{new Date(subscription.createdAt).toLocaleDateString("fr-FR")}</time></div>)}</div>}
           </section>
           <section className="seller-360-card">
-            <div className="seller-360-section-heading"><div><h3>Publications rÃƒÂ©centes</h3><p>Derniers produits ajoutÃƒÂ©s ÃƒÂ  la boutique</p></div></div>
+            <div className="seller-360-section-heading"><div><h3>Publications rÃƒÂ©centes</h3><p>Derniers produits ajoutÃƒÂ©s ÃƒÂ  la boutique</p></div></div>
             {seller360.recentProducts?.length ? <div className="seller-360-products">{seller360.recentProducts.map((product) => <article key={product._id}><div className="min-w-0"><Link to={`/espace_vendeur/products/${product._id}`} className="seller-360-product-name">{product.name}</Link><small>{new Date(product.createdAt).toLocaleDateString("fr-FR")} Ã‚Â· Stock {product.stock}</small></div><span className={`admin-status-badge ${product.publicationStatus === "Approved" ? "admin-status-badge--success" : product.publicationStatus === "Rejected" ? "admin-status-badge--danger" : "admin-status-badge--pending"}`}>{product.publicationStatus === "Approved" ? "PubliÃƒÂ©e" : product.publicationStatus === "Rejected" ? "RefusÃƒÂ©e" : "En attente"}</span></article>)}</div> : <p className="seller-360-empty">Aucune publication enregistrÃƒÂ©e.</p>}
           </section>
         </div>

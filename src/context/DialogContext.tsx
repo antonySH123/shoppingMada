@@ -3,8 +3,10 @@ import AdminModal from "../components/admin/ui/Modal";
 import AdminButton from "../components/admin/ui/Button";
 import { DialogContext } from "./DialogContextInstance";
 import type { DialogContextValue, DialogRequest, DialogResult } from "./dialogTypes";
+import { useTheme } from "./useTheme";
 
 export function DialogProvider({ children }: { children: ReactNode }) {
+  const { theme } = useTheme();
   const [request, setRequest] = useState<DialogRequest | null>(null);
   const [inputValue, setInputValue] = useState("");
   const resolveRef = useRef<((result: DialogResult) => void) | null>(null);
@@ -41,7 +43,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
   return (
     <DialogContext.Provider value={api}>
       {children}
-      <AdminModal open={Boolean(request)} title={request?.title ?? ""} onClose={() => finish(request?.kind === "confirm" ? false : undefined)} size="sm">
+      <AdminModal open={Boolean(request)} title={request?.title ?? ""} onClose={() => finish(request?.kind === "confirm" ? false : undefined)} size="sm" theme={theme}>
         {request && (
           <form onSubmit={submit} className="space-y-4">
             <p className="whitespace-pre-line text-sm leading-6 text-[var(--admin-text)]">{request.message}</p>

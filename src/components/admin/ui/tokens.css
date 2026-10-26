@@ -117,6 +117,11 @@
 .admin-field__error { color: var(--admin-danger); font-size: var(--admin-font-xs); }
 .admin-dialog-backdrop { position: fixed; z-index: 10000; inset: 0; display: grid; place-items: center; background: rgb(3 8 9 / 76%); padding: 1rem; backdrop-filter: blur(5px); }
 .admin-dialog { --admin-canvas: #0b1113; --admin-surface: #111a1d; --admin-surface-raised: #172326; --admin-surface-hover: #1c2a2d; --admin-border: #35484a; --admin-text: #eef6f3; --admin-muted: #a5b4b0; --admin-accent-solid: #3cc8b3; --admin-danger: #ff8085; --admin-radius-sm: 0.5rem; --admin-radius-md: 0.625rem; --admin-radius-lg: 0.875rem; --admin-shadow-md: 0 24px 80px rgb(0 0 0 / 48%); width: min(100%, 36rem); max-height: min(90dvh, 48rem); overflow: auto; border: 1px solid var(--admin-border); border-radius: var(--admin-radius-lg); background-color: #111a1d; color: var(--admin-text); box-shadow: var(--admin-shadow-md); opacity: 1; }
+.admin-dialog-backdrop--light .admin-dialog { --admin-canvas: #f1f6f3; --admin-surface: #ffffff; --admin-surface-raised: #f3f7f4; --admin-surface-hover: #e8f0eb; --admin-border: #cbd9d0; --admin-text: #172b22; --admin-muted: #5e7167; --admin-accent-solid: #16834b; --admin-danger: #b8323b; --admin-shadow-md: 0 24px 80px rgb(20 55 37 / 20%); background-color: #ffffff; }
+.admin-dialog-backdrop--light .admin-dialog .admin-field__control { background-color: #ffffff; }
+.admin-dialog-backdrop--light .admin-dialog :is(h2, p, label) { color: #172b22; }
+.admin-dialog-backdrop--dark .admin-dialog { --admin-border: #35484a; --admin-text: #eef6f3; --admin-muted: #a5b4b0; background-color: #111a1d; color: #eef6f3; }
+.admin-dialog-backdrop--dark .admin-dialog :is(h1, h2, h3, p, label, span, strong) { color: #eef6f3; }
 .admin-dialog__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--admin-border); padding: 1rem 1.25rem; }
 .admin-dialog__body { padding: 1.25rem; }
 .admin-tabs { display: flex; max-width: 100%; gap: 0.25rem; overflow-x: auto; border-bottom: 1px solid var(--admin-border); }

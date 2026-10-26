@@ -1,30 +1,25 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "./sidebar/Sidebar";
 import { Outlet } from "react-router-dom";
 import JodiProvider from "../../context/JodiProvider";
-import { LiaBarsSolid, LiaMoonSolid, LiaSunSolid } from "react-icons/lia";
+import { LiaBarsSolid } from "react-icons/lia";
 import { useLocation } from "react-router-dom";
 import "./ui/tokens.css";
 import { useLanguage } from "../../context/useLanguage";
 import { useAuth } from "../../helper/useAuth";
 import useCSRF from "../../helper/useCSRF";
 import { toast } from "react-toastify";
-import LanguageSelector from "../LanguageSelector";
+import { useTheme } from "../../context/useTheme";
 
 function AppAdmin() {
   const { t } = useLanguage();
+  const { theme } = useTheme();
   const { user, setUserInfo } = useAuth();
   const csrf = useCSRF();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.innerWidth < 768;
-  });
-  const [adminTheme, setAdminTheme] = useState<"dark" | "light">(() => {
-    if (typeof window === "undefined") return "dark";
-    return window.localStorage.getItem("shopinmada.admin-theme") === "light"
-      ? "light"
-      : "dark";
   });
   const currentPageLabels: Record<string, string> = {
     dash: t("admin.dashboard"),
@@ -68,12 +63,8 @@ function AppAdmin() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    window.localStorage.setItem("shopinmada.admin-theme", adminTheme);
-  }, [adminTheme]);
-
   return (
-    <div className="admin-shell flex h-screen" data-admin-theme={adminTheme}>
+    <div className="admin-shell flex h-screen" data-admin-theme={theme}>
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
       <div className="admin-shell-main min-w-0 flex-1 overflow-y-auto">
@@ -95,25 +86,11 @@ function AppAdmin() {
               {t("admin.professionalSpace")}
             </h1>
           </div>
-          <button
-            type="button"
-            className="admin-theme-toggle"
-            aria-label={`Switch to ${adminTheme === "dark" ? t("admin.themeLight") : t("admin.themeDark")} theme`}
-            title={`${adminTheme === "dark" ? t("admin.themeLight") : t("admin.themeDark")} theme`}
-            onClick={() =>
-              setAdminTheme((theme) => (theme === "dark" ? "light" : "dark"))
-            }
-          >
-            {adminTheme === "dark" ? (
-              <LiaSunSolid size={18} />
-            ) : (
-              <LiaMoonSolid size={18} />
-            )}
-          </button>
-          <LanguageSelector compact className="admin-language-selector" />
-          <span className="admin-mobile-page-badge ml-auto rounded-full px-3 py-1.5 text-xs font-semibold">
+          <div className="ml-auto flex min-w-0 items-center gap-2">
+          <span className="admin-mobile-page-badge rounded-full px-3 py-1.5 text-xs font-semibold">
             {currentPageLabels[pageKey] || t("admin.professionalSpace")}
           </span>
+          </div>
         </header>
         <div className="admin-content-gutter py-5 sm:py-8">
           <div className="admin-page page-container">

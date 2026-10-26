@@ -1,6 +1,17 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 
+export async function fetchCSRFToken(): Promise<string | null> {
+  try {
+    const response = await fetch(`${import.meta.env.REACT_API_URL}csrf-token`, { credentials: "include" });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return typeof result.csrfToken === "string" ? result.csrfToken : null;
+  } catch {
+    return null;
+  }
+}
+
 const useCSRF = () => {
   const [csrf, setCsrf] = useState<string | null>(null);
 

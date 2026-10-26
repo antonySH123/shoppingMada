@@ -9,6 +9,9 @@ import TopProgressBar from "./components/progress/TopProgressBar";
 import ScrollToTop from "./components/progress/ScrollToTop";
 import { CartProvider } from "./context/CartContext";
 import LanguageSelector from "./components/LanguageSelector";
+import { useAuth } from "./helper/useAuth";
+import { useTheme } from "./context/useTheme";
+import { LiaMoonSolid, LiaSunSolid } from "react-icons/lia";
 
 const Home = lazy(() => import("./components/Home"));
 const Register = lazy(() => import("./components/Register"));
@@ -76,12 +79,17 @@ const FacebookPublishing = lazy(() => import("./components/admin/operations/Face
 
 function GlobalLanguageSelector() {
   const location = useLocation();
-  const inAppShell = location.pathname === "/" || location.pathname.startsWith("/shop") || [
-    "/vendeur", "/profil", "/panier", "/suivi-commande", "/redirect", "/product/", "/confirmCompte",
-  ].some((path) => location.pathname.startsWith(path));
-
-  if (inAppShell || location.pathname.startsWith("/espace_vendeur")) return null;
+  const { user } = useAuth();
+  if (user || location.pathname.startsWith("/shop") || location.pathname === "/") return null;
   return <LanguageSelector compact className="global-language-selector" />;
+}
+
+function GlobalThemeToggle() {
+  const location = useLocation();
+  const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  if (user || location.pathname.startsWith("/shop") || location.pathname === "/") return null;
+  return <button type="button" className="global-theme-toggle global-theme-toggle--floating" onClick={toggleTheme} aria-label={`${theme === "dark" ? "Light" : "Dark"} theme`} title={`${theme === "dark" ? "Light" : "Dark"} theme`}>{theme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>;
 }
 
 function App() {
@@ -89,6 +97,7 @@ function App() {
     <BrowserRouter>
       <CartProvider>
         <GlobalLanguageSelector />
+        <GlobalThemeToggle />
         <TopProgressBar />
         <ScrollToTop />
         <Suspense fallback={<div className="p-8 text-center">Chargement…</div>}>

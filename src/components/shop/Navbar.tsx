@@ -1,17 +1,19 @@
-﻿import { FormEvent, useEffect, useState } from "react";
-import { LiaSearchSolid, LiaStoreSolid, LiaUser } from "react-icons/lia";
+import { FormEvent, useEffect, useState } from "react";
+import { LiaMoonSolid, LiaSearchSolid, LiaStoreSolid, LiaSunSolid, LiaUser } from "react-icons/lia";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../helper/useAuth";
 import { useSidebar } from "../../context/useSidebar";
 import CartHeaderLink from "../CartHeaderLink";
 import { useLanguage } from "../../context/useLanguage";
 import LanguageSelector from "../LanguageSelector";
+import { useTheme } from "../../context/useTheme";
 
 function Navbar() {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { isOpen: isMobileCategoryOpen, toggler: toggleMobileCategories } =
     useSidebar();
   const query = searchParams.get("q") ?? "";
@@ -79,7 +81,8 @@ function Navbar() {
           </button>
         </form>
         <div className="hidden shrink-0 items-center gap-2 md:flex">
-          <LanguageSelector compact className="desktop-inline-language-selector" />
+          {!user && <LanguageSelector compact className="nav-language-selector" />}
+          {!user && <button type="button" className="global-theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Activer le thème clair" : "Activer le thème sombre"} title={theme === "dark" ? "Thème clair" : "Thème sombre"}>{theme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
           <CartHeaderLink />
           <Link
             to={user ? "/profil" : "/login"}
@@ -104,6 +107,8 @@ function Navbar() {
       <div className="border-t border-gray-100">
         {query ? (
           <div className="market-container flex min-w-0 items-center gap-2 py-2">
+            {!user && <LanguageSelector compact className="nav-language-selector shop-mobile-control" />}
+            {!user && <button type="button" className="global-theme-toggle global-theme-toggle--mobile" onClick={toggleTheme} aria-label={theme === "dark" ? "Activer le thème clair" : "Activer le thème sombre"} title={theme === "dark" ? "Thème clair" : "Thème sombre"}>{theme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
             <nav
               aria-label={t("shop.city")}
               className="flex min-w-0 flex-1 gap-2 overflow-x-auto"
@@ -124,11 +129,12 @@ function Navbar() {
                 </Link>
               ))}
             </nav>
-            <LanguageSelector compact className="mobile-inline-language-selector md:hidden" />
           </div>
         ) : (
           <div className="market-container flex items-center justify-between gap-2 py-2">
             <div className="flex min-w-0 items-center gap-2">
+              {!user && <LanguageSelector compact className="nav-language-selector shop-mobile-control" />}
+              {!user && <button type="button" className="global-theme-toggle global-theme-toggle--mobile" onClick={toggleTheme} aria-label={theme === "dark" ? "Activer le thème clair" : "Activer le thème sombre"} title={theme === "dark" ? "Thème clair" : "Thème sombre"}>{theme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
               <button
                 type="button"
                 aria-expanded={isMobileCategoryOpen}
@@ -138,7 +144,6 @@ function Navbar() {
               >
                 <span aria-hidden="true">☷</span> {t("nav.categories")}
               </button>
-              <LanguageSelector compact className="mobile-inline-language-selector md:hidden" />
               <Link
                 to="/shop"
                 className="hidden text-xs font-semibold text-gray-600 transition hover:text-emerald-800 md:inline"

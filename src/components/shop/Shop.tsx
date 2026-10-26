@@ -138,8 +138,8 @@ function Shop() {
 
   const totalProducts = state.total;
   const totalPages = state.pages;
-  const displayedProducts = state.allProducts ?? [];
   const productGroups = useMemo(() => {
+    const displayedProducts = state.allProducts ?? [];
     const groups = new Map<string, IProduct[]>();
     displayedProducts.forEach((product) => {
       const categoryId = product.category?.trim() || "__other__";
@@ -151,7 +151,7 @@ function Shop() {
       label: categoryLabels[key] ?? t("shop.otherProducts"),
       products,
     }));
-  }, [categoriesLoaded, categoryLabels, displayedProducts, t]);
+  }, [categoriesLoaded, categoryLabels, state.allProducts, t]);
 
   return (
     <main className="min-h-[calc(100vh-4.5rem)] w-full flex-1 overflow-y-auto bg-[#f8faf8] py-8 md:py-10">

@@ -10,7 +10,7 @@ export default interface Iuser{
     personnalInfo_id:IPersonnalInfo
     userGroupMember_id:Iusergroupmember
     adminPermissions?: string[]
-    preferences?: { language?: "fr" | "en"; currency?: "MGA" | "EUR" | "USD"; notifications?: { orders?: boolean; support?: boolean; promotions?: boolean } }
+    preferences?: { language?: "fr" | "en"; theme?: "light" | "dark"; currency?: "MGA" | "EUR" | "USD"; notifications?: { orders?: boolean; support?: boolean; promotions?: boolean } }
     impersonation?: { active?: boolean };
 }
 

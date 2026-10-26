@@ -12,6 +12,10 @@ type Messages = Record<string, string>;
 const storageKey = "shopinmada.language.v1";
 const catalogs: Record<Language, Messages> = {
   fr: {
+    "theme.switchTo": "Passer au thème",
+    "theme.light": "clair",
+    "theme.dark": "sombre",
+    "profile.appearance": "Apparence",
     "admin.accountSettings": "Paramètres du compte",
     "admin.accounts": "Gestion des comptes",
     "admin.addProduct": "Ajouter un produit",
@@ -277,6 +281,10 @@ const catalogs: Record<Language, Messages> = {
     "verify.submitting": "Validation…",
   },
   en: {
+    "theme.switchTo": "Switch to",
+    "theme.light": "light",
+    "theme.dark": "dark",
+    "profile.appearance": "Appearance",
     "admin.accountSettings": "Account settings",
     "admin.accounts": "Account management",
     "admin.addProduct": "Add a product",
@@ -991,6 +999,7 @@ const translationBundles: Record<Language, Record<string, string>> = {
 interface LanguageContextValue {
   language: Language;
   setLanguage: (language: Language) => void;
+  setLanguageSilently: (language: Language) => void;
   t: (key: string) => string;
 }
 
@@ -1008,12 +1017,22 @@ function getInitialLanguage(): Language {
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>(getInitialLanguage);
   const { user, authReady } = useAuth();
+  const [initializedUserId, setInitializedUserId] = useState<string | null>(null);
+  const setLanguageSilently = setLanguage;
 
   useEffect(() => {
-    if (authReady && user?.preferences?.language) {
-      setLanguage(user.preferences.language);
+    if (!authReady) return;
+    if (user) {
+      if (initializedUserId === user._id) return;
+      setLanguage(user.preferences?.language ?? getInitialLanguage());
+      setInitializedUserId(user._id);
+      return;
     }
-  }, [authReady, user?._id, user?.preferences?.language]);
+    if (initializedUserId !== null) {
+      setLanguage(getInitialLanguage());
+      setInitializedUserId(null);
+    }
+  }, [authReady, initializedUserId, user]);
 
   useEffect(() => {
     try {
@@ -1031,7 +1050,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     catalogs.fr[key] ??
     key;
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, setLanguageSilently, t }}>
       {children}
     </LanguageContext.Provider>
   );
