@@ -15,7 +15,7 @@ export default function FacebookPublishing() {
   const { user } = useAuth(); const csrf = useCSRF(); const location = useLocation(); const navigate = useNavigate();
   const isAdmin = user?.userGroupMember_id?.usergroup_id?.name === "Super Admin";
   const [page, setPage] = useState<PageStatus>(null); const [configured, setConfigured] = useState(false); const [publishedCount, setPublishedCount] = useState(0);
-  const [products, setProducts] = useState<Product[]>([]); const [pageNumber, setPageNumber] = useState(1); const [pages, setPages] = useState(1); const [query, setQuery] = useState("");
+  const [products, setProducts] = useState<Product[]>([]); const [pageNumber, setPageNumber] = useState(1); const [pages, setPages] = useState(1); const [query, setQuery] = useState(""); const [search, setSearch] = useState("");
   const [candidates, setCandidates] = useState<Candidate[]>([]); const [flow, setFlow] = useState(""); const [loading, setLoading] = useState(true); const [busy, setBusy] = useState("");
 
   const load = useCallback(async () => {
@@ -23,7 +23,7 @@ export default function FacebookPublishing() {
     try {
       const [statusResponse, productsResponse] = await Promise.all([
         fetch(`${api}/status`, { credentials: "include" }),
-        fetch(`${api}/products?page=${pageNumber}&limit=12&q=${encodeURIComponent(query)}`, { credentials: "include" }),
+        fetch(`${api}/products?page=${pageNumber}&limit=12&q=${encodeURIComponent(search)}`, { credentials: "include" }),
       ]);
       const statusResult = await statusResponse.json(); const productsResult = await productsResponse.json();
       if (!statusResponse.ok) throw new Error(statusResult.message || "Statut Facebook indisponible.");
@@ -32,9 +32,16 @@ export default function FacebookPublishing() {
       setProducts(productsResult.data || []); setPages(productsResult.pagination?.pages || 1);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Chargement impossible."); }
     finally { setLoading(false); }
-  }, [pageNumber, query]);
+  }, [pageNumber, search]);
 
   useEffect(() => { if (isAdmin) void load(); }, [isAdmin, load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPageNumber(1);
+      setSearch(query.trim());
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [query]);
   useEffect(() => {
     const params = new URLSearchParams(location.search); const flowId = params.get("meta_flow"); const errorCode = params.get("meta_error");
     if (errorCode) {
@@ -60,7 +67,7 @@ export default function FacebookPublishing() {
       <div className="flex flex-wrap gap-2">{page && <button type="button" className="admin-button admin-button--secondary admin-button--md" disabled={!!busy} onClick={() => void disconnect()}>{busy === "disconnect" ? "Déconnexion…" : "Déconnecter"}</button>}<button type="button" className="admin-button admin-button--primary admin-button--md" disabled={!configured || !!busy} onClick={() => void connect()}>{busy === "connect" ? "Redirection…" : page ? "Changer de Page" : "Connecter Facebook"}</button></div>
     </section>
     {candidates.length > 0 && <section className="admin-panel space-y-3 p-5"><div><h2 className="font-bold text-[var(--admin-text)]">Choisir la Page à connecter</h2><p className="text-sm text-[var(--admin-muted)]">Seules les Pages pour lesquelles Meta confirme un droit de publication sont proposées.</p></div>{candidates.map((candidate) => <div key={candidate.pageId} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--admin-border)] p-3"><div><strong className="text-sm text-[var(--admin-text)]">{candidate.pageName}</strong><p className="text-xs text-[var(--admin-muted)]">Page ID · {candidate.pageId}</p></div><button type="button" className="admin-button admin-button--primary admin-button--sm" disabled={!!busy} onClick={() => void selectPage(candidate.pageId)}>{busy === candidate.pageId ? "Connexion…" : "Connecter cette Page"}</button></div>)}</section>}
-    <section className="admin-panel overflow-hidden"><div className="admin-panel-heading flex-wrap"><div><h2>Produits approuvés</h2><p>La publication est manuelle et chaque résultat est historisé.</p></div><input className="admin-search-input w-full sm:max-w-xs" value={query} onChange={(event) => { setQuery(event.target.value); setPageNumber(1); }} placeholder="Rechercher un produit…" /></div>
+    <section className="admin-panel overflow-hidden"><div className="admin-panel-heading flex-wrap"><div><h2>Produits visibles par les clients</h2><p>Seuls les produits approuvés des boutiques actuellement actives apparaissent ici.</p></div><div className="flex w-full flex-wrap gap-2 sm:w-auto"><input className="admin-search-input w-full sm:max-w-xs" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un produit…" /><button type="button" className="admin-button admin-button--secondary admin-button--sm" disabled={loading} onClick={() => void load()}>{loading ? "Actualisation…" : "Actualiser"}</button></div></div>
       {loading ? <p className="p-5 text-sm text-[var(--admin-muted)]">Chargement des produits…</p> : products.length === 0 ? <p className="p-5 text-sm text-[var(--admin-muted)]">Aucun produit approuvé ne correspond à cette recherche.</p> : <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">{products.map((product) => { const state = product.publication; return <article key={product._id} className="overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)]"><div className="flex gap-3 p-4"><div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-black/5">{product.photos?.[0] && <img className="h-full w-full object-cover" src={`${import.meta.env.REACT_API_URL}uploads/${encodeURIComponent(product.photos[0].split(/[\\/]/).pop() || "")}`} alt="" />}</div><div className="min-w-0 flex-1"><h3 className="line-clamp-2 font-bold text-[var(--admin-text)]">{product.name}</h3><p className="mt-1 text-xs text-[var(--admin-muted)]">{product.boutiks_id?.name || "Boutique"}</p><p className="mt-2 text-sm font-semibold text-[var(--admin-text)]">{Number(product.price).toLocaleString("fr-FR")} MGA</p></div></div><div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--admin-border)] px-4 py-3"><span className={`text-xs font-semibold ${state?.status === "published" ? "text-emerald-500" : state?.status === "failed" ? "text-rose-500" : "text-[var(--admin-muted)]"}`}>{state?.status === "published" ? "Publié" : state?.status === "failed" ? "Échec · nouvelle tentative possible" : state?.status === "publishing" ? "Publication en cours / statut à vérifier" : "Prêt à publier"}</span>{state?.status === "published" && state.permalink ? <a href={state.permalink} target="_blank" rel="noreferrer" className="text-xs font-bold text-blue-500">Voir la publication ↗</a> : <button type="button" className="admin-button admin-button--primary admin-button--sm" disabled={!page || !product.boutiks_id?.isActive || state?.status === "publishing" || !!busy} onClick={() => void publish(product)}>{busy === product._id ? "Publication…" : state?.status === "failed" ? "Réessayer" : "Publier"}</button>}</div></article>; })}</div>}
       <div className="flex items-center justify-between border-t border-[var(--admin-border)] px-4 py-3 text-sm text-[var(--admin-muted)]"><span>Page {pageNumber} sur {pages}</span><div className="flex gap-2"><button className="admin-button admin-button--secondary admin-button--sm" disabled={pageNumber <= 1 || loading} onClick={() => setPageNumber((value) => value - 1)}>Précédent</button><button className="admin-button admin-button--secondary admin-button--sm" disabled={pageNumber >= pages || loading} onClick={() => setPageNumber((value) => value + 1)}>Suivant</button></div></div>
     </section>
