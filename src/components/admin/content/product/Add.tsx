@@ -22,6 +22,48 @@ import { Link } from "react-router-dom";
 import { AdminButton, AdminField, AdminInput, PageHeader } from "../../ui";
 
 const Editor = lazy(() => import("./Editor"));
+const MAX_PRODUCT_IMAGE_BYTES = 20 * 1024 * 1024;
+const supportedImageExtensions = new Set(["jpg", "jpeg", "png", "webp", "avif", "heic", "heif", "gif", "tif", "tiff", "svg"]);
+const supportedImageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/heic", "image/heif", "image/gif", "image/tiff", "image/svg+xml"]);
+const browserOptionalImageExtensions = new Set(["avif", "heic", "heif", "tif", "tiff", "svg"]);
+
+function getImageExtension(file: File) {
+  return file.name.split(".").pop()?.toLowerCase() ?? "";
+}
+
+async function validateProductImage(file: File): Promise<{ valid: boolean; previewable: boolean; message?: string }> {
+  const extension = getImageExtension(file);
+  const supported = supportedImageMimeTypes.has(file.type.toLowerCase()) || supportedImageExtensions.has(extension);
+  if (!supported) return { valid: false, previewable: false, message: `${file.name} : ce format d’image ne peut pas être converti.` };
+  if (file.size <= 0) return { valid: false, previewable: false, message: `${file.name} : le fichier est vide.` };
+  if (file.size > MAX_PRODUCT_IMAGE_BYTES) return { valid: false, previewable: false, message: `${file.name} dépasse la limite de 20 Mo.` };
+
+  try {
+    if (typeof createImageBitmap === "function") {
+      const bitmap = await createImageBitmap(file);
+      const valid = bitmap.width > 0 && bitmap.height > 0;
+      bitmap.close();
+      if (valid) return { valid: true, previewable: true };
+    } else {
+      const previewUrl = URL.createObjectURL(file);
+      try {
+        const image = new Image();
+        image.src = previewUrl;
+        await image.decode();
+        if (image.naturalWidth > 0 && image.naturalHeight > 0) return { valid: true, previewable: true };
+      } finally {
+        URL.revokeObjectURL(previewUrl);
+      }
+    }
+  } catch {
+    // Le navigateur peut ne pas décoder les formats que le backend sait convertir.
+  }
+
+  if (browserOptionalImageExtensions.has(extension) || ["image/avif", "image/heic", "image/heif", "image/tiff", "image/svg+xml"].includes(file.type.toLowerCase())) {
+    return { valid: true, previewable: false };
+  }
+  return { valid: false, previewable: false, message: `${file.name} semble endommagé ou impossible à lire.` };
+}
 
 export interface IProduct {
   name: string;
@@ -53,6 +95,8 @@ function Add() {
   const inputFile = useRef<HTMLInputElement | null>(null);
   const [files, setFiles] = useState<(File | string)[]>([]); // Existing names and newly selected files
   const [filePreviews, setFilePreviews] = useState<Record<string, string>>({});
+  const [previewableFiles, setPreviewableFiles] = useState<Record<string, boolean>>({});
+  const [validatingFiles, setValidatingFiles] = useState(false);
   const filePreviewsRef = useRef(filePreviews);
   filePreviewsRef.current = filePreviews;
   const [product, setProduct] = useState<IProduct>({
@@ -92,6 +136,11 @@ function Add() {
         delete next[key];
         return next;
       });
+      setPreviewableFiles((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
     }
     setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
@@ -99,6 +148,48 @@ function Add() {
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setProduct((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFilesSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const selectedFiles = Array.from(input.files || []);
+    input.value = "";
+    if (selectedFiles.length === 0) return;
+
+    setValidatingFiles(true);
+    try {
+      const remainingSlots = Math.max(0, 5 - files.length);
+      const acceptedFiles: File[] = [];
+      const previewStatus: Record<string, boolean> = {};
+      for (const file of selectedFiles) {
+        const result = await validateProductImage(file);
+        if (!result.valid) {
+          toast.error(result.message || `${file.name} ne peut pas être utilisé.`);
+          continue;
+        }
+        if (acceptedFiles.length >= remainingSlots) {
+          toast.info("Vous pouvez ajouter jusqu’à 5 images au total.");
+          break;
+        }
+        acceptedFiles.push(file);
+        previewStatus[`${file.name}-${file.lastModified}`] = result.previewable;
+      }
+
+      if (acceptedFiles.length > 0) {
+        setFiles((previous) => [...previous, ...acceptedFiles].slice(0, 5));
+        setFilePreviews((previous) => {
+          const next = { ...previous };
+          acceptedFiles.forEach((file) => {
+            const key = `${file.name}-${file.lastModified}`;
+            if (!next[key]) next[key] = URL.createObjectURL(file);
+          });
+          return next;
+        });
+        setPreviewableFiles((previous) => ({ ...previous, ...previewStatus }));
+      }
+    } finally {
+      setValidatingFiles(false);
+    }
   };
 
   // Fonction pour envoyer le formulaire (ajouter ou éditer)
@@ -171,6 +262,7 @@ function Add() {
     });
     setSelectedCategoryId(null);
     setFiles([]);
+    setPreviewableFiles({});
     Object.values(filePreviews).forEach((url) => URL.revokeObjectURL(url));
     setFilePreviews({});
     setNewContent("");
@@ -319,8 +411,7 @@ function Add() {
                             className="admin-product-preview"
                           />
                         </div>
-                      ) : (
-                        file.type.startsWith("image/") && (
+                      ) : previewableFiles[`${file.name}-${file.lastModified}`] ? (
                           <div className="flex items-center space-x-2">
                             <img
                               src={
@@ -332,8 +423,7 @@ function Add() {
                               className="admin-product-preview"
                             />
                           </div>
-                        )
-                      )}
+                        ) : <div className="flex h-[100px] w-[100px] flex-col items-center justify-center rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-raised)] px-2 text-center text-xs text-[var(--admin-muted)]"><LiaImageSolid size={24} /><span className="mt-1 w-full truncate">{file.name}</span><span className="text-[10px]">{file.type.split("/").pop()?.toUpperCase() || getImageExtension(file).toUpperCase()}</span></div>}
                     </li>
                   ))}
                 </ul>
@@ -343,6 +433,7 @@ function Add() {
                 <button
                   type="button"
                   className="flex h-[100px] w-[100px] flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-[var(--admin-border)] bg-[var(--admin-surface-raised)] text-[var(--admin-muted)] shadow-sm transition hover:border-[var(--admin-accent-solid)] hover:text-[var(--admin-accent-solid)]"
+                  disabled={validatingFiles}
                   onClick={() => {
                     inputFile?.current?.click();
                   }}
@@ -358,32 +449,10 @@ function Add() {
                 type="file"
                 accept="image/*"
                 name="photos"
-                onChange={(e) => {
-                  const selectedFiles = Array.from(e.target.files || []);
-                  const remainingSlots = Math.max(0, 5 - files.length);
-                  const acceptedFiles = selectedFiles.filter((file) => {
-                    const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-                    const looksLikeImage = file.type.startsWith("image/") || /^(jpe?g|png|webp|avif|gif|tiff?|heic|heif|svg)$/.test(extension);
-                    if (!looksLikeImage) toast.error(`${file.name} n’est pas reconnu comme une image.`);
-                    else if (file.size > 20 * 1024 * 1024) toast.error(`${file.name} dépasse la limite de 20 Mo.`);
-                    return looksLikeImage && file.size <= 20 * 1024 * 1024;
-                  }).slice(0, remainingSlots);
-                  if (selectedFiles.length > remainingSlots) toast.info("Vous pouvez ajouter jusqu’à 5 images au total.");
-                  setFiles((prevFiles) =>
-                    [...prevFiles, ...acceptedFiles].slice(0, 5),
-                  );
-                  setFilePreviews((prev) => {
-                    const next = { ...prev };
-                    acceptedFiles.forEach((file) => {
-                      const key = `${file.name}-${file.lastModified}`;
-                      if (!next[key]) next[key] = URL.createObjectURL(file);
-                    });
-                    return next;
-                  });
-                  e.target.value = "";
-                }}
+                onChange={(event) => void handleFilesSelected(event)}
                 multiple
               />
+              {validatingFiles && <p role="status" className="text-xs text-[var(--admin-muted)]">Vérification et lecture des images…</p>}
             </div>
           </section>
         </div>
