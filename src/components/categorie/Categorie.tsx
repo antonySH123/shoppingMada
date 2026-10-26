@@ -1,309 +1,154 @@
-import { useCallback, useEffect, useState } from "react";
-import {
-  FaChevronDown,
-  FaArrowLeft,
-  FaAngleRight,
-  FaPlus,
-} from "react-icons/fa";
-
-import { toast } from "react-toastify";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FaAngleRight, FaArrowLeft, FaSearch } from "react-icons/fa";
 import { useCategory } from "../../context/useCategory";
-import useCSRF from "../../helper/useCSRF";
-import Preloader from "../loading/Preloader";
+import { useLanguage } from "../../context/useLanguage";
 
-// Types pour les catégories
 interface Category {
   _id: string;
   name: string;
   slug: string;
+  translations?: { fr?: string; en?: string };
   children?: Category[];
 }
 
-interface BoutikInfo {
-  product_category: string;
-}
+interface FlatCategory { category: Category; path: Category[] }
 
-interface NewCategory {
-  name: string;
-  slug: string;
-  parent: string | null;
+const frenchCategoryNames: Record<string, string> = {
+  "sports & outdoors": "Sports et plein air", "sports & fitness": "Sports et fitness",
+  "home & kitchen": "Maison et cuisine", "beauty & personal care": "Beauté et soins personnels",
+  "clothing, shoes & jewelry": "Vêtements, chaussures et bijoux", "electronics": "Électronique",
+  "tools & home improvement": "Bricolage et amélioration de la maison", "toys & games": "Jouets et jeux",
+  "automotive": "Automobile", "office products": "Fournitures de bureau", "grocery & gourmet food": "Épicerie et produits gourmets",
+  "health & household": "Santé et maison", "baby": "Bébé", "books": "Livres", "pet supplies": "Articles pour animaux",
+  "outdoor recreation": "Activités de plein air", "cycling": "Cyclisme", "team sports": "Sports collectifs",
+  "winter sports": "Sports d’hiver", "water sports": "Sports nautiques", "skateboarding": "Skateboard",
+  "inline & roller skating": "Roller et patinage", "scooters & equipment": "Trottinettes et équipements",
+  "kids' bikes & accessories": "Vélos et accessoires pour enfants", "protective gear": "Équipements de protection",
+  "helmets": "Casques", "accessories": "Accessoires", "components & parts": "Composants et pièces",
+  "replacement wheels": "Roues de remplacement", "bikes": "Vélos", "balls": "Ballons et balles",
+  "soccer": "Football", "basketball": "Basketball", "volleyball": "Volleyball", "tennis": "Tennis",
+  "diving & snorkeling": "Plongée et snorkeling", "kayaking": "Kayak", "canoeing": "Canoë",
+  "standard skateboards": "Skateboards classiques", "longboards": "Longboards", "roller skates": "Patins à roulettes",
+  "inline skates": "Rollers en ligne", "children's inline skates": "Rollers en ligne pour enfants",
+  "knee pads": "Genouillères", "elbow pads": "Coudières", "wrist guards": "Protège-poignets",
+  "lights & reflectors": "Éclairage et réflecteurs", "bike bells": "Sonnettes de vélo",
+};
+
+const frenchLabel = (category: Category, language: string) => {
+  if (language !== "fr") return category.translations?.en?.trim() || category.name.trim();
+  const provided = category.translations?.fr?.trim();
+  if (provided) return provided;
+  return frenchCategoryNames[category.name.trim().toLocaleLowerCase()] || category.name.trim();
+};
+
+function flattenCategories(items: Category[], ancestors: Category[] = []): FlatCategory[] {
+  return items.flatMap((category) => {
+    const path = [...ancestors, category];
+    return [{ category, path }, ...flattenCategories(category.children ?? [], path)];
+  });
 }
 
 function Categorie() {
-  const [boutikInfo, setBoutikInfo] = useState<BoutikInfo | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [history, setHistory] = useState<Category[][]>([]); // Historique des niveaux
-  const [display, setDisplay] = useState(false);
-  const [displayForm, setDisplayForm] = useState(false);
-  const [parentId, setParentId] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const {setSelectedCategoryId} = useCategory();
-  const csrf = useCSRF();
-  const [selectedCategoryDisplay, setSelectedDisplay] = useState<string | null>(
-    null
-  );
-  const [newCategory, setNewCategory] = useState<NewCategory>();
+  const { selectedCategoryId, setSelectedCategoryId } = useCategory();
+  const { language } = useLanguage();
+  const [tree, setTree] = useState<Category[]>([]);
+  const [branch, setBranch] = useState<Category[]>([]);
+  const [path, setPath] = useState<Category[]>([]);
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
-  // Récupération des catégories
-  const getCategory = useCallback(async () => {
-    if (!boutikInfo) return;
+  const labels = useMemo(() => flattenCategories(tree), [tree]);
+  const selected = useMemo(() => labels.find(({ category }) => category.slug === selectedCategoryId), [labels, selectedCategoryId]);
+  const searchResults = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase();
+    if (!normalized) return [];
+    return labels.filter(({ category, path: categoryPath }) => {
+      const localizedPath = categoryPath.map((part) => frenchLabel(part, language)).join(" ");
+      return `${localizedPath} ${category.name} ${category.slug}`.toLocaleLowerCase().includes(normalized);
+    }).slice(0, 30);
+  }, [labels, language, query]);
 
+  const loadCategories = useCallback(async (signal?: AbortSignal) => {
+    setLoading(true);
+    setLoadError(false);
     try {
-      const response = await fetch(
-        `${import.meta.env.REACT_API_CATEGORY_URL}find/category`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(boutikInfo.product_category),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la récupération des catégories");
-      }
-
-      const data = await response.json();
-      setCategories(data.category || []);
-    } catch (error) {
-      console.error("Erreur:", error);
-    }
-  }, [boutikInfo]);
-
-  // Récupération des informations sur la boutique
-  const fetchData = useCallback(async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.REACT_API_URL}boutiks/info`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials:"include"
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          "Erreur lors de la récupération des informations de la boutique"
-        );
-      }
-
+      const response = await fetch(`${import.meta.env.REACT_API_CATEGORY_URL}all/category`, { signal, headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error("Category API unavailable");
       const result = await response.json();
-      setBoutikInfo(result.boutiks || null);
+      const categories = Array.isArray(result.category) ? result.category as Category[] : [];
+      setTree(categories);
+      setBranch(categories);
     } catch (error) {
-      console.error("Erreur:", error);
+      if (!(error instanceof DOMException && error.name === "AbortError")) setLoadError(true);
+    } finally {
+      if (!signal?.aborted) setLoading(false);
     }
   }, []);
 
-  // Afficher/Masquer la liste des catégories
-  const handleClick = () => {
-    setDisplay((prev) => !prev);
-  };
-  // pour les ajouter les autre categorie
-  const handleClickOther = () => {
-    setDisplayForm((prev) => !prev);
-  };
-
-  // Gestion de l'affichage des sous-catégories
-  const handleCategoryClick = (children?: Category[], id?: string) => {
-    if (children) {
-      setHistory((prevHistory) => [...prevHistory, categories]); // Ajouter l'état actuel à l'historique
-      setCategories(children);
-      setParentId(id as string);
-    }
-  };
-
-  // Revenir au parent
-  const goBack = () => {
-    if (history.length > 0) {
-      const previousCategories = history[history.length - 1]; // Dernier état
-      setHistory((prevHistory) => prevHistory.slice(0, -1)); // Supprimer le dernier niveau de l'historique
-      setCategories(previousCategories);
-    }
-  };
-
-  const handleCheckboxChange = (categoryId: string, categoryName: string) => {
-    setSelectedCategory((prevSelected) =>
-      prevSelected === categoryId ? null : categoryId
-    );
-    setSelectedDisplay((prevSelected) =>
-      prevSelected === categoryName ? null : categoryName
-    );
-  };
-
-  const handleAddNewCategory = async () => {
-    try {
-      const sendFrom = await fetch(
-        `${import.meta.env.REACT_API_CATEGORY_URL}${
-          parentId ? parentId + "/add" : "store/category"
-        }`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(newCategory),
-        }
-      );
-
-      if (!sendFrom.ok) throw new Error("La catégorie n'a pas pu être créée.");
-
-      if (sendFrom.status === 201) {
-        const response = await sendFrom.json();
-        setNewCategory({ ...newCategory, name: "", slug: "", parent: null });
-        setSelectedCategoryId(response.category.name);
-        
-        if(csrf){
-        const update = await fetch(`${import.meta.env.REACT_API_URL}boutiks/newCategories`,{
-          method:"PUT",
-          credentials:"include",
-          headers:{
-            "Content-Type": "application/json",
-            "xsrf-token":csrf
-          },
-          
-          
-          body:JSON.stringify({category_id:response.category._id})
-        })
-        if(update.status === 200){
-          fetchData();
-        }
-        toast.success(response.message);
-      
-      }
-        
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la création de la catégorie.");
-    }
-  };
-
-  // Effet pour récupérer les données de la boutique
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    const controller = new AbortController();
+    void loadCategories(controller.signal);
+    return () => controller.abort();
+  }, [loadCategories]);
 
-  // Effet pour récupérer les catégories lorsque les informations de la boutique sont disponibles
   useEffect(() => {
-    if (boutikInfo) {
-      getCategory();
-    }
-  }, [boutikInfo, getCategory]);
+    if (!open) return;
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const handleEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [open]);
 
-  useEffect(()=>{
-    if(selectedCategory){
-      setSelectedCategoryId(selectedCategory);
-    }
-  },[selectedCategory, setSelectedCategoryId])
+  const choose = (entry: FlatCategory) => {
+    // Product.category historically stores the category slug; keep that contract for existing products.
+    setSelectedCategoryId(entry.category.slug);
+    setPath(entry.path);
+    setQuery("");
+    setOpen(false);
+  };
+
+  const enter = (category: Category) => {
+    setPath((current) => [...current, category]);
+    setBranch(category.children ?? []);
+    setQuery("");
+  };
+
+  const goToLevel = (index: number) => {
+    const nextPath = path.slice(0, index + 1);
+    setPath(nextPath);
+    setBranch(index < 0 ? tree : nextPath[index].children ?? []);
+  };
 
   return (
-    !csrf ? <Preloader/> :
-    <div className="w-full">
-      {/* Bouton principal pour afficher les catégories */}
-      <div
-        className="w-full py-2 border border-green-500 bg-white mb-3 px-5 flex justify-between items-center cursor-pointer"
-        onClick={handleClick}
-      >
-        {selectedCategoryDisplay
-          ? selectedCategoryDisplay
-          : "Choisir votre catégorie"}{" "}
-        <FaChevronDown />
-      </div>
+    <div ref={rootRef} className="relative w-full">
+      <button type="button" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((value) => !value)} className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] px-4 py-3 text-left text-sm text-[var(--admin-text)] shadow-sm transition hover:border-[var(--admin-accent-solid)] focus:outline-none focus:ring-2 focus:ring-[var(--admin-accent-solid)]/30">
+        <span className={selected ? "min-w-0" : "text-[var(--admin-muted)]"}>
+          {selected ? <><span className="block truncate font-semibold">{frenchLabel(selected.category, language)}</span><span className="mt-0.5 block truncate text-xs text-[var(--admin-muted)]">{selected.path.map((part) => frenchLabel(part, language)).join(" › ")}</span></> : language === "fr" ? "Rechercher ou parcourir les catégories" : "Search or browse categories"}
+        </span>
+        {selected && <span className="shrink-0 text-xs font-semibold text-[var(--admin-accent-solid)]">{language === "fr" ? "Modifier" : "Change"}</span>}
+      </button>
 
-      {/* Liste des catégories */}
-      {display && (
-        <div className="bg-white border-none px-5 py-5 shadow-lg rounded-md">
-          {categories.map((element, index) => (
-            <div
-              key={index}
-              className="w-full py-2 px-5 cursor-pointer mb-3 hover:shadow-md rounded-md flex gap-3"
-            >
-              {/* Checkbox pour la catégorie */}
-              <input
-                type="checkbox"
-                name="category"
-                value={element.slug}
-                checked={selectedCategory === element.slug}
-                onChange={() => handleCheckboxChange(element.slug, element.name)}
-              />
-
-              {/* Conteneur pour le texte et l'icône */}
-              <div
-                className="w-full flex justify-between"
-                onClick={() =>
-                  element.children &&
-                  element.children.length > 0 &&
-                  handleCategoryClick(element.children, element.slug)
-                }
-              >
-                {element.name}
-
-                {/* Affichage de l'icône si des enfants existent */}
-                {element.children && element.children.length > 0 && (
-                  <FaAngleRight />
-                )}
-              </div>
-            </div>
-          ))}
-
-          <div
-            className="w-full py-2 border border-gray-50 bg-white mb-3 px-5 flex items-center cursor-pointer"
-            onClick={handleClickOther}
-          >
-            <FaPlus className="mr-2" />
-            Autres
-          </div>
-          {displayForm && (
-            <div className="w-full">
-              <div className="w-full flex items-center gap-5">
-                <div className="w-full">
-                  <input
-                    type="text"
-                    name="name"
-                    className="w-full px-5 py-2 border border-green-500"
-                    placeholder="Ajouter votre categorie"
-                    value={newCategory?.name}
-                    onChange={(e) =>
-                      setNewCategory({
-                        ...newCategory,
-                        name: e.target.value,
-                        slug: e.target.value,
-                        parent: parentId,
-                      })
-                    }
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddNewCategory}
-                  className="border border-green-500 px-3 py-2 text-gray-800 hover:bg-green-500 hover:text-white"
-                >
-                  Ajouter
-                </button>
-              </div>
-            </div>
-          )}
-          {history.length > 0 && (
-            <div
-              className="w-full py-2 border border-gray-50 bg-white mb-3 px-5 flex items-center cursor-pointer"
-              onClick={goBack}
-            >
-              <FaArrowLeft className="mr-2" />
-              Revenir en arrière
-            </div>
-          )}
+      {open && <div className="absolute inset-x-0 top-full z-40 mt-2 overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] shadow-2xl">
+        <div className="border-b border-[var(--admin-border)] p-3">
+          <label className="flex items-center gap-2 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-raised)] px-3">
+            <FaSearch className="shrink-0 text-[var(--admin-muted)]" />
+            <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={language === "fr" ? "Ex. chaussures, cuisine, téléphone…" : "E.g. shoes, kitchen, phone…"} className="min-w-0 flex-1 bg-transparent py-3 text-sm text-[var(--admin-text)] outline-none placeholder:text-[var(--admin-muted)]" aria-label={language === "fr" ? "Rechercher une catégorie" : "Search categories"} />
+          </label>
+          {path.length > 0 && !query.trim() && <div className="mt-3 flex flex-wrap items-center gap-1 text-xs text-[var(--admin-muted)]"><button type="button" onClick={() => goToLevel(-1)} className="hover:text-[var(--admin-text)]">{language === "fr" ? "Toutes" : "All"}</button>{path.map((part, index) => <span key={part._id} className="inline-flex items-center gap-1"><FaAngleRight /><button type="button" onClick={() => goToLevel(index)} className="hover:text-[var(--admin-text)]">{frenchLabel(part, language)}</button></span>)}</div>}
         </div>
-      )}
-      {/* Bouton pour revenir au parent */}
 
-      {/* Message si aucune catégorie n'est disponible */}
-      {categories.length === 0 && display && (
-        <div className="w-full py-5 border border-gray-500 px-5">
-          Aucune sous-catégorie disponible.
-        </div>
-      )}
+        {loading ? <p className="p-5 text-sm text-[var(--admin-muted)]">{language === "fr" ? "Chargement des catégories…" : "Loading categories…"}</p> : loadError ? <div className="p-5 text-sm"><p className="text-[var(--admin-warning)]">{language === "fr" ? "Impossible de charger les catégories." : "Categories could not be loaded."}</p><button type="button" onClick={() => void loadCategories()} className="mt-2 font-semibold text-[var(--admin-accent-solid)]">{language === "fr" ? "Réessayer" : "Try again"}</button></div> : query.trim() ? <div role="listbox" className="max-h-72 overflow-y-auto p-2">{searchResults.map((entry) => <button type="button" role="option" aria-selected={entry.category.slug === selectedCategoryId} key={entry.category._id} onClick={() => choose(entry)} className="flex w-full items-start justify-between gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-[var(--admin-surface-raised)]"><span className="min-w-0"><strong className="block text-sm text-[var(--admin-text)]">{frenchLabel(entry.category, language)}</strong><span className="mt-1 block text-xs text-[var(--admin-muted)]">{entry.path.map((part) => frenchLabel(part, language)).join(" › ")}</span></span><span className="shrink-0 rounded-lg bg-[var(--admin-accent-soft)] px-2 py-1 text-xs font-semibold text-[var(--admin-accent-solid)]">{language === "fr" ? "Choisir" : "Select"}</span></button>)}{searchResults.length === 0 && <p className="p-4 text-sm text-[var(--admin-muted)]">{language === "fr" ? "Aucune catégorie correspondante." : "No matching category."}</p>}</div> : <div className="max-h-72 overflow-y-auto p-2">{path.length > 0 && <button type="button" onClick={() => goToLevel(path.length - 2)} className="mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-3 text-left text-sm font-semibold text-[var(--admin-accent-solid)] hover:bg-[var(--admin-surface-raised)]"><FaArrowLeft />{language === "fr" ? "Retour" : "Back"}</button>}{branch.map((category) => <div key={category._id} className="flex items-center gap-2 rounded-xl px-2 py-1 hover:bg-[var(--admin-surface-raised)]"><button type="button" onClick={() => choose({ category, path: [...path, category] })} className="min-w-0 flex-1 py-2 text-left text-sm font-medium text-[var(--admin-text)]">{frenchLabel(category, language)}</button><button type="button" aria-label={`${language === "fr" ? "Parcourir" : "Browse"} ${frenchLabel(category, language)}`} onClick={() => enter(category)} disabled={!category.children?.length} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[var(--admin-muted)] hover:bg-[var(--admin-surface)] disabled:opacity-30"><FaAngleRight /></button></div>)}{branch.length === 0 && <p className="p-4 text-sm text-[var(--admin-muted)]">{language === "fr" ? "Aucune sous-catégorie. Choisissez une autre branche." : "No subcategories. Choose another branch."}</p>}</div>}
+        <div className="border-t border-[var(--admin-border)] px-4 py-2 text-[11px] text-[var(--admin-muted)]">{language === "fr" ? "Vous pouvez rechercher en français ou avec le nom d’origine." : "Search in English or using the original category name."}</div>
+      </div>}
     </div>
   );
 }

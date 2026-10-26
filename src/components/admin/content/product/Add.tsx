@@ -104,6 +104,10 @@ function Add() {
   // Fonction pour envoyer le formulaire (ajouter ou éditer)
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!selectedCategoryId) {
+      toast.error("Choisissez une catégorie pour le produit.");
+      return;
+    }
     if (quotaReached) {
       toast.info("Votre forfait a atteint sa limite de produits. Passez à un forfait supérieur pour publier davantage.");
       return;
