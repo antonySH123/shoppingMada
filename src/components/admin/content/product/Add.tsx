@@ -286,7 +286,7 @@ function Add() {
             <div>
               <h2 className="admin-subsection-title">Images du produit</h2>
               <p className="admin-helper-text">
-                Jusqu’à 5 images, au format JPEG, PNG ou WebP.
+                Jusqu’à 5 images · JPEG, PNG, WebP, AVIF, HEIC/HEIF, GIF, TIFF, SVG · 20 Mo maximum par image. Les fichiers sont optimisés en WebP.
               </p>
             </div>
 
@@ -356,14 +356,19 @@ function Add() {
                 ref={inputFile}
                 hidden
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/*"
                 name="photos"
                 onChange={(e) => {
                   const selectedFiles = Array.from(e.target.files || []);
-                  const acceptedFiles = selectedFiles.slice(
-                    0,
-                    Math.max(0, 5 - files.length),
-                  );
+                  const remainingSlots = Math.max(0, 5 - files.length);
+                  const acceptedFiles = selectedFiles.filter((file) => {
+                    const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+                    const looksLikeImage = file.type.startsWith("image/") || /^(jpe?g|png|webp|avif|gif|tiff?|heic|heif|svg)$/.test(extension);
+                    if (!looksLikeImage) toast.error(`${file.name} n’est pas reconnu comme une image.`);
+                    else if (file.size > 20 * 1024 * 1024) toast.error(`${file.name} dépasse la limite de 20 Mo.`);
+                    return looksLikeImage && file.size <= 20 * 1024 * 1024;
+                  }).slice(0, remainingSlots);
+                  if (selectedFiles.length > remainingSlots) toast.info("Vous pouvez ajouter jusqu’à 5 images au total.");
                   setFiles((prevFiles) =>
                     [...prevFiles, ...acceptedFiles].slice(0, 5),
                   );
