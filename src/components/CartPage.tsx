@@ -345,7 +345,7 @@ function CartPage() {
                         </div>
                       ))}
                     </div>
-                    <footer className="space-y-3 border-t border-gray-100 bg-[#fbfdfb] p-5">
+                    <footer className="space-y-3 border-t border-gray-100 bg-[var(--muted-surface)] p-5">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-500">Sous-total</span>
                         <strong>{priceInArriary(group.subtotal)}</strong>

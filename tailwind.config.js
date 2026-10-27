@@ -6,8 +6,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        white: "rgb(var(--card-rgb) / <alpha-value>)",
-        black: "rgb(var(--foreground-rgb) / <alpha-value>)",
+        white: "#ffffff",
+        black: "#000000",
         gray: {
           50: "rgb(var(--muted-surface-rgb) / <alpha-value>)",
           100: "rgb(var(--muted-surface-rgb) / <alpha-value>)",

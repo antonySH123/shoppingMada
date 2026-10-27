@@ -115,7 +115,7 @@ function Home() {
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-800/10 bg-white/75 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-900 shadow-sm">
               <span className="h-2 w-2 rounded-full bg-emerald-600" /> {t("home.kicker")}
             </span>
-            <h1 className="max-w-2xl text-4xl font-bold leading-[1.08] tracking-[-0.055em] text-[#183524] sm:text-5xl md:text-[4.15rem]">
+            <h1 className="max-w-2xl text-4xl font-bold leading-[1.08] tracking-[-0.055em] text-[var(--foreground)] sm:text-5xl md:text-[4.15rem]">
               {t("home.title")}{" "}
               <span className="text-emerald-700">{t("home.titleAccent")}</span>
             </h1>
@@ -198,7 +198,7 @@ function Home() {
         </div>
       </section>
 
-      <section id="product" className="bg-[#f8faf8] py-16 text-lg">
+      <section id="product" className="bg-[var(--background)] py-16 text-lg">
         <div className="market-container">
           <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -328,7 +328,7 @@ function Home() {
             ].map((feature, index) => (
               <article
                 key={feature.title}
-                className="home-feature-card rounded-2xl border border-gray-100 bg-[#fbfcfb] p-6 sm:p-7"
+                className="home-feature-card rounded-2xl border border-gray-100 bg-[var(--card)] p-6 sm:p-7"
               >
                 <span className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
                   {feature.icon}
@@ -348,7 +348,7 @@ function Home() {
         </div>
       </section>
 
-      <section id="abonnements" className="bg-[#f2f6f1] py-16 text-lg sm:py-20">
+      <section id="abonnements" className="bg-[var(--muted-surface)] py-16 text-lg sm:py-20">
         <div className="market-container grid items-center gap-9 lg:grid-cols-[1fr_0.8fr]">
           <div>
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
@@ -396,7 +396,7 @@ function Home() {
             </p>
             <Link
               to="/vendeur"
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-950 transition hover:bg-emerald-50"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-5 py-3 text-sm font-bold text-[var(--primary-foreground)] shadow-[0_8px_22px_rgb(67_217_179_/_16%)] transition hover:-translate-y-px hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               {t("home.startSelling")} <LiaArrowRightSolid />
             </Link>

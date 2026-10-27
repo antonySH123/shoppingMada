@@ -59,6 +59,7 @@
   --muted-rgb: 101 115 107;
   --foreground-rgb: 23 35 28;
   --on-dark: #ffffff;
+  --surface-shadow: 0 5px 18px rgb(23 35 28 / 5%);
 }
 
 :root[data-theme="dark"] {
@@ -71,7 +72,7 @@
   --market-surface: #111a1d;
   --market-canvas: #0b1113;
   --market-green: #43d9b3;
-  --market-green-dark: #168b72;
+  --market-green-dark: #55e2c0;
   --background: #0b1113;
   --foreground: #eef6f3;
   --card: #111a1d;
@@ -89,6 +90,7 @@
   --muted-rgb: 165 180 176;
   --foreground-rgb: 238 246 243;
   --on-dark: #eef6f3;
+  --surface-shadow: 0 8px 24px rgb(0 0 0 / 18%);
 }
 
 :root[data-theme="light"] { color-scheme: light; }
@@ -305,7 +307,7 @@ select:focus-visible {
   border: 1px solid var(--market-line);
   border-radius: 1rem;
   background: var(--market-surface);
-  box-shadow: 0 5px 18px rgb(23 35 28 / 5%);
+  box-shadow: var(--surface-shadow);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
@@ -324,7 +326,7 @@ select:focus-visible {
   border-radius: 0.75rem;
   background: var(--market-green);
   padding: 0.75rem 1.1rem;
-  color: white;
+  color: var(--primary-foreground);
   font-weight: 700;
   transition: background 160ms ease, transform 160ms ease;
 }
@@ -336,9 +338,9 @@ select:focus-visible {
 
 .market-input {
   min-height: 2.8rem;
-  border: 1px solid #dce5de;
+  border: 1px solid var(--market-line);
   border-radius: 0.75rem;
-  background: white;
+  background: var(--input);
   padding: 0.7rem 0.9rem;
   color: var(--market-ink);
   transition: border-color 160ms ease, box-shadow 160ms ease;
@@ -355,11 +357,11 @@ select:focus-visible {
   min-height: 2.75rem;
   align-items: center;
   justify-content: center;
-  border: 1px solid #dce5de;
+  border: 1px solid var(--market-line);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--card);
   padding: 0.65rem 1rem;
-  color: #34443a;
+  color: var(--market-ink);
   font-weight: 650;
   transition: background 160ms ease, border-color 160ms ease;
 }
@@ -2652,21 +2654,17 @@ select:focus-visible {
 :root[data-theme="dark"] #root { min-height: 100vh; background: var(--background); color: var(--foreground); }
 :root[data-theme="light"] #root { min-height: 100vh; background: var(--background); color: var(--foreground); }
 :root[data-theme="dark"] :is(.customer-app, .admin-shell, .auth-page, .profile-page-root, .seller-page, .upgrade-pro-page) { color: var(--foreground); }
-:root[data-theme="dark"] :is(.customer-app, .auth-page, .profile-page-root, .seller-page, .upgrade-pro-page) :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-\[\#f8faf8\], .bg-\[\#f6f8f6\], .bg-\[\#fbfcfb\]) { background-color: var(--card) !important; }
+:root[data-theme="dark"] :is(.customer-app, .auth-page, .profile-page-root, .seller-page, .upgrade-pro-page) :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-\[\#f8faf8\], .bg-\[\#f6f8f6\], .bg-\[\#fbfcfb\]):not(input):not(select):not(textarea) { background-color: var(--card) !important; }
 :root[data-theme="dark"] :is(.customer-app, .auth-page, .profile-page-root, .seller-page, .upgrade-pro-page) :is(.text-black, .text-gray-950, .text-gray-900, .text-gray-800, .text-gray-700) { color: var(--foreground) !important; }
 :root[data-theme="dark"] :is(.customer-app, .auth-page, .profile-page-root, .seller-page, .upgrade-pro-page) :is(.text-gray-600, .text-gray-500, .text-gray-400) { color: var(--muted) !important; }
 :root[data-theme="dark"] :is(.customer-app, .admin-shell, .auth-page, .seller-page) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { border-color: var(--border); background-color: var(--input); color: var(--foreground); color-scheme: dark; }
 :root[data-theme="dark"] :is(.customer-app, .admin-shell, .auth-page, .seller-page) :is(input, textarea)::placeholder { color: var(--muted); }
-:root[data-theme="dark"] #root :is(.bg-white, .bg-gray-50, .bg-gray-100):not(button):not([role="button"]) { background-color: var(--card) !important; }
+:root[data-theme="dark"] #root :is(.bg-white, .bg-gray-50, .bg-gray-100):not(button):not([role="button"]):not(input):not(select):not(textarea) { background-color: var(--card) !important; }
 :root[data-theme="dark"] #root :is(.text-black, .text-gray-950, .text-gray-900, .text-gray-800, .text-gray-700) { color: var(--foreground) !important; }
 :root[data-theme="dark"] #root :is(.text-gray-600, .text-gray-500, .text-gray-400) { color: var(--muted) !important; }
-:root[data-theme="dark"] #root :is(.text-white, [class*="text-white/"]) { color: var(--on-dark) !important; }
 :root[data-theme="dark"] #root :is(.text-emerald-700, .text-emerald-800, .text-emerald-900, .text-green-700, .text-green-800, .text-green-900) { color: var(--primary) !important; }
 :root[data-theme="dark"] #root :is(.bg-emerald-50, .bg-emerald-100, .bg-green-50, .bg-green-100) { background-color: var(--muted-surface) !important; }
 :root[data-theme="dark"] #root :is(.border-gray-50, .border-gray-100, .border-gray-200, .border-gray-300) { border-color: var(--border) !important; }
-:root[data-theme="dark"] #root [class*="bg-[#"]:not([class*="bg-[#25D366"]) { background-color: var(--card) !important; }
-:root[data-theme="dark"] #root [class*="text-[#"] { color: var(--foreground) !important; }
-:root[data-theme="dark"] #root [class*="border-[#"] { border-color: var(--border) !important; }
 :root[data-theme="dark"] #root :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { border-color: var(--border); background-color: var(--input); color: var(--foreground); color-scheme: dark; }
 :root[data-theme="dark"] #root :is(input, textarea)::placeholder { color: var(--muted); }
 :root[data-theme="dark"] .auth-page { background-image: radial-gradient(ellipse at 12% 12%, rgb(67 217 179 / 10%), transparent 35%), radial-gradient(ellipse at 90% 90%, rgb(71 116 255 / 12%), transparent 36%); }
@@ -2676,13 +2674,12 @@ select:focus-visible {
 :root[data-theme="dark"] .customer-app :is(.market-card, .market-panel, .home-feature-card, .profile-section-card, .profile-orders, .seller-form-card, .seller-onboarding-section, .upgrade-pro-page) { border-color: var(--border); background-color: var(--card); color: var(--card-foreground); }
 :root[data-theme="dark"] .customer-app :is(.seller-form-card-heading, .seller-form-footer, .profile-section-body, .profile-information-item) { border-color: var(--border); background-color: var(--muted-surface); }
 :root[data-theme="dark"] :is(.customer-app, .admin-shell) :is(a, button, input, select, textarea, [tabindex]):focus-visible { outline-color: var(--ring); }
-:root[data-theme="dark"] body { background: #0b1113 !important; color: #eef6f3; }
-:root[data-theme="dark"] :is(.customer-app, .admin-shell, .seller-page) { background-color: #0b1113; color: #eef6f3; }
+:root[data-theme="dark"] body { background: var(--background) !important; color: var(--foreground); }
+:root[data-theme="dark"] :is(.customer-app, .admin-shell, .seller-page) { background-color: var(--background); color: var(--foreground); }
 :root[data-theme="dark"] :is(header, footer, nav, aside, section, article, .market-card, .profile-section-card, .profile-orders, .upgrade-pro-page, .upgrade-pro-checkout) { border-color: #29393b; }
-:root[data-theme="dark"] :is(.customer-app, .seller-page, .profile-page-root, .upgrade-pro-page) :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-\[\#f8faf8\], .bg-\[\#f6f8f6\]) { background-color: #111a1d !important; }
-:root[data-theme="dark"] :is(.customer-app, .seller-page, .profile-page-root, .upgrade-pro-page) :is(.text-gray-950, .text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500) { color: #d2e0da !important; }
-:root[data-theme="dark"] :is(.customer-app, .seller-page, .profile-page-root, .upgrade-pro-page) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { border-color: #35484a !important; background-color: #172326 !important; color: #eef6f3 !important; color-scheme: dark; }
-:root[data-theme="dark"] :is(.customer-app, .seller-page, .profile-page-root, .upgrade-pro-page) :is(input, textarea)::placeholder { color: #a5b4b0; }
+:root[data-theme="dark"] :is(.customer-app, .seller-page, .profile-page-root, .upgrade-pro-page) :is(.bg-white, .bg-gray-50, .bg-gray-100):not(input):not(select):not(textarea) { background-color: var(--card) !important; }
+:root[data-theme="dark"] :is(.customer-app, .seller-page, .profile-page-root, .upgrade-pro-page) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { border-color: var(--border) !important; background-color: var(--input) !important; color: var(--foreground) !important; color-scheme: dark; }
+:root[data-theme="dark"] :is(.customer-app, .seller-page, .profile-page-root, .upgrade-pro-page) :is(input, textarea)::placeholder { color: var(--muted); }
 :root[data-theme="dark"] .seller-page > section { border-color: #29393b; background: linear-gradient(145deg, #111a1d, #172326); }
 :root[data-theme="dark"] :is(.auth-page, .auth-panel, .auth-card) { border-color: #29393b; background-color: #111a1d; color: #eef6f3; }
 :root[data-theme="dark"] .auth-page :is(.text-gray-950, .text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500) { color: #d2e0da !important; }
@@ -2819,6 +2816,7 @@ select:focus-visible {
 :root[data-theme="dark"] .profile-orders table .profile-order-cancel { border-color: rgb(255 128 133 / 30%); background: rgb(255 128 133 / 10%); color: #ff9da2; }
 :root[data-theme="dark"] .customer-app .home-pro-card { border: 1px solid rgb(110 231 183 / 20%); background: linear-gradient(145deg, #102b25, #12382e); }
 :root[data-theme="dark"] .customer-app .banner { background: radial-gradient(ellipse at 82% 20%, rgb(67 217 179 / 10%), transparent 40%), linear-gradient(135deg, var(--background), var(--muted-surface)); }
+:root[data-theme="dark"] .customer-app .banner .market-container > div:first-child > span:first-child { border-color: var(--border); background: color-mix(in srgb, var(--muted-surface) 92%, transparent); color: var(--foreground); }
 :root[data-theme="dark"] .customer-app .banner::before { border-color: rgb(67 217 179 / 16%); background: radial-gradient(circle at 43% 46%, #18302a 0, #18302a 31%, #1b2b2c 31.2%, #1b2b2c 52%, transparent 52.2%); }
 :root[data-theme="dark"] .customer-app .banner::after { background: rgb(67 217 179 / 8%); }
 :root[data-theme="dark"] .customer-app .banner-product-tag { border-color: var(--border); background: rgb(17 26 29 / 94%); color: var(--foreground); }
@@ -2882,3 +2880,64 @@ select:focus-visible {
 :root[data-theme="dark"] #root :is(.text-sky-700, .text-sky-800, .text-sky-900, .text-blue-700, .text-blue-800, .text-blue-900) { color: #9bd7ff !important; }
 :root[data-theme="dark"] #root :is(.text-purple-700, .text-purple-800, .text-purple-900) { color: #d3b5ff !important; }
 :root[data-theme="dark"] #root :is(.hover\:bg-red-50, .hover\:bg-amber-50, .hover\:bg-yellow-50):hover { background-color: var(--muted-surface) !important; }
+
+/* Shared semantic surfaces for subscription checkout in both themes. */
+:root[data-theme="dark"] .upgrade-pro-page {
+  border-color: var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: var(--surface-shadow);
+}
+:root[data-theme="dark"] .upgrade-pro-section-heading h2,
+:root[data-theme="dark"] .upgrade-pro-feature h3,
+:root[data-theme="dark"] .upgrade-pro-plan-head h2,
+:root[data-theme="dark"] .upgrade-pro-operator strong { color: var(--foreground); }
+:root[data-theme="dark"] .upgrade-pro-section-heading p,
+:root[data-theme="dark"] .upgrade-pro-feature p,
+:root[data-theme="dark"] .upgrade-pro-plan-note,
+:root[data-theme="dark"] .upgrade-pro-price span,
+:root[data-theme="dark"] .upgrade-pro-operator small,
+:root[data-theme="dark"] .upgrade-pro-legal { color: var(--muted); }
+:root[data-theme="dark"] .upgrade-pro-section-heading > span,
+:root[data-theme="dark"] .upgrade-pro-price,
+:root[data-theme="dark"] .upgrade-pro-legal svg { color: var(--primary); }
+:root[data-theme="dark"] :is(.upgrade-pro-feature, .upgrade-pro-checkout) {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: var(--surface-shadow);
+}
+:root[data-theme="dark"] .upgrade-pro-feature > span {
+  border-color: var(--border);
+  background: var(--muted-surface);
+  color: var(--primary);
+}
+:root[data-theme="dark"] .upgrade-pro-plan-head {
+  border-color: var(--border);
+  background: radial-gradient(circle at 100% 0, rgb(67 217 179 / 10%), transparent 42%), var(--muted-surface);
+}
+:root[data-theme="dark"] .upgrade-pro-plan-badge,
+:root[data-theme="dark"] .upgrade-pro-operator {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--foreground);
+}
+:root[data-theme="dark"] .upgrade-pro-operator:hover { border-color: var(--primary); background: var(--muted-surface); }
+:root[data-theme="dark"] .upgrade-pro-operator.is-selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+:root[data-theme="dark"] .upgrade-pro-payment-form legend,
+:root[data-theme="dark"] .upgrade-pro-payment-form label { color: var(--foreground); }
+:root[data-theme="dark"] .upgrade-pro-payment-form input,
+:root[data-theme="dark"] .upgrade-pro-payment-form input:focus {
+  border-color: var(--border);
+  background: var(--input);
+  color: var(--foreground);
+}
+:root[data-theme="dark"] .upgrade-pro-submit { color: #fff; }
+:root[data-theme="dark"] .upgrade-pro-submit:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}

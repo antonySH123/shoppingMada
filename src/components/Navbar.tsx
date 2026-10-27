@@ -133,7 +133,7 @@ const Navbar = () => {
             alt="ShopInMada"
             className="h-11 w-auto object-contain sm:h-12"
           />
-          <span className="ml-2 text-sm font-extrabold tracking-tight text-[#173c27] sm:text-lg">
+          <span className="ml-2 text-sm font-extrabold tracking-tight text-emerald-900 sm:text-lg">
             ShopInMada
           </span>
         </Link>
@@ -154,7 +154,7 @@ const Navbar = () => {
             placeholder={t("nav.searchDesktop")}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className="h-11 w-full rounded-full border border-gray-200 bg-[#f6f8f6] pl-12 pr-24 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-700/10"
+            className="h-11 w-full rounded-full border border-gray-200 bg-[var(--muted-surface)] pl-12 pr-24 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-700/10"
           />
           <button
             type="submit"
@@ -226,7 +226,7 @@ const Navbar = () => {
             placeholder={t("nav.searchMobile")}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className="h-11 w-full rounded-full border border-gray-200 bg-[#f6f8f6] pl-11 pr-16 text-sm outline-none focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-700/10"
+            className="h-11 w-full rounded-full border border-gray-200 bg-[var(--muted-surface)] pl-11 pr-16 text-sm outline-none focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-700/10"
           />
           <button
             type="submit"

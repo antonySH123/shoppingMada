@@ -50,7 +50,7 @@ function Navbar() {
             alt="ShopInMada"
             className="h-11 w-auto object-contain sm:h-12"
           />
-          <span className="ml-1.5 text-xs font-extrabold tracking-tight text-[#173c27] sm:ml-2 sm:text-base">
+          <span className="ml-1.5 text-xs font-extrabold tracking-tight text-emerald-900 sm:ml-2 sm:text-base">
             ShopInMada
           </span>
         </Link>
@@ -66,7 +66,7 @@ function Navbar() {
           />
           <input
             type="search"
-            className="h-11 w-full rounded-full border border-gray-200 bg-[#f6f8f6] pl-11 pr-14 text-sm outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-700/10"
+            className="h-11 w-full rounded-full border border-gray-200 bg-[var(--muted-surface)] pl-11 pr-14 text-sm outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-700/10"
             placeholder={t("nav.searchDesktop")}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
