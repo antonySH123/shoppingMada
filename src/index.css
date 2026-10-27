@@ -2670,7 +2670,8 @@ select:focus-visible {
 :root[data-theme="dark"] .auth-page { background-image: radial-gradient(ellipse at 12% 12%, rgb(67 217 179 / 10%), transparent 35%), radial-gradient(ellipse at 90% 90%, rgb(71 116 255 / 12%), transparent 36%); }
 :root[data-theme="dark"] .theme-bootstrap { background: var(--background); }
 :root[data-theme="dark"] :is(.customer-app, .admin-shell) :is(table, thead, tbody, tr, th, td) { border-color: var(--border); }
-:root[data-theme="dark"] .customer-app :is(header, .bg-white\/95, .bg-white\/90) { background-color: color-mix(in srgb, var(--card) 95%, transparent) !important; }
+:root[data-theme="dark"] .customer-app > header,
+:root[data-theme="dark"] .customer-app > main > header { background-color: color-mix(in srgb, var(--card) 95%, transparent) !important; }
 :root[data-theme="dark"] .customer-app :is(.market-card, .market-panel, .home-feature-card, .profile-section-card, .profile-orders, .seller-form-card, .seller-onboarding-section, .upgrade-pro-page) { border-color: var(--border); background-color: var(--card); color: var(--card-foreground); }
 :root[data-theme="dark"] .customer-app :is(.seller-form-card-heading, .seller-form-footer, .profile-section-body, .profile-information-item) { border-color: var(--border); background-color: var(--muted-surface); }
 :root[data-theme="dark"] :is(.customer-app, .admin-shell) :is(a, button, input, select, textarea, [tabindex]):focus-visible { outline-color: var(--ring); }
@@ -2940,4 +2941,25 @@ select:focus-visible {
 :root[data-theme="dark"] .upgrade-pro-submit:focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 3px;
+}
+:root[data-theme="dark"] .customer-app .shop-filter-scroll :is(input, select) {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .customer-app .shop-filter-scroll :is(input, select):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+:root[data-theme="dark"] .customer-app .shop-results-heading {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+:root[data-theme="dark"] .customer-app .shop-category-section > header {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 0.125rem !important;
 }

@@ -154,7 +154,7 @@ function Shop() {
   }, [categoriesLoaded, categoryLabels, state.allProducts, t]);
 
   return (
-    <main className="min-h-[calc(100vh-4.5rem)] w-full flex-1 overflow-y-auto bg-[var(--background)] py-8 text-[var(--foreground)] md:py-10">
+    <main className="min-h-0 w-full min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[var(--background)] py-8 text-[var(--foreground)] md:py-10">
       <div className="market-container">
         <div className="shop-results-heading mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>

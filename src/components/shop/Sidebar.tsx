@@ -85,7 +85,7 @@ const Sidebar = () => {
   return (
     <>
       {isMobile && isOpen && <button type="button" aria-label={t("shop.closeCategories")} onClick={toggleMobileOpen} className="fixed inset-0 top-[6.65rem] z-40 bg-gray-950/35 backdrop-blur-[1px]" />}
-      {(!isMobile || isOpen) && <aside id="shop-category-sidebar" className={`fixed bottom-0 left-0 top-[6.65rem] z-50 flex w-[min(19rem,88vw)] flex-col border-r border-gray-200 bg-white shadow-[12px_0_35px_rgba(20,40,28,0.08)] transition-[transform,width] duration-300 md:sticky md:top-[6.65rem] md:z-20 md:h-[calc(100vh-6.65rem)] md:shrink-0 md:shadow-none ${isMobile ? "translate-x-0" : (isOpen ? "md:w-[18rem]" : "md:w-[4.5rem]")}`}>
+      {(!isMobile || isOpen) && <aside id="shop-category-sidebar" className={`fixed bottom-0 left-0 top-[6.65rem] z-50 flex w-[min(19rem,88vw)] flex-col border-r border-gray-200 bg-white shadow-[12px_0_35px_rgba(20,40,28,0.08)] transition-[transform,width] duration-300 md:sticky md:top-0 md:z-20 md:h-full md:shrink-0 md:shadow-none ${isMobile ? "translate-x-0" : (isOpen ? "md:w-[18rem]" : "md:w-[4.5rem]")}`}>
         <div className={`flex min-h-[4.5rem] items-center border-b border-gray-100 ${isOpen ? "justify-between px-5" : "justify-center px-2"}`}>
           {isOpen && <div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">{t("shop.explore")}</p><h2 className="mt-0.5 text-sm font-bold text-gray-900">{t("shop.categories")}</h2></div>}
           <button type="button" onClick={toggleOpen} aria-label={isOpen ? t("shop.collapseCategories") : t("shop.showCategories")} className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800">

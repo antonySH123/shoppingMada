@@ -8,9 +8,9 @@ function BaseShop() {
   return (
     <div className="customer-app">
       <ToggleSidebarContext>
-        <main className="flex min-h-screen flex-col gap-1 overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
+        <main className="flex h-screen min-h-0 flex-col gap-1 overflow-hidden bg-[var(--background)] text-[var(--foreground)] [height:100dvh]">
           <Navbar />
-          <div className="flex min-h-[calc(100vh-4.5rem)] w-full flex-1 gap-3">
+          <div className="flex min-h-0 w-full flex-1 gap-3">
             <Sidebar />
             <Outlet />
           </div>

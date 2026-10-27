@@ -38,7 +38,7 @@ function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-gray-200/80 bg-white/95 shadow-[0_4px_18px_rgba(20,40,28,0.05)] backdrop-blur-xl">
+    <header className="sticky top-0 z-40 w-full shrink-0 border-b border-gray-200/80 bg-white/95 shadow-[0_4px_18px_rgba(20,40,28,0.05)] backdrop-blur-xl">
       <div className="market-container flex h-[4.5rem] items-center gap-4 sm:gap-6">
         <Link
           to="/"
