@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useId, useRef } from "react";
 import { LiaTimesSolid } from "react-icons/lia";
+import { useLanguage } from "../../../context/useLanguage";
 
 export interface AdminModalProps {
   open: boolean;
@@ -22,6 +23,7 @@ function AdminModal({
 }: AdminModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!open) return;
@@ -73,7 +75,7 @@ function AdminModal({
           <button
             type="button"
             className="admin-button admin-button--ghost admin-button--icon"
-            aria-label="Fermer la fenêtre"
+            aria-label={t("common.close")}
             onClick={onClose}
           >
             <LiaTimesSolid size={18} />

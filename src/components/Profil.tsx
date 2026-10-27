@@ -26,7 +26,7 @@ import { useTheme } from "../context/useTheme";
 
 function Profil() {
   const { user, setUserInfo, currencyRates } = useAuth();
-  const { t, language, setLanguage } = useLanguage();
+  const { t, language, persistLanguage } = useLanguage();
   const { theme, persistTheme } = useTheme();
   const csrf = useCSRF();
   const navigate = useNavigate();
@@ -128,7 +128,7 @@ function Profil() {
 
   const deleteAddress = async (id: string) => { if (!csrf) return; try { const response = await fetch(`${import.meta.env.REACT_API_URL}user/addresses/${id}`, { method: "DELETE", credentials: "include", headers: { "xsrf-token": csrf } }); const result = await response.json(); if (!response.ok) throw new Error(result.message); setAddresses(result.data ?? []); } catch (error) { toast.error(error instanceof Error ? error.message : "Suppression impossible."); } };
 
-  const savePreferences = async (next: { currency?: "MGA" | "EUR" | "USD"; language?: "fr" | "en"; notifications?: { orders: boolean; support: boolean; promotions: boolean } }): Promise<boolean> => {
+  const savePreferences = async (next: { currency?: "MGA" | "EUR" | "USD"; notifications?: { orders: boolean; support: boolean; promotions: boolean } }): Promise<boolean> => {
     if (!csrf || !user || savingPreferences) return false;
     setSavingPreferences(true);
     try {
@@ -136,7 +136,6 @@ function Profil() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Enregistrement impossible.");
       setUserInfo({ ...user, preferences: result.data });
-      if (result.data?.language) setLanguage(result.data.language);
       toast.success("Préférences enregistrées.");
       return true;
     } catch (error) { toast.error(error instanceof Error ? error.message : "Enregistrement impossible."); }
@@ -151,12 +150,15 @@ function Profil() {
   };
 
   const saveLanguage = (nextLanguage: "fr" | "en") => {
-    const previousLanguage = language;
-    setLanguage(nextLanguage);
-    void savePreferences({ language: nextLanguage }).then((saved) => { if (!saved) setLanguage(previousLanguage); });
+    if (savingPreferences) return;
+    setSavingPreferences(true);
+    void persistLanguage(nextLanguage).then((saved) => {
+      if (saved) toast.success(t("language.saved"));
+      else toast.error(t("language.saveError"));
+    }).finally(() => setSavingPreferences(false));
   };
 
-  const saveTheme = async (nextTheme: "light" | "dark") => {
+  const saveTheme = async (nextTheme: "light" | "dark" | "system") => {
     if (savingTheme) return;
     setSavingTheme(true);
     try {
@@ -504,7 +506,7 @@ function Profil() {
                 <div className="profile-section-body compact-grid">
                   <label className="profile-pref-field">
                     <span>{t("language.label")}</span>
-                    <span className="text-xs text-gray-500">{language === "fr" ? "Ce choix s’applique à toutes les pages et est enregistré sur votre compte." : "This choice applies across the app and is saved to your account."}</span>
+                    <span className="text-xs text-gray-500">{isSeller ? t("profile.languageHintSeller") : t("profile.languageHint")}</span>
                     <select value={language} disabled={savingPreferences} onChange={(event) => saveLanguage(event.target.value as "fr" | "en")}>
                       <option value="fr">{t("language.french")}</option>
                       <option value="en">{t("language.english")}</option>
@@ -512,8 +514,9 @@ function Profil() {
                   </label>
                   <label className="profile-pref-field">
                     <span>{t("profile.appearance")}</span>
-                    <span className="text-xs text-gray-500">{language === "fr" ? "Ce choix s’applique aux interfaces client, vendeur, administrateur et aux fenêtres de dialogue." : "This choice applies to customer, seller and admin interfaces, including dialogs."}</span>
-                    <select value={theme} disabled={savingPreferences || savingTheme} onChange={(event) => void saveTheme(event.target.value as "light" | "dark")}>
+                    <span className="text-xs text-gray-500">{t("profile.themeHint")}</span>
+                      <select value={theme} disabled={savingPreferences || savingTheme} onChange={(event) => void saveTheme(event.target.value as "light" | "dark" | "system")}>
+                        <option value="system">{t("theme.system")}</option>
                       <option value="light">{t("theme.light")}</option>
                       <option value="dark">{t("theme.dark")}</option>
                     </select>

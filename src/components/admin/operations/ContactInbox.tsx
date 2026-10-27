@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../../../helper/useAuth";
 import useCSRF from "../../../helper/useCSRF";
 import { PageHeader, StatusBadge } from "../ui";
+import { useLanguage } from "../../../context/useLanguage";
 
 interface Ticket {
   _id: string;
@@ -19,6 +20,7 @@ interface Ticket {
 
 function ContactInbox() {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const csrf = useCSRF();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [status, setStatus] = useState("open");
@@ -40,15 +42,15 @@ function ContactInbox() {
         { credentials: "include" },
       );
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Boîte de support indisponible.");
+      if (!response.ok) throw new Error(result.message || t("admin.inboxUnavailable"));
       setTickets(Array.isArray(result.data) ? result.data : []);
       setPages(result.pagination?.pages ?? 1); setTotal(result.pagination?.total ?? result.data?.length ?? 0);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erreur de chargement.");
+      toast.error(error instanceof Error ? error.message : t("common.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [status, page, search]);
+  }, [status, page, search, t]);
 
   useEffect(() => {
     if (isAdmin) void load();
@@ -71,11 +73,11 @@ function ContactInbox() {
         },
       );
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Mise à jour impossible.");
+      if (!response.ok) throw new Error(result.message || t("admin.updateUnavailable"));
       toast.success(result.message);
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erreur de mise à jour.");
+      toast.error(error instanceof Error ? error.message : t("admin.updateError"));
     } finally {
       setBusy("");
     }
@@ -90,11 +92,11 @@ function ContactInbox() {
         method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "xsrf-token": csrf }, body: JSON.stringify({ message }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Envoi impossible.");
+      if (!response.ok) throw new Error(result.message || t("admin.sendUnavailable"));
       setReplies((current) => ({ ...current, [ticket._id]: "" }));
       toast.success(result.message);
       await load();
-    } catch (error) { toast.error(error instanceof Error ? error.message : "Erreur d’envoi."); }
+    } catch (error) { toast.error(error instanceof Error ? error.message : t("admin.sendError")); }
     finally { setBusy(""); }
   };
 
@@ -103,23 +105,23 @@ function ContactInbox() {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Support client"
-        title="Boîte de réception"
-        description="Traitez les messages reçus, ajoutez une note interne et suivez leur résolution."
+        eyebrow={t("admin.customerSupport")}
+        title={t("admin.inboxTitle")}
+        description={t("admin.inboxDescription")}
       />
       <div className="admin-panel flex flex-wrap items-center justify-between gap-3 p-4">
-        <span className="text-sm text-[var(--admin-muted)]">{total} ticket(s)</span>
-        <input aria-label="Rechercher un ticket" className="admin-search-input" placeholder="Nom, e-mail ou sujet" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
-        <select aria-label="Filtrer les tickets" className="admin-search-input" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}>
-          <option value="open">Nouveaux</option>
-          <option value="in_progress">En cours</option>
-          <option value="resolved">Résolus</option>
+        <span className="text-sm text-[var(--admin-muted)]">{t("admin.ticketCount").replace("{count}", String(total))}</span>
+        <input aria-label={t("admin.searchTicket")} className="admin-search-input" placeholder={t("admin.searchTicketPlaceholder")} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
+        <select aria-label={t("admin.filterTickets")} className="admin-search-input" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}>
+          <option value="open">{t("admin.ticketNew")}</option>
+          <option value="in_progress">{t("admin.ticketInProgress")}</option>
+          <option value="resolved">{t("admin.ticketResolvedPlural")}</option>
         </select>
       </div>
       {loading ? (
-        <div className="admin-panel p-6" role="status">Chargement des messages…</div>
+        <div className="admin-panel p-6" role="status">{t("admin.loadingMessages")}</div>
       ) : tickets.length === 0 ? (
-        <div className="admin-panel p-8 text-center text-[var(--admin-muted)]">Aucun message dans cette file.</div>
+        <div className="admin-panel p-8 text-center text-[var(--admin-muted)]">{t("admin.noMessagesQueue")}</div>
       ) : (
         <div className="grid gap-4">
           {tickets.map((ticket) => (
@@ -128,33 +130,33 @@ function ContactInbox() {
                 <div>
                   <h2 className="font-bold text-[var(--admin-text)]">{ticket.subject}</h2>
                   <p className="text-sm text-[var(--admin-muted)]">
-                    {ticket.name} · <a className="underline" href={`mailto:${ticket.email}`}>{ticket.email}</a> · {new Date(ticket.createdAt).toLocaleString("fr-FR")}
+                    {ticket.name} · <a className="underline" href={`mailto:${ticket.email}`}>{ticket.email}</a> · {new Date(ticket.createdAt).toLocaleString(language === "fr" ? "fr-FR" : "en-US")}
                   </p>
                 </div>
                 <StatusBadge
                   status={ticket.status === "resolved" ? "Completed" : ticket.status}
                   tone={ticket.status === "in_progress" ? "progress" : undefined}
-                  label={ticket.status === "resolved" ? "Résolu" : ticket.status === "in_progress" ? "En cours" : "Nouveau"}
+                  label={ticket.status === "resolved" ? t("admin.ticketResolved") : ticket.status === "in_progress" ? t("admin.ticketInProgress") : t("admin.ticketNew")}
                 />
               </div>
               <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-[var(--admin-text)]">{ticket.message}</p>
-              {(ticket.replies ?? []).length > 0 && <div className="mt-4 space-y-2 border-l-2 border-emerald-500/40 pl-4"><h3 className="text-xs font-bold uppercase tracking-wide text-[var(--admin-muted)]">Historique des réponses</h3>{ticket.replies!.map((item, index) => <div key={`${ticket._id}-${index}`} className="rounded-lg bg-white/5 p-3"><p className="text-xs text-[var(--admin-muted)]">{item.authorName} · {new Date(item.sentAt).toLocaleString("fr-FR")}</p><p className="mt-1 whitespace-pre-wrap text-sm">{item.message}</p></div>)}</div>}
-              <label className="mt-4 block text-xs font-semibold text-[var(--admin-muted)]">Réponse envoyée par e-mail<textarea className="admin-search-input mt-1 min-h-24 w-full" value={replies[ticket._id] ?? ""} onChange={(event) => setReplies((current) => ({ ...current, [ticket._id]: event.target.value }))} maxLength={4000} placeholder="Écrivez une réponse au client…" /></label>
-              <button className="admin-button admin-button--primary admin-button--md mt-2" disabled={busy === ticket._id || !replies[ticket._id]?.trim()} onClick={() => void reply(ticket)}>Envoyer la réponse</button>
+              {(ticket.replies ?? []).length > 0 && <div className="mt-4 space-y-2 border-l-2 border-emerald-500/40 pl-4"><h3 className="text-xs font-bold uppercase tracking-wide text-[var(--admin-muted)]">{t("admin.replyHistory")}</h3>{ticket.replies!.map((item, index) => <div key={`${ticket._id}-${index}`} className="rounded-lg bg-white/5 p-3"><p className="text-xs text-[var(--admin-muted)]">{item.authorName} · {new Date(item.sentAt).toLocaleString(language === "fr" ? "fr-FR" : "en-US")}</p><p className="mt-1 whitespace-pre-wrap text-sm">{item.message}</p></div>)}</div>}
+              <label className="mt-4 block text-xs font-semibold text-[var(--admin-muted)]">{t("admin.emailReply")}<textarea className="admin-search-input mt-1 min-h-24 w-full" value={replies[ticket._id] ?? ""} onChange={(event) => setReplies((current) => ({ ...current, [ticket._id]: event.target.value }))} maxLength={4000} placeholder={t("admin.replyPlaceholder")} /></label>
+              <button className="admin-button admin-button--primary admin-button--md mt-2" disabled={busy === ticket._id || !replies[ticket._id]?.trim()} onClick={() => void reply(ticket)}>{t("admin.sendReply")}</button>
               <label className="mt-4 block text-xs font-semibold text-[var(--admin-muted)]">
-                Note interne
+                {t("admin.internalNote")}
                 <textarea className="admin-search-input mt-1 min-h-20 w-full" value={notes[ticket._id] ?? ticket.adminNote ?? ""} onChange={(event) => setNotes((current) => ({ ...current, [ticket._id]: event.target.value }))} maxLength={1000} />
               </label>
               <div className="mt-3 flex flex-wrap gap-2">
-                <button className="admin-button admin-button--secondary admin-button--md" disabled={busy === ticket._id} onClick={() => void update(ticket, "in_progress")}>Prendre en charge</button>
-                <button className="admin-button admin-button--primary admin-button--md" disabled={busy === ticket._id} onClick={() => void update(ticket, "resolved")}>Marquer résolu</button>
-                {ticket.status !== "open" && <button className="admin-button admin-button--ghost admin-button--md" disabled={busy === ticket._id} onClick={() => void update(ticket, "open")}>Rouvrir</button>}
+                <button className="admin-button admin-button--secondary admin-button--md" disabled={busy === ticket._id} onClick={() => void update(ticket, "in_progress")}>{t("admin.takeTicket")}</button>
+                <button className="admin-button admin-button--primary admin-button--md" disabled={busy === ticket._id} onClick={() => void update(ticket, "resolved")}>{t("admin.markResolved")}</button>
+                {ticket.status !== "open" && <button className="admin-button admin-button--ghost admin-button--md" disabled={busy === ticket._id} onClick={() => void update(ticket, "open")}>{t("admin.reopen")}</button>}
               </div>
             </article>
           ))}
         </div>
       )}
-      {pages > 1 && <div className="admin-panel flex items-center justify-between gap-3 p-4"><button className="admin-button admin-button--secondary admin-button--md" disabled={page <= 1 || loading} onClick={() => setPage((current) => current - 1)}>Précédent</button><span>Page {page} / {pages}</span><button className="admin-button admin-button--secondary admin-button--md" disabled={page >= pages || loading} onClick={() => setPage((current) => current + 1)}>Suivant</button></div>}
+      {pages > 1 && <div className="admin-panel flex items-center justify-between gap-3 p-4"><button className="admin-button admin-button--secondary admin-button--md" disabled={page <= 1 || loading} onClick={() => setPage((current) => current - 1)}>{t("common.previous")}</button><span>{t("pagination.pageOf").replace("{page}", String(page)).replace("{pages}", String(pages))}</span><button className="admin-button admin-button--secondary admin-button--md" disabled={page >= pages || loading} onClick={() => setPage((current) => current + 1)}>{t("common.next")}</button></div>}
     </div>
   );
 }

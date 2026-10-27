@@ -1,10 +1,13 @@
 ﻿import {
   createContext,
   useEffect,
+  useLayoutEffect,
   useState,
   type ReactNode,
 } from "react";
 import { useAuth } from "../helper/useAuth";
+import useCSRF from "../helper/useCSRF";
+import { languageForSession, shouldPersistLanguageLocally } from "./languagePreference.js";
 
 export type Language = "fr" | "en";
 type Messages = Record<string, string>;
@@ -12,10 +15,120 @@ type Messages = Record<string, string>;
 const storageKey = "shopinmada.language.v1";
 const catalogs: Record<Language, Messages> = {
   fr: {
+    "common.close": "Fermer",
+    "common.loading": "Chargement…",
+    "common.noResults": "Aucun résultat",
+    "common.noData": "Aucune donnée à afficher pour le moment.",
+    "common.previousPage": "Page précédente",
+    "common.nextPage": "Page suivante",
+    "common.previous": "Précédent",
+    "common.next": "Suivant",
+    "common.retry": "Réessayer",
+    "common.submit": "Valider",
+    "common.cancel": "Annuler",
+    "common.save": "Enregistrer",
+    "common.error": "Une erreur est survenue.",
+    "common.loadError": "Erreur de chargement.",
+    "common.saveError": "Enregistrement impossible.",
+    "common.tablePagination": "Pagination du tableau",
+    "pagination.pageOf": "Page {page} sur {pages}",
+    "pagination.rangeOf": "{start}–{end} sur {total}",
+    "admin.financeEyebrow": "Pilotage",
+    "admin.auditEyebrow": "Sécurité et traçabilité",
+    "admin.auditDescription": "Historique des décisions administratives enregistrées par les modules opérationnels.",
+    "admin.loadingAudit": "Chargement du journal…",
+    "admin.date": "Date",
+    "admin.administrator": "Administrateur",
+    "admin.action": "Action",
+    "admin.target": "Cible",
+    "admin.reason": "Motif",
+    "admin.auditEmpty": "Aucune action enregistrée pour le moment. Les événements apparaîtront ici dès qu’une décision est prise dans les files KYC et Support.",
+    "admin.inboxUnavailable": "Boîte de support indisponible.",
+    "admin.customerSupport": "Support client",
+    "admin.inboxTitle": "Boîte de réception",
+    "admin.inboxDescription": "Traitez les messages reçus, ajoutez une note interne et suivez leur résolution.",
+    "admin.ticketCount": "{count} ticket(s)",
+    "admin.searchTicket": "Rechercher un ticket",
+    "admin.searchTicketPlaceholder": "Nom, e-mail ou sujet",
+    "admin.filterTickets": "Filtrer les tickets",
+    "admin.ticketNew": "Nouveau",
+    "admin.ticketInProgress": "En cours",
+    "admin.ticketResolved": "Résolu",
+    "admin.ticketResolvedPlural": "Résolus",
+    "admin.loadingMessages": "Chargement des messages…",
+    "admin.noMessagesQueue": "Aucun message dans cette file.",
+    "admin.replyHistory": "Historique des réponses",
+    "admin.emailReply": "Réponse envoyée par e-mail",
+    "admin.replyPlaceholder": "Écrivez une réponse au client…",
+    "admin.sendReply": "Envoyer la réponse",
+    "admin.internalNote": "Note interne",
+    "admin.takeTicket": "Prendre en charge",
+    "admin.markResolved": "Marquer résolu",
+    "admin.reopen": "Rouvrir",
+    "admin.financeDescription": "Encaissements confirmés, remboursements consignés, soldes vendeurs et prévisions.",
+    "admin.financeRatesTitle": "Taux d’affichage des devises",
+    "admin.financeRatesHint": "Saisissez les MGA par euro et dollar. Les paiements restent en MGA.",
+    "admin.financeNoRates": "Aucun taux défini.",
+    "admin.financeGross": "Encaissements",
+    "admin.marketplaceVolume": "Volume marketplace",
+    "admin.refundsRecorded": "Remboursements consignés",
+    "admin.netAfterRefunds": "Net après remboursements",
+    "admin.forecast30Days": "Échéances estimées · 30 jours",
+    "admin.updatedAt": "Mis à jour le",
+    "admin.reportUnavailable": "Rapport indisponible.",
+    "admin.sellerBalances": "Soldes et reversements vendeurs",
+    "admin.payoutLedgerHint": "Le registre calcule la commission configurée par boutique et le solde dû. Consigner un virement ne déclenche pas le transfert bancaire.",
+    "admin.gross": "Brut",
+    "admin.commission": "Commission",
+    "admin.balance": "Solde",
+    "admin.amountMGA": "Montant MGA",
+    "admin.transferReference": "Référence du virement",
+    "admin.recordPayout": "Consigner le versement",
+    "admin.refundLedgerTitle": "Consigner un remboursement",
+    "admin.refundLedgerHint": "Cette action met à jour le registre. Effectuez séparément le remboursement sur le moyen de paiement.",
+    "admin.source": "Origine",
+    "admin.subscription": "Abonnement",
+    "admin.marketplaceSuborder": "Sous-commande marketplace",
+    "admin.sourceId": "ID source",
+    "admin.amount": "Montant",
+    "admin.reasonLabel": "Motif",
+    "admin.save": "Enregistrer",
+    "admin.csvExports": "Exports CSV",
+    "admin.exportSellers": "vendeurs",
+    "admin.exportOrders": "commandes",
+    "admin.exportDisputes": "litiges",
+    "admin.exportProducts": "produits",
+    "admin.exportReviews": "avis",
+    "admin.exportKyc": "dossiers KYC",
+    "admin.exportTickets": "tickets support",
+    "admin.exportSubscriptions": "abonnements",
+    "admin.exportAudit": "journal d’audit",
+    "admin.export": "Exporter",
+    "admin.refundUnavailable": "Remboursement impossible.",
+    "admin.payoutUnavailable": "Versement impossible.",
+    "admin.updateUnavailable": "Mise à jour impossible.",
+    "admin.updateError": "Erreur de mise à jour.",
+    "admin.sendUnavailable": "Envoi impossible.",
+    "admin.sendError": "Erreur d’envoi.",
+    "admin.currencyEur": "MGA pour 1 EUR",
+    "admin.currencyUsd": "MGA pour 1 USD",
+    "admin.saveRates": "Enregistrer les taux",
+    "admin.from": "Du",
+    "admin.to": "Au",
+    "admin.refresh": "Actualiser",
+    "admin.financialMetricsLoading": "Calcul des indicateurs…",
+    "admin.receiptsByDay": "Encaissements par jour",
+    "admin.noReceiptsPeriod": "Aucun encaissement sur cette période.",
     "theme.switchTo": "Passer au thème",
     "theme.light": "clair",
     "theme.dark": "sombre",
+    "theme.system": "Système",
+    "theme.activateLight": "Activer le thème clair",
+    "theme.activateDark": "Activer le thème sombre",
     "profile.appearance": "Apparence",
+    "profile.languageHint": "Ce choix s’applique à toutes les pages et est enregistré sur votre compte.",
+    "profile.languageHintSeller": "Ce choix s’applique au profil client, à votre espace vendeur et à l’administration.",
+    "profile.themeHint": "Ce choix s’applique à toutes les interfaces et est enregistré sur votre compte.",
     "admin.accountSettings": "Paramètres du compte",
     "admin.accounts": "Gestion des comptes",
     "admin.addProduct": "Ajouter un produit",
@@ -25,6 +138,8 @@ const catalogs: Record<Language, Messages> = {
     "admin.accountActive": "Compte actif",
     "admin.activityLog": "Journal d’activité",
     "admin.categories": "Catégories",
+    "admin.facebook": "Facebook",
+    "admin.toggleNavigation": "Afficher ou masquer le menu",
     "admin.closeMenu": "Fermer le menu",
     "admin.dashboard": "Tableau de bord",
     "admin.discoverPro": "Découvrir ShopInMada Pro",
@@ -120,23 +235,30 @@ const catalogs: Record<Language, Messages> = {
     "language.english": "Anglais",
     "language.french": "Français",
     "language.label": "Langue",
+    "language.saved": "Langue enregistrée.",
     "language.saveError": "Impossible d’enregistrer la langue sur votre compte. Votre choix précédent a été rétabli.",
     "nav.about": "À propos",
     "nav.account": "Mon compte",
     "nav.allCities": "Toutes les villes",
     "nav.becomeSeller": "Devenir vendeur",
     "nav.categories": "Catégories",
+    "nav.closeMenu": "Fermer le menu",
     "nav.contact": "Contact",
     "nav.discover": "Découvrir",
     "nav.exploreProducts": "Explorer les produits",
+    "nav.home": "Accueil ShopInMada",
     "nav.joinSellers": "Vous êtes vendeur ? Rejoignez-nous",
     "nav.localMarket": "Des boutiques locales, partout à Madagascar",
     "nav.login": "Connexion",
     "nav.logout": "Déconnexion",
+    "nav.openMenu": "Ouvrir le menu",
     "nav.proOffer": "Offre Pro",
+    "nav.profile": "Mon profil",
+    "nav.primaryNavigation": "Navigation principale",
     "nav.register": "Créer un compte",
     "nav.registerShort": "Inscription",
     "nav.search": "Rechercher",
+    "nav.searchAction": "Lancer la recherche",
     "nav.searchDesktop": "Que recherchez-vous aujourd’hui ?",
     "nav.searchMobile": "Rechercher un produit...",
     "nav.sell": "Vendre",
@@ -281,10 +403,120 @@ const catalogs: Record<Language, Messages> = {
     "verify.submitting": "Validation…",
   },
   en: {
+    "common.close": "Close",
+    "common.loading": "Loading…",
+    "common.noResults": "No results",
+    "common.noData": "No data to display yet.",
+    "common.previousPage": "Previous page",
+    "common.nextPage": "Next page",
+    "common.previous": "Previous",
+    "common.next": "Next",
+    "common.retry": "Try again",
+    "common.submit": "Submit",
+    "common.cancel": "Cancel",
+    "common.save": "Save",
+    "common.error": "An error occurred.",
+    "common.loadError": "Loading failed.",
+    "common.saveError": "Unable to save.",
+    "common.tablePagination": "Table pagination",
+    "pagination.pageOf": "Page {page} of {pages}",
+    "pagination.rangeOf": "{start}–{end} of {total}",
+    "admin.financeEyebrow": "Overview",
+    "admin.auditEyebrow": "Security and accountability",
+    "admin.auditDescription": "History of administrative decisions recorded by operational modules.",
+    "admin.loadingAudit": "Loading activity log…",
+    "admin.date": "Date",
+    "admin.administrator": "Administrator",
+    "admin.action": "Action",
+    "admin.target": "Target",
+    "admin.reason": "Reason",
+    "admin.auditEmpty": "No actions recorded yet. Events appear here when a decision is made in KYC and Support queues.",
+    "admin.inboxUnavailable": "Support inbox unavailable.",
+    "admin.customerSupport": "Customer support",
+    "admin.inboxTitle": "Inbox",
+    "admin.inboxDescription": "Handle incoming messages, add internal notes and track resolution.",
+    "admin.ticketCount": "{count} ticket(s)",
+    "admin.searchTicket": "Search tickets",
+    "admin.searchTicketPlaceholder": "Name, email or subject",
+    "admin.filterTickets": "Filter tickets",
+    "admin.ticketNew": "New",
+    "admin.ticketInProgress": "In progress",
+    "admin.ticketResolved": "Resolved",
+    "admin.ticketResolvedPlural": "Resolved",
+    "admin.loadingMessages": "Loading messages…",
+    "admin.noMessagesQueue": "No messages in this queue.",
+    "admin.replyHistory": "Reply history",
+    "admin.emailReply": "Reply sent by email",
+    "admin.replyPlaceholder": "Write a reply to the customer…",
+    "admin.sendReply": "Send reply",
+    "admin.internalNote": "Internal note",
+    "admin.takeTicket": "Take ownership",
+    "admin.markResolved": "Mark resolved",
+    "admin.reopen": "Reopen",
+    "admin.financeDescription": "Confirmed payments, recorded refunds, seller balances and forecasts.",
+    "admin.financeRatesTitle": "Display currency rates",
+    "admin.financeRatesHint": "Enter MGA per euro and dollar. Payments remain in MGA.",
+    "admin.financeNoRates": "No rates configured.",
+    "admin.currencyEur": "MGA per 1 EUR",
+    "admin.currencyUsd": "MGA per 1 USD",
+    "admin.saveRates": "Save rates",
+    "admin.from": "From",
+    "admin.to": "To",
+    "admin.refresh": "Refresh",
+    "admin.financialMetricsLoading": "Calculating indicators…",
+    "admin.receiptsByDay": "Receipts by day",
+    "admin.noReceiptsPeriod": "No receipts for this period.",
+    "admin.financeGross": "Receipts",
+    "admin.marketplaceVolume": "Marketplace volume",
+    "admin.refundsRecorded": "Recorded refunds",
+    "admin.netAfterRefunds": "Net after refunds",
+    "admin.forecast30Days": "Estimated due · 30 days",
+    "admin.updatedAt": "Updated",
+    "admin.reportUnavailable": "Report unavailable.",
+    "admin.sellerBalances": "Seller balances and payouts",
+    "admin.payoutLedgerHint": "The ledger calculates each shop’s configured commission and balance due. Recording a transfer does not initiate a bank payment.",
+    "admin.gross": "Gross",
+    "admin.commission": "Commission",
+    "admin.balance": "Balance",
+    "admin.amountMGA": "Amount in MGA",
+    "admin.transferReference": "Transfer reference",
+    "admin.recordPayout": "Record payout",
+    "admin.refundLedgerTitle": "Record a refund",
+    "admin.refundLedgerHint": "This updates the ledger. Process the refund separately through the payment method.",
+    "admin.source": "Source",
+    "admin.subscription": "Subscription",
+    "admin.marketplaceSuborder": "Marketplace suborder",
+    "admin.sourceId": "Source ID",
+    "admin.amount": "Amount",
+    "admin.reasonLabel": "Reason",
+    "admin.save": "Save",
+    "admin.csvExports": "CSV exports",
+    "admin.exportSellers": "sellers",
+    "admin.exportOrders": "orders",
+    "admin.exportDisputes": "disputes",
+    "admin.exportProducts": "products",
+    "admin.exportReviews": "reviews",
+    "admin.exportKyc": "KYC cases",
+    "admin.exportTickets": "support tickets",
+    "admin.exportSubscriptions": "subscriptions",
+    "admin.exportAudit": "audit log",
+    "admin.export": "Export",
+    "admin.refundUnavailable": "Unable to record refund.",
+    "admin.payoutUnavailable": "Unable to record payout.",
+    "admin.updateUnavailable": "Unable to update.",
+    "admin.updateError": "Update failed.",
+    "admin.sendUnavailable": "Unable to send.",
+    "admin.sendError": "Send failed.",
     "theme.switchTo": "Switch to",
     "theme.light": "light",
     "theme.dark": "dark",
+    "theme.system": "System",
+    "theme.activateLight": "Enable light theme",
+    "theme.activateDark": "Enable dark theme",
     "profile.appearance": "Appearance",
+    "profile.languageHint": "This choice applies across all pages and is saved to your account.",
+    "profile.languageHintSeller": "This choice applies to the customer profile, seller workspace and administration.",
+    "profile.themeHint": "This choice applies across all interfaces and is saved to your account.",
     "admin.accountSettings": "Account settings",
     "admin.accounts": "Account management",
     "admin.addProduct": "Add a product",
@@ -294,6 +526,8 @@ const catalogs: Record<Language, Messages> = {
     "admin.accountActive": "Account active",
     "admin.activityLog": "Activity log",
     "admin.categories": "Categories",
+    "admin.facebook": "Facebook",
+    "admin.toggleNavigation": "Show or hide navigation",
     "admin.closeMenu": "Close menu",
     "admin.dashboard": "Dashboard",
     "admin.discoverPro": "Discover ShopInMada Pro",
@@ -391,23 +625,30 @@ const catalogs: Record<Language, Messages> = {
     "language.english": "English",
     "language.french": "French",
     "language.label": "Language",
+    "language.saved": "Language saved.",
     "language.saveError": "Could not save the language to your account. Your previous choice has been restored.",
     "nav.about": "About",
     "nav.account": "My account",
     "nav.allCities": "All cities",
     "nav.becomeSeller": "Become a seller",
     "nav.categories": "Categories",
+    "nav.closeMenu": "Close the menu",
     "nav.contact": "Contact",
     "nav.discover": "Discover",
     "nav.exploreProducts": "Explore products",
+    "nav.home": "ShopInMada home",
     "nav.joinSellers": "Are you a seller? Join us",
     "nav.localMarket": "Local shops across Madagascar",
     "nav.login": "Sign in",
     "nav.logout": "Sign out",
+    "nav.openMenu": "Open the menu",
     "nav.proOffer": "Pro plan",
+    "nav.profile": "My profile",
+    "nav.primaryNavigation": "Main navigation",
     "nav.register": "Create an account",
     "nav.registerShort": "Register",
     "nav.search": "Search",
+    "nav.searchAction": "Start search",
     "nav.searchDesktop": "What are you looking for today?",
     "nav.searchMobile": "Search for a product...",
     "nav.sell": "Sell",
@@ -999,7 +1240,7 @@ const translationBundles: Record<Language, Record<string, string>> = {
 interface LanguageContextValue {
   language: Language;
   setLanguage: (language: Language) => void;
-  setLanguageSilently: (language: Language) => void;
+  persistLanguage: (language: Language) => Promise<boolean>;
   t: (key: string) => string;
 }
 
@@ -1016,32 +1257,70 @@ function getInitialLanguage(): Language {
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>(getInitialLanguage);
-  const { user, authReady } = useAuth();
+  const { user, authReady, setUserInfo } = useAuth();
+  const csrf = useCSRF();
   const [initializedUserId, setInitializedUserId] = useState<string | null>(null);
-  const setLanguageSilently = setLanguage;
+  const userId = user?._id;
+  const accountLanguage = user?.preferences?.language;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!authReady) return;
     if (user) {
-      if (initializedUserId === user._id) return;
-      setLanguage(user.preferences?.language ?? getInitialLanguage());
-      setInitializedUserId(user._id);
+      if (initializedUserId === userId) return;
+      setLanguage(languageForSession(true, accountLanguage, getInitialLanguage()));
+      setInitializedUserId(userId ?? null);
+      return;
+    }
+    if (initializedUserId === null) {
+      setLanguage(languageForSession(false, undefined, getInitialLanguage()));
       return;
     }
     if (initializedUserId !== null) {
       setLanguage(getInitialLanguage());
       setInitializedUserId(null);
     }
-  }, [authReady, initializedUserId, user]);
+  }, [accountLanguage, authReady, initializedUserId, user, userId]);
 
   useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
+  useEffect(() => {
+    if (!authReady || !shouldPersistLanguageLocally(Boolean(user))) return;
     try {
       localStorage.setItem(storageKey, language);
     } catch {
       // Language selection still works for the current session.
     }
-    document.documentElement.lang = language;
-  }, [language]);
+  }, [authReady, language, user]);
+
+  const persistLanguage = async (nextLanguage: Language) => {
+    if (!user) {
+      setLanguage(nextLanguage);
+      return true;
+    }
+    if (!csrf) return false;
+    const previousLanguage = language;
+    setLanguage(nextLanguage);
+    try {
+      const response = await fetch(`${import.meta.env.REACT_API_URL}user/preferences`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "xsrf-token": csrf },
+        body: JSON.stringify({ language: nextLanguage }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setLanguage(previousLanguage);
+        return false;
+      }
+      if (result.data) setUserInfo({ ...user, preferences: { ...user.preferences, ...result.data } });
+      return true;
+    } catch {
+      setLanguage(previousLanguage);
+      return false;
+    }
+  };
 
   const t = (key: string) =>
     translationBundles[language][key] ??
@@ -1050,7 +1329,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     catalogs.fr[key] ??
     key;
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, setLanguageSilently, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, persistLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );

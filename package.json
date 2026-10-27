@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test:theme": "node --test src/context/themePreference.test.mjs",
+    "test:language": "node --test src/context/languagePreference.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

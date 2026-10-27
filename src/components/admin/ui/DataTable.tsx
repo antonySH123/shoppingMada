@@ -2,6 +2,7 @@ import { ReactNode, useMemo, useState } from "react";
 import AdminButton from "./Button";
 import EmptyState from "./EmptyState";
 import AdminSkeleton from "./Skeleton";
+import { useLanguage } from "../../../context/useLanguage";
 
 export type AdminSortValue = string | number | Date | null | undefined;
 export interface AdminDataColumn<T> {
@@ -39,9 +40,10 @@ function DataTable<T>({
   getRowKey,
   pageSize = 10,
   loading = false,
-  emptyTitle = "Aucun résultat",
-  emptyDescription = "Aucune donnée à afficher pour le moment.",
+  emptyTitle,
+  emptyDescription,
 }: DataTableProps<T>) {
+  const { t } = useLanguage();
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [pageIndex, setPageIndex] = useState(0);
@@ -81,7 +83,8 @@ function DataTable<T>({
     return (
       <div
         className="admin-table-scroll grid gap-3 p-4"
-        aria-label="Chargement du tableau"
+        role="status"
+        aria-label={t("common.loading")}
       >
         <AdminSkeleton rows={6} />
       </div>
@@ -105,7 +108,7 @@ function DataTable<T>({
                 const sorted = sortColumn === column.id;
                 const ariaSort = sorted
                   ? sortDirection === "asc"
-                    ? "ascending"
+              ? "ascending"
                     : "descending"
                   : "none";
                 return (
@@ -172,7 +175,7 @@ function DataTable<T>({
       {sortedRows.length > pageSize && (
         <nav
           className="admin-table-pagination"
-          aria-label="Pagination du tableau"
+          aria-label={t("common.tablePagination")}
         >
           <span>
             {safePageIndex * pageSize + 1}–
@@ -185,9 +188,9 @@ function DataTable<T>({
               variant="outline"
               disabled={safePageIndex === 0}
               onClick={() => setPageIndex((page) => Math.max(0, page - 1))}
-              aria-label="Page précédente"
+              aria-label={t("common.previousPage")}
             >
-              Précédent
+              {t("common.previous")}
             </AdminButton>
             <AdminButton
               size="sm"
@@ -196,9 +199,9 @@ function DataTable<T>({
               onClick={() =>
                 setPageIndex((page) => Math.min(pageCount - 1, page + 1))
               }
-              aria-label="Page suivante"
+              aria-label={t("common.nextPage")}
             >
-              Suivant
+              {t("common.next")}
             </AdminButton>
           </div>
         </nav>

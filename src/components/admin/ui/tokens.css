@@ -1,11 +1,11 @@
 .admin-shell {
-  --admin-canvas: #0b1113;
-  --admin-surface: #111a1d;
-  --admin-surface-raised: #172326;
-  --admin-surface-hover: #1c2a2d;
-  --admin-border: #29393b;
-  --admin-text: #eef6f3;
-  --admin-muted: #a5b4b0;
+  --admin-canvas: var(--background);
+  --admin-surface: var(--card);
+  --admin-surface-raised: var(--muted-surface);
+  --admin-surface-hover: color-mix(in srgb, var(--muted-surface) 78%, var(--primary));
+  --admin-border: var(--border);
+  --admin-text: var(--foreground);
+  --admin-muted: var(--muted);
   --admin-accent: linear-gradient(112deg, #43d9b3 0%, #39b9c8 58%, #6b8dff 100%);
   --admin-accent-solid: #3cc8b3;
   --admin-success: #48d6a0;
@@ -33,13 +33,13 @@
 }
 
 .admin-shell[data-admin-theme="light"] {
-  --admin-canvas: #e8efeb;
-  --admin-surface: #f7faf8;
-  --admin-surface-raised: #edf4f0;
-  --admin-surface-hover: #e3eee7;
-  --admin-border: #cbd9d0;
-  --admin-text: #172b22;
-  --admin-muted: #5e7167;
+  --admin-canvas: var(--background);
+  --admin-surface: var(--card);
+  --admin-surface-raised: var(--muted-surface);
+  --admin-surface-hover: color-mix(in srgb, var(--muted-surface) 78%, var(--primary));
+  --admin-border: var(--border);
+  --admin-text: var(--foreground);
+  --admin-muted: var(--muted);
   --admin-success: #16794e;
   --admin-warning: #9b6411;
   --admin-danger: #b8323b;

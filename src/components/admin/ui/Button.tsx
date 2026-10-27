@@ -1,4 +1,5 @@
 import { ButtonHTMLAttributes, ReactNode } from "react";
+import { useLanguage } from "../../../context/useLanguage";
 
 export type AdminButtonVariant =
   | "primary"
@@ -29,6 +30,7 @@ function AdminButton({
   children,
   ...props
 }: AdminButtonProps) {
+  const { t } = useLanguage();
   const label = props["aria-label"];
   const title =
     tooltip ?? (iconOnly && typeof label === "string" ? label : undefined);
@@ -45,7 +47,7 @@ function AdminButton({
       {loading ? (
         <>
           <span className="admin-button__spinner" aria-hidden="true" />
-          <span className="sr-only">Chargement…</span>
+          <span className="sr-only">{t("common.loading")}</span>
         </>
       ) : (
         children

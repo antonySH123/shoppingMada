@@ -30,8 +30,8 @@ const Navbar = () => {
     { href: "/#about", label: t("nav.about") },
     { href: "/#abonnements", label: t("nav.proOffer") },
   ];
-  const { user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { user, authReady } = useAuth();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const isSeller = user?.userGroupMember_id?.usergroup_id?.name === "Boutiks";
   const visibleMenu = menu.filter(
     (item) => item.href !== "/vendeur" || !isSeller,
@@ -61,7 +61,7 @@ const Navbar = () => {
         to="/profil"
         onClick={closeMenu}
         className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
-        aria-label="Mon profil"
+        aria-label={t("nav.profile")}
       >
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-800">
           <LiaUser size={18} />
@@ -83,8 +83,8 @@ const Navbar = () => {
         to="/logout"
         onClick={closeMenu}
         className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 transition hover:bg-red-50 hover:text-red-600"
-        aria-label="Se déconnecter"
-        title="Se déconnecter"
+        aria-label={t("nav.logout")}
+        title={t("nav.logout")}
       >
         <LiaSignOutAltSolid size={20} />
       </Link>
@@ -125,7 +125,7 @@ const Navbar = () => {
       <div className="market-container flex h-[4.5rem] items-center gap-3 sm:gap-5">
         <Link
           to="/"
-          aria-label="ShopInMada, accueil"
+          aria-label={t("nav.home")}
           className="flex shrink-0 items-center"
         >
           <img
@@ -150,7 +150,7 @@ const Navbar = () => {
           />
           <input
             type="search"
-            aria-label="Rechercher un produit ou une boutique"
+            aria-label={t("nav.searchDesktop")}
             placeholder={t("nav.searchDesktop")}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
@@ -165,14 +165,14 @@ const Navbar = () => {
         </form>
 
         <div className="ml-auto hidden shrink-0 items-center gap-1 md:flex">
-          {!user && <LanguageSelector compact className="nav-language-selector" />}
-          {!user && <button type="button" className="global-theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Activer le thème clair" : "Activer le thème sombre"} title={theme === "dark" ? "Thème clair" : "Thème sombre"}>{theme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
+          {authReady && !user && <LanguageSelector compact className="nav-language-selector" />}
+          {!user && <button type="button" className="global-theme-toggle" onClick={toggleTheme} aria-label={resolvedTheme === "dark" ? t("theme.activateLight") : t("theme.activateDark")} title={resolvedTheme === "dark" ? t("theme.activateLight") : t("theme.activateDark")}>{resolvedTheme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
           <CartHeaderLink />
           {accountLinks}
         </div>
         <button
           type="button"
-          aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
+      aria-label={open ? t("nav.closeMenu") : t("nav.openMenu")}
           aria-expanded={open}
           onClick={() => setOpen((previous) => !previous)}
           className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 text-gray-700 transition hover:bg-gray-50 md:hidden"
@@ -183,7 +183,7 @@ const Navbar = () => {
 
       <div className="market-container hidden items-center justify-between border-t border-gray-100 py-1.5 md:flex">
         <nav
-          aria-label="Navigation principale"
+          aria-label={t("nav.primaryNavigation")}
           className="flex items-center gap-1"
         >
           {visibleMenu.map((item) => {
@@ -212,8 +212,8 @@ const Navbar = () => {
       </div>
 
       <div className="market-container flex items-center gap-2 pb-3 md:hidden">
-        {!user && <LanguageSelector compact className="nav-language-selector" />}
-        {!user && <button type="button" className="global-theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Activer le thème clair" : "Activer le thème sombre"} title={theme === "dark" ? "Thème clair" : "Thème sombre"}>{theme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
+        {authReady && !user && <LanguageSelector compact className="nav-language-selector" />}
+        {!user && <button type="button" className="global-theme-toggle" onClick={toggleTheme} aria-label={resolvedTheme === "dark" ? t("theme.activateLight") : t("theme.activateDark")} title={resolvedTheme === "dark" ? t("theme.activateLight") : t("theme.activateDark")}>{resolvedTheme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
         <form onSubmit={handleSearch} role="search" className="relative min-w-0 flex-1">
           <LiaSearchSolid
             aria-hidden="true"
@@ -222,7 +222,7 @@ const Navbar = () => {
           />
           <input
             type="search"
-            aria-label="Rechercher un produit ou une boutique"
+            aria-label={t("nav.searchDesktop")}
             placeholder={t("nav.searchMobile")}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
@@ -230,7 +230,7 @@ const Navbar = () => {
           />
           <button
             type="submit"
-            aria-label="Lancer la recherche"
+            aria-label={t("nav.searchAction")}
             className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-800 text-white"
           >
             <LiaSearchSolid size={18} />
@@ -241,7 +241,7 @@ const Navbar = () => {
       {open && (
         <div className="border-t border-gray-100 bg-white px-4 pb-5 pt-3 shadow-lg md:hidden">
           <nav
-            aria-label="Navigation mobile"
+            aria-label={t("nav.primaryNavigation")}
             className="market-container flex flex-col gap-1"
           >
             {[

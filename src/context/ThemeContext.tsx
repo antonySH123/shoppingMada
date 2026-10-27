@@ -1,74 +1,94 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 import { ThemeContext } from "./ThemeContextInstance";
 import useCSRF from "../helper/useCSRF";
 import { useAuth } from "../helper/useAuth";
+import { resolveTheme, shouldPersistThemeLocally, themeForSession } from "./themePreference.js";
+import type { ThemeChoice } from "./ThemeContextInstance";
+export type { Theme, ThemeChoice } from "./ThemeContextInstance";
 
-import type { Theme } from "./ThemeContextInstance";
-export type { Theme } from "./ThemeContextInstance";
 const storageKey = "shopinmada.theme.v1";
+const systemPreference = window.matchMedia?.("(prefers-color-scheme: dark)");
 
-function getInitialTheme(): Theme {
+function getInitialTheme(): ThemeChoice {
   try {
-    return localStorage.getItem(storageKey) === "dark" ? "dark" : "light";
+    const storedTheme = localStorage.getItem(storageKey);
+    return storedTheme === "light" || storedTheme === "dark" ? storedTheme : "system";
   } catch {
-    return "light";
+    return "system";
   }
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [theme, setThemeChoice] = useState<ThemeChoice>(getInitialTheme);
+  const [systemPrefersDark, setSystemPrefersDark] = useState(systemPreference?.matches ?? false);
+  const [initialized, setInitialized] = useState(false);
   const { user, authReady, setUserInfo } = useAuth();
   const csrf = useCSRF();
-  const [initializedUserId, setInitializedUserId] = useState<string | null>(null);
+  const userId = user?._id;
+  const accountTheme = user?.preferences?.theme;
+  const isAuthenticated = userId !== undefined;
+  const resolvedTheme = resolveTheme(theme, systemPrefersDark);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!authReady) return;
-    if (user) {
-      if (initializedUserId === user._id) return;
-      const accountTheme = user.preferences?.theme;
-      setTheme(accountTheme === "light" || accountTheme === "dark" ? accountTheme : getInitialTheme());
-      setInitializedUserId(user._id);
-      return;
-    }
-    if (initializedUserId !== null) {
-      setTheme(getInitialTheme());
-      setInitializedUserId(null);
-    }
-  }, [authReady, initializedUserId, user]);
+    const nextTheme = themeForSession(isAuthenticated, accountTheme, getInitialTheme());
+    setThemeChoice(nextTheme);
+    setInitialized(true);
+  }, [accountTheme, authReady, isAuthenticated, userId]);
 
-  useEffect(() => {
-    try { localStorage.setItem(storageKey, theme); } catch { /* Keep theme for this session. */ }
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-  }, [theme]);
+  useLayoutEffect(() => {
+    const applyResolvedTheme = () => {
+      const nextResolvedTheme = resolveTheme(theme, systemPrefersDark);
+      document.documentElement.dataset.theme = nextResolvedTheme;
+      document.documentElement.classList.toggle("dark", nextResolvedTheme === "dark");
+      document.documentElement.style.colorScheme = nextResolvedTheme;
+    };
+    applyResolvedTheme();
+    const handleSystemChange = (event: MediaQueryListEvent) => setSystemPrefersDark(event.matches);
+    systemPreference?.addEventListener("change", handleSystemChange);
+    return () => systemPreference?.removeEventListener("change", handleSystemChange);
+  }, [systemPrefersDark, theme]);
 
-  const persistTheme = useCallback(async (nextTheme: Theme) => {
-    if (!user) { setTheme(nextTheme); return true; }
-    const csrfToken = csrf;
-    if (!csrfToken) return false;
+  const setTheme = useCallback(async (nextTheme: ThemeChoice) => {
+    if (!user) {
+      setThemeChoice(nextTheme);
+      if (shouldPersistThemeLocally(false)) {
+        try {
+          if (nextTheme === "system") localStorage.removeItem(storageKey);
+          else localStorage.setItem(storageKey, nextTheme);
+        } catch { /* The theme remains active for the current session. */ }
+      }
+      return true;
+    }
+    if (!csrf) return false;
+
     const previousTheme = theme;
+    setThemeChoice(nextTheme);
     try {
-      setTheme(nextTheme);
-      const response = await fetch(`${import.meta.env.REACT_API_URL}user/preferences`, {
-        method: "PUT",
+      const response = await fetch(`${import.meta.env.REACT_API_URL}user/profile/theme`, {
+        method: "PATCH",
         credentials: "include",
-        headers: { "Content-Type": "application/json", "xsrf-token": csrfToken },
+        headers: { "Content-Type": "application/json", "xsrf-token": csrf },
         body: JSON.stringify({ theme: nextTheme }),
       });
-      if (!response.ok) { setTheme(previousTheme); return false; }
       const result = await response.json();
-      setTheme(nextTheme);
-      if (result.data) setUserInfo({ ...user, preferences: result.data });
+      if (!response.ok) {
+        setThemeChoice(previousTheme);
+        return false;
+      }
+      setUserInfo({ ...user, preferences: { ...user.preferences, ...result.data } });
       return true;
     } catch {
-      setTheme(previousTheme);
+      setThemeChoice(previousTheme);
       return false;
     }
   }, [csrf, setUserInfo, theme, user]);
-  const toggleTheme = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    void persistTheme(nextTheme);
-  };
-  const value = { theme, setTheme, toggleTheme, persistTheme };
+
+  const toggleTheme = useCallback(() => {
+    void setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  }, [resolvedTheme, setTheme]);
+
+  const value = useMemo(() => ({ theme, resolvedTheme, setTheme, toggleTheme, persistTheme: setTheme }), [resolvedTheme, setTheme, theme, toggleTheme]);
+  if (!initialized) return <div className="theme-bootstrap" aria-hidden="true" />;
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

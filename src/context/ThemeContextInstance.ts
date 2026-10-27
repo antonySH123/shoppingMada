@@ -1,4 +1,5 @@
 import { createContext } from "react";
 export type Theme = "light" | "dark";
-export type ThemeContextValue = { theme: Theme; setTheme: (theme: Theme) => void; toggleTheme: () => void; persistTheme: (theme: Theme) => Promise<boolean> };
+export type ThemeChoice = Theme | "system";
+export type ThemeContextValue = { theme: ThemeChoice; resolvedTheme: Theme; setTheme: (theme: ThemeChoice) => Promise<boolean>; toggleTheme: () => void; persistTheme: (theme: ThemeChoice) => Promise<boolean> };
 export const ThemeContext = createContext<ThemeContextValue | null>(null);

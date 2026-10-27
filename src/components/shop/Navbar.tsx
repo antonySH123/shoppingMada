@@ -12,8 +12,8 @@ function Navbar() {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { user, authReady } = useAuth();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const { isOpen: isMobileCategoryOpen, toggler: toggleMobileCategories } =
     useSidebar();
   const query = searchParams.get("q") ?? "";
@@ -42,7 +42,7 @@ function Navbar() {
       <div className="market-container flex h-[4.5rem] items-center gap-4 sm:gap-6">
         <Link
           to="/"
-          aria-label="Accueil ShopInMada"
+          aria-label={t("nav.home")}
           className="flex shrink-0 items-center"
         >
           <img
@@ -74,15 +74,15 @@ function Navbar() {
           />
           <button
             type="submit"
-            aria-label="Rechercher"
+            aria-label={t("nav.searchAction")}
             className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-800 text-white transition hover:bg-emerald-950"
           >
             <LiaSearchSolid size={18} />
           </button>
         </form>
         <div className="hidden shrink-0 items-center gap-2 md:flex">
-          {!user && <LanguageSelector compact className="nav-language-selector" />}
-          {!user && <button type="button" className="global-theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Activer le thème clair" : "Activer le thème sombre"} title={theme === "dark" ? "Thème clair" : "Thème sombre"}>{theme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
+          {authReady && !user && <LanguageSelector compact className="nav-language-selector" />}
+          {!user && <button type="button" className="global-theme-toggle" onClick={toggleTheme} aria-label={resolvedTheme === "dark" ? t("theme.activateLight") : t("theme.activateDark")} title={resolvedTheme === "dark" ? t("theme.activateLight") : t("theme.activateDark")}>{resolvedTheme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
           <CartHeaderLink />
           <Link
             to={user ? "/profil" : "/login"}
@@ -107,8 +107,7 @@ function Navbar() {
       <div className="border-t border-gray-100">
         {query ? (
           <div className="market-container flex min-w-0 items-center gap-2 py-2">
-            {!user && <LanguageSelector compact className="nav-language-selector shop-mobile-control" />}
-            {!user && <button type="button" className="global-theme-toggle global-theme-toggle--mobile" onClick={toggleTheme} aria-label={theme === "dark" ? "Activer le thème clair" : "Activer le thème sombre"} title={theme === "dark" ? "Thème clair" : "Thème sombre"}>{theme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
+            {authReady && !user && <LanguageSelector compact className="nav-language-selector md:hidden" />}
             <nav
               aria-label={t("shop.city")}
               className="flex min-w-0 flex-1 gap-2 overflow-x-auto"
@@ -133,8 +132,8 @@ function Navbar() {
         ) : (
           <div className="market-container flex items-center justify-between gap-2 py-2">
             <div className="flex min-w-0 items-center gap-2">
-              {!user && <LanguageSelector compact className="nav-language-selector shop-mobile-control" />}
-              {!user && <button type="button" className="global-theme-toggle global-theme-toggle--mobile" onClick={toggleTheme} aria-label={theme === "dark" ? "Activer le thème clair" : "Activer le thème sombre"} title={theme === "dark" ? "Thème clair" : "Thème sombre"}>{theme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
+              {authReady && !user && <LanguageSelector compact className="nav-language-selector md:hidden" />}
+              {!user && <button type="button" className="global-theme-toggle global-theme-toggle--mobile" onClick={toggleTheme} aria-label={resolvedTheme === "dark" ? t("theme.activateLight") : t("theme.activateDark")} title={resolvedTheme === "dark" ? t("theme.activateLight") : t("theme.activateDark")}>{resolvedTheme === "dark" ? <LiaSunSolid size={18} /> : <LiaMoonSolid size={18} />}</button>}
               <button
                 type="button"
                 aria-expanded={isMobileCategoryOpen}

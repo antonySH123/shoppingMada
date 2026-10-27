@@ -13,7 +13,7 @@ import { useTheme } from "../../context/useTheme";
 
 function AppAdmin() {
   const { t } = useLanguage();
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const { user, setUserInfo } = useAuth();
   const csrf = useCSRF();
   const location = useLocation();
@@ -43,7 +43,7 @@ function AppAdmin() {
     "categories-admin": t("admin.categories"),
     finances: t("admin.finance"),
     forfaits: t("admin.plansPermissions"),
-    facebook: "Facebook",
+    facebook: t("admin.facebook"),
   };
   const pageKey = location.pathname.split("/").filter(Boolean).pop() || "dash";
 
@@ -64,14 +64,14 @@ function AppAdmin() {
   }, []);
 
   return (
-    <div className="admin-shell flex h-screen" data-admin-theme={theme}>
+    <div className="admin-shell flex h-screen" data-admin-theme={resolvedTheme}>
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
       <div className="admin-shell-main min-w-0 flex-1 overflow-y-auto">
         {user?.impersonation?.active && <div className="sticky top-0 z-50 flex items-center justify-between gap-3 bg-amber-300 px-4 py-2 text-sm font-bold text-slate-950"><span>{t("admin.impersonationActive")}</span><button className="rounded-lg bg-slate-950 px-3 py-1 text-white" onClick={async()=>{try{const r=await fetch(`${import.meta.env.REACT_API_URL}auth/impersonation`,{method:"DELETE",credentials:"include",headers:{"xsrf-token":csrf??""}});const j=await r.json();if(!r.ok)throw new Error(j.message);const me=await fetch(`${import.meta.env.REACT_API_URL}auth/me`,{credentials:"include"});const profile=await me.json();setUserInfo(profile.userInfo);toast.success(t("admin.impersonationStopped"));}catch(e){toast.error(e instanceof Error?e.message:t("admin.impersonationStopError"));}}}>{t("admin.stopImpersonation")}</button></div>}
         <header className="admin-page-header sticky top-0 z-20 flex h-[4.5rem] items-center gap-3 border-b px-4 shadow-sm sm:px-6">
           <button
-            aria-label="Afficher/masquer le menu"
+            aria-label={t("admin.toggleNavigation")}
             aria-expanded={!isCollapsed}
             className="admin-mobile-menu-button flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-gray-200 text-gray-700 transition hover:bg-gray-50"
             onClick={toggleSidebar}

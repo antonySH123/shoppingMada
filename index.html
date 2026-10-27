@@ -7,6 +7,19 @@
     <meta http-equiv="X-UA-Compatible" content="IE=7">
     <meta name="keywords" content="Madagascar, Shopping, Vente en ligne, Produit, Service">
     <title>ShopInMada</title>
+    <script>
+      (() => {
+        const root = document.documentElement;
+        let saved = null;
+        try {
+          saved = localStorage.getItem("shopinmada.theme.v1");
+        } catch (_) { /* The system preference remains available. */ }
+        const dark = saved === "dark" || (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        root.dataset.theme = dark ? "dark" : "light";
+        root.classList.toggle("dark", dark);
+        root.style.colorScheme = dark ? "dark" : "light";
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
