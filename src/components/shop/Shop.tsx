@@ -177,30 +177,30 @@ function Shop() {
             </p>
           )}
         </div>
-        <form aria-label={t("shop.applyFilters")} onSubmit={applyFilters} className="shop-filter-bar">
-          <div className="shop-filter-scroll">
-            <label className="shop-filter-field shop-filter-city">
-              <span>{t("shop.city")}</span>
-              <input value={filters.location} maxLength={100} placeholder={t("shop.allCities")} onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))} />
+        <form aria-label={t("shop.applyFilters")} onSubmit={applyFilters} className="mb-[1.1rem] min-w-0 max-md:-mx-2.5 max-md:mb-3 max-md:w-[calc(100%+1.25rem)]">
+          <div className="shop-filter-scroll flex min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain px-0.5 py-[0.35rem] pb-[0.55rem] [scrollbar-width:none] max-md:gap-[0.45rem] max-md:px-[0.65rem]">
+            <label className="grid w-[10.5rem] min-w-0 flex-none gap-[0.18rem] rounded-[0.95rem] border border-[var(--border)] bg-[var(--card)] px-[0.7rem] py-[0.45rem] pb-2 shadow-[0_5px_14px_rgb(27_49_37_/_4%)] max-md:min-h-[3.45rem] max-md:rounded-[0.85rem] max-md:px-[0.6rem] max-md:py-[0.4rem]">
+              <span className="text-[0.6rem] font-bold leading-tight text-[var(--muted)]">{t("shop.city")}</span>
+              <input className="h-[1.55rem] w-full min-w-0 border-0 !bg-transparent text-[0.75rem] font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--muted)] focus:outline-none max-md:h-6 max-md:text-[0.72rem]" value={filters.location} maxLength={100} placeholder={t("shop.allCities")} onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))} />
             </label>
-            <label className="shop-filter-field shop-filter-price">
-              <span>{t("shop.minimumPrice")}</span>
-              <input type="number" min="0" value={filters.minPrice} placeholder={t("shop.noMinimum")} onChange={(event) => setFilters((current) => ({ ...current, minPrice: event.target.value }))} />
+            <label className="grid w-32 min-w-0 flex-none gap-[0.18rem] rounded-[0.95rem] border border-[var(--border)] bg-[var(--card)] px-[0.7rem] py-[0.45rem] pb-2 shadow-[0_5px_14px_rgb(27_49_37_/_4%)] max-md:min-h-[3.45rem] max-md:rounded-[0.85rem] max-md:px-[0.6rem] max-md:py-[0.4rem]">
+              <span className="text-[0.6rem] font-bold leading-tight text-[var(--muted)]">{t("shop.minimumPrice")}</span>
+              <input className="h-[1.55rem] w-full min-w-0 border-0 !bg-transparent text-[0.75rem] font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--muted)] focus:outline-none max-md:h-6 max-md:text-[0.72rem]" type="number" min="0" value={filters.minPrice} placeholder={t("shop.noMinimum")} onChange={(event) => setFilters((current) => ({ ...current, minPrice: event.target.value }))} />
             </label>
-            <label className="shop-filter-field shop-filter-price">
-              <span>{t("shop.maximumPrice")}</span>
-              <input type="number" min="0" value={filters.maxPrice} placeholder={t("shop.noMaximum")} onChange={(event) => setFilters((current) => ({ ...current, maxPrice: event.target.value }))} />
+            <label className="grid w-32 min-w-0 flex-none gap-[0.18rem] rounded-[0.95rem] border border-[var(--border)] bg-[var(--card)] px-[0.7rem] py-[0.45rem] pb-2 shadow-[0_5px_14px_rgb(27_49_37_/_4%)] max-md:min-h-[3.45rem] max-md:rounded-[0.85rem] max-md:px-[0.6rem] max-md:py-[0.4rem]">
+              <span className="text-[0.6rem] font-bold leading-tight text-[var(--muted)]">{t("shop.maximumPrice")}</span>
+              <input className="h-[1.55rem] w-full min-w-0 border-0 !bg-transparent text-[0.75rem] font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--muted)] focus:outline-none max-md:h-6 max-md:text-[0.72rem]" type="number" min="0" value={filters.maxPrice} placeholder={t("shop.noMaximum")} onChange={(event) => setFilters((current) => ({ ...current, maxPrice: event.target.value }))} />
             </label>
-            <label className="shop-filter-field shop-filter-sort">
-              <span>{t("shop.sortBy")}</span>
-              <select value={filters.sort} onChange={(event) => setFilters((current) => ({ ...current, sort: event.target.value }))}>
+            <label className="grid w-[10.5rem] min-w-0 flex-none gap-[0.18rem] rounded-[0.95rem] border border-[var(--border)] bg-[var(--card)] px-[0.7rem] py-[0.45rem] pb-2 shadow-[0_5px_14px_rgb(27_49_37_/_4%)] max-md:min-h-[3.45rem] max-md:rounded-[0.85rem] max-md:px-[0.6rem] max-md:py-[0.4rem]">
+              <span className="text-[0.6rem] font-bold leading-tight text-[var(--muted)]">{t("shop.sortBy")}</span>
+              <select className="h-[1.55rem] w-full min-w-0 border-0 !bg-transparent text-[0.75rem] font-bold text-[var(--foreground)] outline-none focus:outline-none [color-scheme:light] dark:[color-scheme:dark] dark:[&>option]:bg-[#172326] dark:[&>option]:text-[#eef6f3] max-md:h-6 max-md:text-[0.72rem]" value={filters.sort} onChange={(event) => setFilters((current) => ({ ...current, sort: event.target.value }))}>
                 <option value="newest">{t("shop.newest")}</option>
                 <option value="oldest">{t("shop.oldest")}</option>
                 <option value="price_asc">{t("shop.priceAscending")}</option>
                 <option value="price_desc">{t("shop.priceDescending")}</option>
               </select>
             </label>
-            <button type="submit" className="shop-filter-submit">{t("shop.applyFilters")}</button>
+            <button type="submit" className="min-h-[3.25rem] flex-none rounded-[0.95rem] bg-[linear-gradient(110deg,#147b49,#0f6845)] px-4 text-xs font-extrabold text-white shadow-[0_8px_18px_rgb(22_131_75_/_17%)] transition hover:-translate-y-px hover:shadow-[0_11px_22px_rgb(22_131_75_/_22%)] max-md:min-h-[3.45rem] max-md:rounded-[0.85rem] max-md:px-[0.85rem]">{t("shop.applyFilters")}</button>
           </div>
         </form>
         {!state.loading && !state.error && state.allProducts?.length === 0 && (
@@ -226,19 +226,19 @@ function Shop() {
             {Array.from({ length: 5 }).map((_, index) => <SkeletonCard key={index} />)}
           </div>
         ) : (
-          <div className="shop-category-sections">
+          <div className="shop-category-sections grid gap-6 max-md:gap-[1.1rem]">
             {productGroups.map((group) => (
-              <section className="shop-category-section" key={group.key} aria-labelledby={`category-${group.key}`}>
-                <header className="shop-category-heading">
-                  <div>
-                    <span>{t("shop.categoryLabel")}</span>
-                    <h2 id={`category-${group.key}`}>{group.label}</h2>
+              <section className="shop-category-section min-w-0 max-md:rounded-[1.15rem] max-md:border max-md:border-[var(--border)] max-md:bg-[linear-gradient(150deg,var(--card),var(--muted-surface))] max-md:p-3 max-md:shadow-[0_8px_22px_rgb(27_49_37_/_4%)]" key={group.key} aria-labelledby={`category-${group.key}`}>
+                <header className="mb-[0.7rem] flex min-w-0 items-center justify-between gap-4 px-0.5 max-md:mb-[0.55rem]">
+                  <div className="min-w-0">
+                    <span className="text-[0.62rem] font-extrabold uppercase tracking-[0.12em] text-[var(--primary)]">{t("shop.categoryLabel")}</span>
+                    <h2 className="mt-[0.15rem] overflow-hidden text-ellipsis whitespace-nowrap text-[1.2rem] font-extrabold tracking-[-0.035em] text-[var(--foreground)] max-md:text-base" id={`category-${group.key}`}>{group.label}</h2>
                   </div>
-                  <span className="shop-category-count">
+                  <span className="flex-none rounded-full border border-[var(--border)] bg-[var(--muted-surface)] px-[0.65rem] py-[0.35rem] text-[0.68rem] font-bold text-[var(--foreground)] max-md:px-[0.55rem] max-md:py-[0.3rem] max-md:text-[0.62rem]">
                     {t("shop.pageProductCount").replace("{count}", String(group.products.length))}
                   </span>
                 </header>
-                <div className="shop-product-grid grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="shop-product-grid grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-md:gap-[0.55rem]">
                   {group.products.map((product) => <ProductCard product={product} key={product._id} />)}
                 </div>
               </section>
