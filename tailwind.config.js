@@ -31,6 +31,13 @@ module.exports = {
         muted: "var(--muted)",
         "muted-surface": "var(--muted-surface)",
         input: "var(--input)",
+        surface: "var(--surface)",
+        "surface-elevated": "var(--surface-elevated)",
+        "text-primary": "var(--text-primary)",
+        "text-secondary": "var(--text-secondary)",
+        "text-muted": "var(--text-muted)",
+        accent: "var(--accent)",
+        "accent-foreground": "var(--accent-foreground)",
       },
       animation: {
         'translate-y': 'translateY 1s ease-out', // Définition de l'animation

@@ -60,6 +60,13 @@
   --foreground-rgb: 23 35 28;
   --on-dark: #ffffff;
   --surface-shadow: 0 5px 18px rgb(23 35 28 / 5%);
+  --surface: var(--card);
+  --surface-elevated: var(--muted-surface);
+  --text-primary: var(--foreground);
+  --text-secondary: var(--muted);
+  --text-muted: var(--muted);
+  --accent: var(--primary);
+  --accent-foreground: var(--primary-foreground);
 }
 
 :root[data-theme="dark"] {
@@ -2962,4 +2969,56 @@ select:focus-visible {
   background: transparent !important;
   box-shadow: none !important;
   padding: 0 0.125rem !important;
+}
+:root[data-theme="dark"] .customer-app .product-card {
+  border-color: var(--border) !important;
+  background: var(--surface) !important;
+  color: var(--text-primary);
+  box-shadow: var(--surface-shadow);
+}
+:root[data-theme="dark"] .customer-app .product-card > div:first-child {
+  background: var(--surface-elevated) !important;
+}
+:root[data-theme="dark"] .customer-app .product-card img {
+  filter: none !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+}
+:root[data-theme="dark"] .customer-app .product-card h3 { color: var(--text-primary) !important; }
+:root[data-theme="dark"] .customer-app .product-card p { color: var(--text-secondary) !important; }
+:root[data-theme="dark"] .customer-app .product-card > div:first-child span {
+  border-color: var(--border) !important;
+  background: color-mix(in srgb, var(--surface) 96%, transparent) !important;
+  color: var(--accent) !important;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 24%);
+}
+:root[data-theme="dark"] .customer-mobile-nav {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  box-shadow: 0 -8px 28px rgb(0 0 0 / 22%);
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+:root[data-theme="dark"] .customer-mobile-nav-item {
+  color: var(--text-secondary);
+  transition: color 180ms ease, background-color 180ms ease;
+}
+:root[data-theme="dark"] .customer-mobile-nav-item.is-active {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  color: var(--accent);
+}
+:root[data-theme="dark"] .customer-app #product .market-container > .mb-7 > a {
+  border-color: var(--border);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+:root[data-theme="dark"] .customer-app .home-product-grid .card,
+:root[data-theme="dark"] .customer-app .shop-product-grid .card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+:root[data-theme="dark"] .customer-app :is(.home-product-grid, .shop-product-grid) .react-loading-skeleton {
+  --base-color: var(--surface-elevated);
+  --highlight-color: color-mix(in srgb, var(--surface-elevated) 70%, var(--foreground));
 }
